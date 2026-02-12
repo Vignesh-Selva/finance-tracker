@@ -57,12 +57,13 @@ class UIRenderer {
             const cryptoTotalPLPercent =
                 cryptoInvested > 0 ? ((cryptoTotalPL / cryptoInvested) * 100).toFixed(2) : 0;
 
-            const overallInvestmentPLPercent =
-                (
-                    Number(mutualFundsTotalPLPercent) +
-                    Number(stocksTotalPLPercent) +
-                    Number(cryptoTotalPLPercent)
-                ).toFixed(2);
+            // Calculate overall investment P/L (weighted average)
+            const totalInvested = mfInvested + stocksInvested + cryptoInvested;
+            const totalCurrentValue = mfCurrent + stocksCurrent + cryptoCurrent;
+            const totalPL = totalCurrentValue - totalInvested;
+            const overallInvestmentPLPercent = totalInvested > 0
+                ? ((totalPL / totalInvested) * 100).toFixed(2)
+                : '0.00';
 
             // Allocation bar
             let allocationHTML = '<div class="allocation-bar">';
@@ -134,38 +135,35 @@ class UIRenderer {
                     ${legendHTML}
                 </div>
                 <div class="section-header"></div>
-                <div class="section-header"><h2>Investments P/L</h2></div>
-                <div class="stat-grid">
-                    <div class="stat-card">
-                        <h3>Total P/L</h3>
-                        <p class="stat-change">${overallInvestmentPLPercent}%
-                        <p class="stat-value ${mutualFundsTotalPL + stocksTotalPL + cryptoTotalPL >= 0 ? 'positive' : 'negative'}">
-                            ${Utilities.formatCurrency(mutualFundsTotalPL + stocksTotalPL + cryptoTotalPL)}
-                        </p>
-                        <div class="section-header"></div>
-                        <div class="stat-grid">
-                            <div class="stat-card">
-                                <h3>Mutual Funds P/L</h3>
-                                <p class="stat-value ${mutualFundsTotalPL >= 0 ? 'positive' : 'negative'}">
-                                    ${Utilities.formatCurrency(mutualFundsTotalPL)}
-                                </p>
-                                <p class="stat-change">${mutualFundsTotalPLPercent}%</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Stocks & ETF P/L</h3>
-                                <p class="stat-value ${stocksTotalPL >= 0 ? 'positive' : 'negative'}">
-                                    ${Utilities.formatCurrency(stocksTotalPL)}
-                                </p>
-                                <p class="stat-change">${stocksTotalPLPercent}%</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Crypto P/L</h3>
-                                <p class="stat-value ${cryptoTotalPL >= 0 ? 'positive' : 'negative'}">
-                                    ${Utilities.formatCurrency(cryptoTotalPL)}
-                                </p>
-                                <p class="stat-change">${cryptoTotalPLPercent}%</p>
-                            </div>
-                            </div>
+                    <div class="section-header"><h2>Investments P/L</h2></div>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <h3>Total P/L</h3>
+                            <p class="stat-value ${totalPL >= 0 ? 'positive' : 'negative'}">
+                                ${Utilities.formatCurrency(totalPL)}
+                            </p>
+                            <p class="stat-change">${overallInvestmentPLPercent}%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Mutual Funds P/L</h3>
+                            <p class="stat-value ${mutualFundsTotalPL >= 0 ? 'positive' : 'negative'}">
+                                ${Utilities.formatCurrency(mutualFundsTotalPL)}
+                            </p>
+                            <p class="stat-change">${mutualFundsTotalPLPercent}%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Stocks & ETF P/L</h3>
+                            <p class="stat-value ${stocksTotalPL >= 0 ? 'positive' : 'negative'}">
+                                ${Utilities.formatCurrency(stocksTotalPL)}
+                            </p>
+                            <p class="stat-change">${stocksTotalPLPercent}%</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Crypto P/L</h3>
+                            <p class="stat-value ${cryptoTotalPL >= 0 ? 'positive' : 'negative'}">
+                                ${Utilities.formatCurrency(cryptoTotalPL)}
+                            </p>
+                            <p class="stat-change">${cryptoTotalPLPercent}%</p>
                         </div>
                     </div>
                 </div>
@@ -173,6 +171,7 @@ class UIRenderer {
 
             document.getElementById('content-dashboard').innerHTML = html;
         } catch (e) {
+            console.error('Dashboard render error:', e);
             Utilities.showNotification('Failed to render dashboard', 'error');
         }
     }
@@ -255,9 +254,11 @@ class UIRenderer {
 
             document.getElementById('content-expenses').innerHTML = html;
         } catch (error) {
+            console.error('Expenses render error:', error);
             Utilities.showNotification('Failed to render expenses', 'error');
         }
     }
+
     async renderSavings() {
         try {
             const savings = await this.dbManager.getAll('savings');
@@ -290,7 +291,7 @@ class UIRenderer {
             `;
 
             if (savings.length === 0) {
-                html += '<tr><td colspan="5" style="text-align: center;">No savings accounts yet</td></tr>';
+                html += '<tr><td colspan="4" style="text-align: center;">No savings accounts yet</td></tr>';
             } else {
                 savings.forEach(s => {
                     html += `
@@ -311,6 +312,7 @@ class UIRenderer {
 
             document.getElementById('content-savings').innerHTML = html;
         } catch (error) {
+            console.error('Savings render error:', error);
             Utilities.showNotification('Failed to render savings', 'error');
         }
     }
@@ -383,6 +385,7 @@ class UIRenderer {
 
             document.getElementById('content-fixedDeposits').innerHTML = html;
         } catch (error) {
+            console.error('Fixed deposits render error:', error);
             Utilities.showNotification('Failed to render fixed deposits', 'error');
         }
     }
@@ -462,6 +465,7 @@ class UIRenderer {
 
             document.getElementById('content-mutualFunds').innerHTML = html;
         } catch (error) {
+            console.error('Mutual funds render error:', error);
             Utilities.showNotification('Failed to render mutual funds', 'error');
         }
     }
@@ -517,7 +521,7 @@ class UIRenderer {
             `;
 
             if (stocks.length === 0) {
-                html += '<tr><td colspan="7" style="text-align: center;">No stocks yet</td></tr>';
+                html += '<tr><td colspan="8" style="text-align: center;">No stocks yet</td></tr>';
             } else {
                 stocks.forEach(stock => {
                     const plData = Utilities.calculatePL(stock.invested || 0, stock.current || 0);
@@ -543,6 +547,7 @@ class UIRenderer {
 
             document.getElementById('content-stocks').innerHTML = html;
         } catch (error) {
+            console.error('Stocks render error:', error);
             Utilities.showNotification('Failed to render stocks', 'error');
         }
     }
@@ -598,7 +603,7 @@ class UIRenderer {
             `;
 
             if (crypto.length === 0) {
-                html += '<tr><td colspan="7" style="text-align: center;">No crypto holdings yet</td></tr>';
+                html += '<tr><td colspan="8" style="text-align: center;">No crypto holdings yet</td></tr>';
             } else {
                 crypto.forEach(c => {
                     const plData = Utilities.calculatePL(c.invested || 0, c.current || 0);
@@ -624,6 +629,7 @@ class UIRenderer {
 
             document.getElementById('content-crypto').innerHTML = html;
         } catch (error) {
+            console.error('Crypto render error:', error);
             Utilities.showNotification('Failed to render crypto', 'error');
         }
     }
@@ -700,6 +706,7 @@ class UIRenderer {
 
             document.getElementById('content-liabilities').innerHTML = html;
         } catch (error) {
+            console.error('Liabilities render error:', error);
             Utilities.showNotification('Failed to render liabilities', 'error');
         }
     }

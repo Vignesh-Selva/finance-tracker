@@ -5,7 +5,7 @@ class PersonalFinanceApp {
         this.formHandler = null;
         this.currentTab = 'dashboard';
         this.sidebarCollapsed = false;
-        this.isSettingsModal = false; // Track if we're in settings modal
+        this.isSettingsModal = false;
     }
 
     async init() {
@@ -24,107 +24,133 @@ class PersonalFinanceApp {
             await this.switchTab('dashboard');
 
         } catch (error) {
+            console.error('App initialization error:', error);
             Utilities.showNotification('Failed to initialize app. Please refresh the page.', 'error');
         }
     }
 
     async initializeDefaultData() {
-        const settings = await this.dbManager.getAll('settings');
-        if (settings.length === 0) {
-            await this.dbManager.save('settings', {
-                id: 1,
-                currency: 'INR',
-                goal: 15000000,
-                epf: 681593,
-                ppf: 13000,
-                theme: 'light',
-                lastSync: new Date().toISOString()
-            });
+        try {
+            const settings = await this.dbManager.getAll('settings');
+            if (settings.length === 0) {
+                await this.dbManager.save('settings', {
+                    id: 1,
+                    currency: 'INR',
+                    goal: 15000000,
+                    epf: 0,
+                    ppf: 0,
+                    theme: 'light',
+                    lastSync: new Date().toISOString()
+                });
+            }
+        } catch (error) {
+            console.error('Default data initialization error:', error);
         }
     }
 
     loadTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        try {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
 
-        const themeBtn = document.getElementById('themeToggle');
-        if (themeBtn) {
-            themeBtn.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) {
+                themeBtn.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+            }
+        } catch (error) {
+            console.error('Theme load error:', error);
         }
     }
 
     loadSidebarState() {
-        const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        if (collapsed) {
-            this.toggleSidebar();
+        try {
+            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (collapsed) {
+                this.toggleSidebar();
+            }
+        } catch (error) {
+            console.error('Sidebar state load error:', error);
         }
     }
 
     toggleSidebar() {
-        this.sidebarCollapsed = !this.sidebarCollapsed;
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        const toggleBtn = document.getElementById('sidebarToggle');
+        try {
+            this.sidebarCollapsed = !this.sidebarCollapsed;
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const toggleBtn = document.getElementById('sidebarToggle');
 
-        if (this.sidebarCollapsed) {
-            sidebar.classList.add('collapsed');
-            mainContent.classList.add('expanded');
-            if (toggleBtn) toggleBtn.textContent = '☰';
-        } else {
-            sidebar.classList.remove('collapsed');
-            mainContent.classList.remove('expanded');
-            if (toggleBtn) toggleBtn.textContent = '✕';
+            if (this.sidebarCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+                if (toggleBtn) toggleBtn.textContent = '☰';
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('expanded');
+                if (toggleBtn) toggleBtn.textContent = '✕';
+            }
+
+            localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
+        } catch (error) {
+            console.error('Sidebar toggle error:', error);
         }
-
-        localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
     }
 
     setupEventListeners() {
-        const closeBtn = document.querySelector('.close');
-        if (closeBtn) {
-            closeBtn.onclick = () => this.closeModal();
-        }
-
-        window.onclick = (event) => {
-            const modal = document.getElementById('dataModal');
-            if (event.target === modal) {
-                this.closeModal();
+        try {
+            const closeBtn = document.querySelector('.close');
+            if (closeBtn) {
+                closeBtn.onclick = () => this.closeModal();
             }
-        };
 
-        const themeBtn = document.getElementById('themeToggle');
-        if (themeBtn) {
-            themeBtn.onclick = () => {
-                Utilities.toggleTheme();
-                this.loadTheme();
+            window.onclick = (event) => {
+                const modal = document.getElementById('dataModal');
+                if (event.target === modal) {
+                    this.closeModal();
+                }
             };
-        }
 
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        if (sidebarToggle) {
-            sidebarToggle.onclick = () => this.toggleSidebar();
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn) {
+                themeBtn.onclick = () => {
+                    Utilities.toggleTheme();
+                    this.loadTheme();
+                };
+            }
+
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            if (sidebarToggle) {
+                sidebarToggle.onclick = () => this.toggleSidebar();
+            }
+        } catch (error) {
+            console.error('Event listeners setup error:', error);
         }
     }
 
     async switchTab(tabName) {
-        this.currentTab = tabName;
+        try {
+            this.currentTab = tabName;
 
-        document.querySelectorAll('.content').forEach(div => div.classList.remove('active'));
-        document.querySelectorAll('.sidebar-item').forEach(item => {
-            item.classList.remove('active');
-        });
+            document.querySelectorAll('.content').forEach(div => div.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
 
-        const contentDiv = document.getElementById(`content-${tabName}`);
-        if (contentDiv) contentDiv.classList.add('active');
+            const contentDiv = document.getElementById(`content-${tabName}`);
+            if (contentDiv) contentDiv.classList.add('active');
 
-        document.querySelectorAll('.sidebar-item').forEach(item => {
-            const onclick = item.getAttribute('onclick');
-            if (onclick && onclick.includes(`'${tabName}'`)) {
-                item.classList.add('active');
-            }
-        });
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                const onclick = item.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${tabName}'`)) {
+                    item.classList.add('active');
+                }
+            });
 
-        await this.renderCurrentTab();
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.error('Tab switch error:', error);
+            Utilities.showNotification('Failed to switch tab', 'error');
+        }
     }
 
     async renderCurrentTab() {
@@ -156,6 +182,7 @@ class PersonalFinanceApp {
                     break;
             }
         } catch (error) {
+            console.error('Render error:', error);
             Utilities.showNotification('Failed to render content', 'error');
         }
     }
@@ -192,6 +219,7 @@ class PersonalFinanceApp {
                 Utilities.showNotification('Entry deleted successfully');
                 await this.refreshCurrentTab();
             } catch (error) {
+                console.error('Delete error:', error);
                 Utilities.showNotification('Failed to delete entry', 'error');
             }
         }
@@ -202,7 +230,6 @@ class PersonalFinanceApp {
     }
 
     async saveModalData() {
-        // Check if this is a settings modal or regular form
         if (this.isSettingsModal) {
             await this.saveSettings();
         } else {
@@ -220,62 +247,67 @@ class PersonalFinanceApp {
     }
 
     async showSettings() {
-        this.isSettingsModal = true;
-        const settings = await Utilities.getSettings(this.dbManager);
+        try {
+            this.isSettingsModal = true;
+            const settings = await Utilities.getSettings(this.dbManager);
 
-        const formHTML = `
-            <div class="form-group">
-                <label>Currency:</label>
-                <input type="text" id="setting-currency" value="${settings.currency}" class="form-input" />
-            </div>
-            <div class="form-group">
-                <label>Financial Goal:</label>
-                <input type="number" id="setting-goal" value="${settings.goal}" class="form-input" step="1000" min="0" />
-            </div>
-            <div class="form-group">
-                <label>EPF Balance:</label>
-                <input type="number" id="setting-epf" value="${settings.epf}" class="form-input" step="0.01" min="0" />
-            </div>
-            <div class="form-group">
-                <label>PPF Balance:</label>
-                <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" />
-            </div>
-        `;
+            const formHTML = `
+                <div class="form-group">
+                    <label>Currency:</label>
+                    <input type="text" id="setting-currency" value="${settings.currency}" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label>Financial Goal:</label>
+                    <input type="number" id="setting-goal" value="${settings.goal}" class="form-input" step="1000" min="0" />
+                </div>
+                <div class="form-group">
+                    <label>EPF Balance:</label>
+                    <input type="number" id="setting-epf" value="${settings.epf}" class="form-input" step="0.01" min="0" />
+                </div>
+                <div class="form-group">
+                    <label>PPF Balance:</label>
+                    <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" />
+                </div>
+            `;
 
-        const modal = document.getElementById('dataModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
+            const modal = document.getElementById('dataModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
 
-        modalTitle.textContent = 'Settings';
-        modalBody.innerHTML = formHTML;
-        modal.style.display = 'block';
+            modalTitle.textContent = 'Settings';
+            modalBody.innerHTML = formHTML;
+            modal.style.display = 'block';
+        } catch (error) {
+            console.error('Show settings error:', error);
+            Utilities.showNotification('Failed to load settings', 'error');
+        }
     }
 
     async saveSettings() {
-        const settings = await Utilities.getSettings(this.dbManager);
-
-        const goal = parseFloat(document.getElementById('setting-goal').value);
-        const epf = parseFloat(document.getElementById('setting-epf').value);
-        const ppf = parseFloat(document.getElementById('setting-ppf').value);
-
-        // Validate: allow zero but not negative
-        if (goal < 0 || epf < 0 || ppf < 0) {
-            Utilities.showNotification('Values cannot be negative', 'error');
-            return;
-        }
-
-        settings.currency = document.getElementById('setting-currency').value;
-        settings.goal = goal;
-        settings.epf = epf;
-        settings.ppf = ppf;
-        settings.lastSync = new Date().toISOString();
-
         try {
+            const settings = await Utilities.getSettings(this.dbManager);
+
+            const goal = parseFloat(document.getElementById('setting-goal').value);
+            const epf = parseFloat(document.getElementById('setting-epf').value);
+            const ppf = parseFloat(document.getElementById('setting-ppf').value);
+
+            if (goal < 0 || epf < 0 || ppf < 0) {
+                Utilities.showNotification('Values cannot be negative', 'error');
+                return;
+            }
+
+            settings.currency = document.getElementById('setting-currency').value;
+            settings.goal = goal;
+            settings.epf = epf;
+            settings.ppf = ppf;
+            settings.lastSync = new Date().toISOString();
+
             await this.dbManager.save('settings', settings);
             Utilities.showNotification('Settings saved successfully');
             this.closeModal();
             await this.refreshCurrentTab();
         } catch (error) {
+            console.error('Save settings error:', error);
             Utilities.showNotification('Failed to save settings', 'error');
         }
     }
@@ -289,6 +321,7 @@ class PersonalFinanceApp {
             Utilities.exportData(data);
             Utilities.showNotification('Data exported successfully');
         } catch (error) {
+            console.error('Export error:', error);
             Utilities.showNotification('Failed to export data', 'error');
         }
     }
@@ -303,7 +336,6 @@ class PersonalFinanceApp {
                 const file = e.target.files[0];
                 const data = await Utilities.importData(file, this.dbManager);
 
-                // Map old field names to new field names
                 const fieldMappings = {
                     'savings': {
                         'bank': 'bankName',
@@ -332,7 +364,6 @@ class PersonalFinanceApp {
                         const items = Array.isArray(data[store]) ? data[store] : [data[store]];
 
                         for (const item of items) {
-                            // Apply field mappings
                             if (fieldMappings[store]) {
                                 const mapping = fieldMappings[store];
                                 for (const [oldField, newField] of Object.entries(mapping)) {
@@ -342,7 +373,6 @@ class PersonalFinanceApp {
                                 }
                             }
 
-                            // Remove old id to let database generate new ones
                             const itemToSave = { ...item };
                             delete itemToSave.id;
 
@@ -354,6 +384,7 @@ class PersonalFinanceApp {
                 Utilities.showNotification('Data imported successfully');
                 await this.refreshCurrentTab();
             } catch (error) {
+                console.error('Import error:', error);
                 Utilities.showNotification('Failed to import data: ' + error.message, 'error');
             }
         };

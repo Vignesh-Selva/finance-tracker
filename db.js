@@ -14,7 +14,10 @@ class DatabaseManager {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-            request.onerror = () => reject(request.error);
+            request.onerror = () => {
+                console.error('Database error:', request.error);
+                reject(request.error);
+            };
 
             request.onsuccess = () => {
                 this.db = request.result;
@@ -45,45 +48,97 @@ class DatabaseManager {
 
     async save(storeName, data) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.put(data);
+            try {
+                if (!this.db) {
+                    reject(new Error('Database not initialized'));
+                    return;
+                }
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.put(data);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => {
+                    console.error('Save error:', request.error);
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Transaction error:', error);
+                reject(error);
+            }
         });
     }
 
     async getAll(storeName) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.getAll();
+            try {
+                if (!this.db) {
+                    reject(new Error('Database not initialized'));
+                    return;
+                }
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.getAll();
+
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => {
+                    console.error('GetAll error:', request.error);
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Transaction error:', error);
+                reject(error);
+            }
         });
     }
 
     async getOne(storeName, id) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.get(id);
+            try {
+                if (!this.db) {
+                    reject(new Error('Database not initialized'));
+                    return;
+                }
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(id);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => {
+                    console.error('GetOne error:', request.error);
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Transaction error:', error);
+                reject(error);
+            }
         });
     }
 
     async delete(storeName, id) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.delete(id);
+            try {
+                if (!this.db) {
+                    reject(new Error('Database not initialized'));
+                    return;
+                }
 
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.delete(id);
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => {
+                    console.error('Delete error:', request.error);
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Transaction error:', error);
+                reject(error);
+            }
         });
     }
 }
