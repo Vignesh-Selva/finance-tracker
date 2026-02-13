@@ -374,7 +374,9 @@ class PersonalFinanceApp {
                             }
 
                             const itemToSave = { ...item };
-                            delete itemToSave.id;
+                            if (store != 'settings'){
+                                delete itemToSave.id;
+                            }
 
                             await this.dbManager.save(store, itemToSave);
                         }
