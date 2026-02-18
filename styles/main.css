@@ -69,6 +69,7 @@ body {
     transform: translateX(-100%);
     opacity: 0;
     width: 240px;
+    background: var(--card-bg);
 }
 
 .sidebar.mobile:not(.collapsed) {
@@ -94,11 +95,14 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     z-index: 101;
+    display: none;
 }
 
 .sidebar-toggle-btn.mobile {
     left: 15px;
     top: 15px;
+    z-index: 110;
+    display: flex;
 }
 
 .sidebar.collapsed+.sidebar-toggle-btn {
@@ -168,7 +172,7 @@ body {
 .main-content.mobile {
     margin-left: 0;
     padding: 20px;
-    padding-top: 70px;
+    padding-top: 90px;
 }
 
 .content {

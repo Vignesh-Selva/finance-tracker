@@ -131,6 +131,7 @@ class PersonalFinanceApp {
 
         if (toggleBtn) {
             toggleBtn.textContent = collapsed ? '☰' : '✕';
+            toggleBtn.setAttribute('aria-expanded', (!collapsed).toString());
         }
 
         if (persist) {
@@ -194,7 +195,14 @@ class PersonalFinanceApp {
                 item.setAttribute('role', 'button');
                 item.setAttribute('tabindex', '0');
                 const tabName = item.getAttribute('data-tab');
-                const handler = () => tabName && this.switchTab(tabName);
+                const handler = () => {
+                    if (tabName) {
+                        this.switchTab(tabName);
+                        if (window.innerWidth <= 900) {
+                            this.setSidebarCollapsed(true, false);
+                        }
+                    }
+                };
                 item.addEventListener('click', handler);
                 item.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {

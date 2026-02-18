@@ -20,43 +20,43 @@
                 <button id="themeToggle" class="theme-toggle">🌙</button>
             </div>
             <nav class="sidebar-nav">
-                <div class="sidebar-item active" onclick="window.app.switchTab('dashboard')">
+                <div class="sidebar-item active" data-tab="dashboard" onclick="window.app.switchTab('dashboard')">
 
                     📊 Dashboard
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('expenses')">
+                <div class="sidebar-item" data-tab="expenses" onclick="window.app.switchTab('expenses')">
 
                     💸 Expenses
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('savings')">
+                <div class="sidebar-item" data-tab="savings" onclick="window.app.switchTab('savings')">
 
                     🏦 Savings
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('fixedDeposits')">
+                <div class="sidebar-item" data-tab="fixedDeposits" onclick="window.app.switchTab('fixedDeposits')">
 
                     📈 Fixed Deposits
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('mutualFunds')">
+                <div class="sidebar-item" data-tab="mutualFunds" onclick="window.app.switchTab('mutualFunds')">
 
                     📊 Mutual Funds
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('stocks')">
+                <div class="sidebar-item" data-tab="stocks" onclick="window.app.switchTab('stocks')">
 
                     📈 Stocks
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('crypto')">
+                <div class="sidebar-item" data-tab="crypto" onclick="window.app.switchTab('crypto')">
 
                     🪙 Crypto
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('liabilities')">
+                <div class="sidebar-item" data-tab="liabilities" onclick="window.app.switchTab('liabilities')">
 
                     💳 Liabilities
                 </div>
-                <div class="sidebar-item" onclick="window.app.switchTab('budgets')">
+                <div class="sidebar-item" data-tab="budgets" onclick="window.app.switchTab('budgets')">
 
                     🧭 Budgets
                 </div>
-                <div class="sidebar-item" onclick="window.app.showSettings()">
+                <div class="sidebar-item" data-tab="settings" onclick="window.app.showSettings()">
 
                     ⚙️ Settings
                 </div>
@@ -71,7 +71,7 @@
             </nav>
         </aside>
 
-        <!-- <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button> -->
+        <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
 
         <main class="main-content">
             <div id="content-dashboard" class="content active"></div>
