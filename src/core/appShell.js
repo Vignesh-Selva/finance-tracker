@@ -1,18 +1,43 @@
+import Utilities from '../utils/utils.js';
+import { DatabaseManager } from '../data/dbManager.js';
+import { FormHandler } from '../ui/forms/formHandler.js';
+import { renderDashboard } from '../ui/features/dashboard.js';
+import { renderExpenses } from '../ui/features/expenses.js';
+import { renderSavings } from '../ui/features/savings.js';
+import { renderFixedDeposits } from '../ui/features/fixedDeposits.js';
+import { renderMutualFunds } from '../ui/features/mutualFunds.js';
+import { renderStocks } from '../ui/features/stocks.js';
+import { renderCrypto } from '../ui/features/crypto.js';
+import { renderLiabilities } from '../ui/features/liabilities.js';
+import { renderBudgets } from '../ui/features/budgets.js';
+import { INITIAL_DATA } from '../utils/initialData.js';
+
 class PersonalFinanceApp {
     constructor() {
         this.dbManager = new DatabaseManager();
-        this.renderer = null;
         this.formHandler = null;
         this.currentTab = 'dashboard';
         this.sidebarCollapsed = false;
+        this.userSidebarPref = null;
         this.isSettingsModal = false;
+
+        this.renderers = {
+            dashboard: renderDashboard,
+            expenses: renderExpenses,
+            savings: renderSavings,
+            fixedDeposits: renderFixedDeposits,
+            mutualFunds: renderMutualFunds,
+            stocks: renderStocks,
+            crypto: renderCrypto,
+            liabilities: renderLiabilities,
+            budgets: renderBudgets,
+        };
     }
 
     async init() {
         try {
             await this.dbManager.init();
 
-            this.renderer = new UIRenderer(this.dbManager);
             this.formHandler = new FormHandler(this.dbManager);
 
             this.formHandler.app = this;
@@ -64,10 +89,10 @@ class PersonalFinanceApp {
 
     loadSidebarState() {
         try {
-            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (collapsed) {
-                this.toggleSidebar();
-            }
+            const stored = localStorage.getItem('sidebarCollapsed');
+            this.userSidebarPref = stored === null ? null : stored === 'true';
+
+            this.updateResponsiveLayout();
         } catch (error) {
             console.error('Sidebar state load error:', error);
         }
@@ -75,25 +100,62 @@ class PersonalFinanceApp {
 
     toggleSidebar() {
         try {
-            this.sidebarCollapsed = !this.sidebarCollapsed;
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('.main-content');
-            const toggleBtn = document.getElementById('sidebarToggle');
-
-            if (this.sidebarCollapsed) {
-                sidebar.classList.add('collapsed');
-                mainContent.classList.add('expanded');
-                if (toggleBtn) toggleBtn.textContent = '☰';
-            } else {
-                sidebar.classList.remove('collapsed');
-                mainContent.classList.remove('expanded');
-                if (toggleBtn) toggleBtn.textContent = '✕';
-            }
-
-            localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
+            this.setSidebarCollapsed(!this.sidebarCollapsed, true);
         } catch (error) {
             console.error('Sidebar toggle error:', error);
         }
+    }
+
+    setSidebarCollapsed(collapsed, persist = false) {
+        this.sidebarCollapsed = collapsed;
+
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (sidebar) {
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+            } else {
+                sidebar.classList.remove('collapsed');
+            }
+        }
+
+        if (mainContent) {
+            if (collapsed) {
+                mainContent.classList.add('expanded');
+            } else {
+                mainContent.classList.remove('expanded');
+            }
+        }
+
+        if (toggleBtn) {
+            toggleBtn.textContent = collapsed ? '☰' : '✕';
+        }
+
+        if (persist) {
+            this.userSidebarPref = collapsed;
+            localStorage.setItem('sidebarCollapsed', collapsed);
+        }
+    }
+
+    updateResponsiveLayout() {
+        const isMobile = window.innerWidth <= 900;
+        const appContainer = document.querySelector('.app-container');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (appContainer) appContainer.classList.toggle('mobile', isMobile);
+        if (sidebar) sidebar.classList.toggle('mobile', isMobile);
+        if (mainContent) mainContent.classList.toggle('mobile', isMobile);
+        if (toggleBtn) toggleBtn.classList.toggle('mobile', isMobile);
+
+        const shouldCollapse = isMobile
+            ? true
+            : (this.userSidebarPref ?? false);
+
+        this.setSidebarCollapsed(shouldCollapse, false);
     }
 
     setupEventListeners() {
@@ -122,6 +184,25 @@ class PersonalFinanceApp {
             if (sidebarToggle) {
                 sidebarToggle.onclick = () => this.toggleSidebar();
             }
+
+            window.addEventListener('resize', () => {
+                this.updateResponsiveLayout();
+            });
+
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            sidebarItems.forEach(item => {
+                item.setAttribute('role', 'button');
+                item.setAttribute('tabindex', '0');
+                const tabName = item.getAttribute('data-tab');
+                const handler = () => tabName && this.switchTab(tabName);
+                item.addEventListener('click', handler);
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handler();
+                    }
+                });
+            });
         } catch (error) {
             console.error('Event listeners setup error:', error);
         }
@@ -140,8 +221,8 @@ class PersonalFinanceApp {
             if (contentDiv) contentDiv.classList.add('active');
 
             document.querySelectorAll('.sidebar-item').forEach(item => {
-                const onclick = item.getAttribute('onclick');
-                if (onclick && onclick.includes(`'${tabName}'`)) {
+                const itemTab = item.getAttribute('data-tab');
+                if (itemTab === tabName) {
                     item.classList.add('active');
                 }
             });
@@ -155,31 +236,9 @@ class PersonalFinanceApp {
 
     async renderCurrentTab() {
         try {
-            switch (this.currentTab) {
-                case 'dashboard':
-                    await this.renderer.renderDashboard();
-                    break;
-                case 'expenses':
-                    await this.renderer.renderExpenses();
-                    break;
-                case 'savings':
-                    await this.renderer.renderSavings();
-                    break;
-                case 'fixedDeposits':
-                    await this.renderer.renderFixedDeposits();
-                    break;
-                case 'mutualFunds':
-                    await this.renderer.renderMutualFunds();
-                    break;
-                case 'stocks':
-                    await this.renderer.renderStocks();
-                    break;
-                case 'crypto':
-                    await this.renderer.renderCrypto();
-                    break;
-                case 'liabilities':
-                    await this.renderer.renderLiabilities();
-                    break;
+            const renderFn = this.renderers[this.currentTab];
+            if (renderFn) {
+                await renderFn(this.dbManager);
             }
         } catch (error) {
             console.error('Render error:', error);
@@ -268,6 +327,10 @@ class PersonalFinanceApp {
                     <label>PPF Balance:</label>
                     <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" />
                 </div>
+                <div class="form-actions">
+                    <button type="button" id="setting-reset" class="btn btn-secondary">Reset settings</button>
+                    <button type="button" id="data-reset" class="btn btn-danger">Reset all data</button>
+                </div>
             `;
 
             const modal = document.getElementById('dataModal');
@@ -277,6 +340,16 @@ class PersonalFinanceApp {
             modalTitle.textContent = 'Settings';
             modalBody.innerHTML = formHTML;
             modal.style.display = 'block';
+
+            const resetBtn = document.getElementById('setting-reset');
+            if (resetBtn) {
+                resetBtn.onclick = () => this.resetSettings();
+            }
+
+            const dataResetBtn = document.getElementById('data-reset');
+            if (dataResetBtn) {
+                dataResetBtn.onclick = () => this.resetAllData();
+            }
         } catch (error) {
             console.error('Show settings error:', error);
             Utilities.showNotification('Failed to load settings', 'error');
@@ -312,6 +385,50 @@ class PersonalFinanceApp {
         }
     }
 
+    async resetSettings() {
+        try {
+            const confirmed = await Utilities.showConfirm('Reset settings to defaults? This will overwrite your current values.');
+            if (!confirmed) return;
+
+            const defaults = {
+                ...INITIAL_DATA.settings,
+                lastSync: new Date().toISOString()
+            };
+
+            await this.dbManager.save('settings', defaults);
+            Utilities.showNotification('Settings reset to defaults');
+            this.closeModal();
+            await this.refreshCurrentTab();
+        } catch (error) {
+            console.error('Reset settings error:', error);
+            Utilities.showNotification('Failed to reset settings', 'error');
+        }
+    }
+
+    async resetAllData() {
+        try {
+            const confirmed = await Utilities.showConfirm('This will erase ALL data (transactions, assets, liabilities, settings). Proceed?');
+            if (!confirmed) return;
+
+            for (const store of this.dbManager.stores) {
+                await this.dbManager.clear(store);
+            }
+
+            // Re-seed default settings
+            await this.dbManager.save('settings', {
+                ...INITIAL_DATA.settings,
+                lastSync: new Date().toISOString()
+            });
+
+            Utilities.showNotification('All data reset to defaults');
+            this.closeModal();
+            await this.switchTab('dashboard');
+        } catch (error) {
+            console.error('Reset all data error:', error);
+            Utilities.showNotification('Failed to reset all data', 'error');
+        }
+    }
+
     async exportAllData() {
         try {
             const data = {};
@@ -335,6 +452,14 @@ class PersonalFinanceApp {
             try {
                 const file = e.target.files[0];
                 const data = await Utilities.importData(file, this.dbManager);
+
+                const overwrite = await Utilities.showConfirm('Importing will replace existing data. Continue?');
+                if (!overwrite) return;
+
+                // Clear all stores to avoid duplication on repeated imports
+                for (const store of this.dbManager.stores) {
+                    await this.dbManager.clear(store);
+                }
 
                 const fieldMappings = {
                     'savings': {
@@ -374,13 +499,22 @@ class PersonalFinanceApp {
                             }
 
                             const itemToSave = { ...item };
-                            if (store != 'settings'){
+                            if (store !== 'settings') {
                                 delete itemToSave.id;
                             }
 
                             await this.dbManager.save(store, itemToSave);
                         }
                     }
+                }
+
+                // If no settings were present in import, seed defaults to keep app consistent
+                const hasSettings = Array.isArray(data.settings) ? data.settings.length > 0 : !!data.settings;
+                if (!hasSettings) {
+                    await this.dbManager.save('settings', {
+                        ...INITIAL_DATA.settings,
+                        lastSync: new Date().toISOString()
+                    });
                 }
 
                 Utilities.showNotification('Data imported successfully');
@@ -395,8 +529,4 @@ class PersonalFinanceApp {
     }
 }
 
-let app;
-window.addEventListener('DOMContentLoaded', async () => {
-    app = new PersonalFinanceApp();
-    await app.init();
-});
+export default PersonalFinanceApp;

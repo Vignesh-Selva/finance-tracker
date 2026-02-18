@@ -1,7 +1,7 @@
-const DB_NAME = 'PersonalFinanceDB';
-const DB_VERSION = 1;
+export const DB_NAME = 'PersonalFinanceDB';
+export const DB_VERSION = 1;
 
-class DatabaseManager {
+export class DatabaseManager {
     constructor() {
         this.db = null;
         this.stores = [
@@ -133,6 +133,30 @@ class DatabaseManager {
                 request.onsuccess = () => resolve();
                 request.onerror = () => {
                     console.error('Delete error:', request.error);
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error('Transaction error:', error);
+                reject(error);
+            }
+        });
+    }
+
+    async clear(storeName) {
+        return new Promise((resolve, reject) => {
+            try {
+                if (!this.db) {
+                    reject(new Error('Database not initialized'));
+                    return;
+                }
+
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.clear();
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => {
+                    console.error('Clear error:', request.error);
                     reject(request.error);
                 };
             } catch (error) {

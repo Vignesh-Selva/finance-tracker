@@ -1,15 +1,30 @@
-const CACHE_NAME = 'personal-finance-v3';
+const CACHE_NAME = 'personal-finance-cache-v2';
 
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/app.js',
-    '/db.js',
-    '/utils.js',
-    '/calculator.js',
-    '/renderer.js',
-    '/formHandler.js',
-    '/manifest.json'
+    './index.html',
+    './styles/main.css',
+    './manifest.json',
+    './icon-192.svg',
+    './icon-512.svg',
+    '../src/index.js',
+    '../src/core/appShell.js',
+    '../src/ui/features/dashboard.js',
+    '../src/ui/features/expenses.js',
+    '../src/ui/features/savings.js',
+    '../src/ui/features/fixedDeposits.js',
+    '../src/ui/features/mutualFunds.js',
+    '../src/ui/features/stocks.js',
+    '../src/ui/features/crypto.js',
+    '../src/ui/features/liabilities.js',
+    '../src/ui/forms/formHandler.js',
+    '../src/utils/utils.js',
+    '../src/utils/formatUtils.js',
+    '../src/utils/financeUtils.js',
+    '../src/utils/sanitizeUtils.js',
+    '../src/utils/dataUtils.js',
+    '../src/utils/initialData.js',
+    '../src/services/calculator.js',
+    '../src/data/dbManager.js',
 ];
 
 self.addEventListener('install', event => {

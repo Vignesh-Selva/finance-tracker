@@ -1,14 +1,24 @@
-class FormHandler {
+import Utilities from '../../utils/utils.js';
+
+export class FormHandler {
     constructor(dbManager) {
         this.dbManager = dbManager;
         this.editingEntry = null;
         this.currentFormType = '';
         this.app = null;
+        this.fundNameSuggestions = [];
     }
 
     async showAddForm(type) {
         this.currentFormType = type;
         this.editingEntry = null;
+
+        if (type === 'mutualFunds') {
+            const funds = await this.dbManager.getAll('mutualFunds');
+            this.fundNameSuggestions = [...new Set(funds.map(f => f.fundName).filter(Boolean))];
+        } else {
+            this.fundNameSuggestions = [];
+        }
 
         const formConfig = this.getFormConfig(type);
         if (!formConfig) {
@@ -22,6 +32,13 @@ class FormHandler {
     async showEditForm(type, id) {
         this.currentFormType = type;
         this.editingEntry = await this.dbManager.getOne(type, id);
+
+        if (type === 'mutualFunds') {
+            const funds = await this.dbManager.getAll('mutualFunds');
+            this.fundNameSuggestions = [...new Set(funds.map(f => f.fundName).filter(Boolean))];
+        } else {
+            this.fundNameSuggestions = [];
+        }
 
         const formConfig = this.getFormConfig(type);
         if (!formConfig) {
@@ -56,7 +73,15 @@ class FormHandler {
                 html += `<textarea id="field-${field.name}" class="form-input" ${field.required ? 'required' : ''}>${data[field.name] || ''}</textarea>`;
             } else {
                 const value = data[field.name] || '';
-                html += `<input type="${field.type}" id="field-${field.name}" value="${value}" class="form-input" ${field.required ? 'required' : ''} ${field.step ? 'step="' + field.step + '"' : ''} ${field.min !== undefined ? 'min="' + field.min + '"' : ''} />`;
+                const listAttr = field.suggestions && field.suggestions.length > 0 ? `list="list-${field.name}"` : '';
+                html += `<input type="${field.type}" id="field-${field.name}" value="${value}" class="form-input" ${field.required ? 'required' : ''} ${field.step ? 'step="' + field.step + '"' : ''} ${field.min !== undefined ? 'min="' + field.min + '"' : ''} ${listAttr} />`;
+                if (field.suggestions && field.suggestions.length > 0) {
+                    html += `<datalist id="list-${field.name}">`;
+                    field.suggestions.forEach(opt => {
+                        html += `<option value="${opt}"></option>`;
+                    });
+                    html += '</datalist>';
+                }
             }
 
             html += '</div>';
@@ -157,6 +182,23 @@ class FormHandler {
             }
         }
 
+        if (!this.editingEntry && this.currentFormType === 'mutualFunds') {
+            const existingFunds = await this.dbManager.getAll('mutualFunds');
+            const normalizedInput = (data.fundName || '').trim().toLowerCase();
+            const match = existingFunds.find(f => (f.fundName || '').trim().toLowerCase() === normalizedInput);
+
+            if (match) {
+                data.id = match.id;
+                data.invested = (match.invested || 0) + (data.invested || 0);
+                data.current = (match.current || 0) + (data.current || 0);
+                data.units = (match.units || 0) + (data.units || 0);
+                data.type = data.type || match.type;
+                if (data.sip === undefined && match.sip !== undefined) {
+                    data.sip = match.sip;
+                }
+            }
+        }
+
         if (!isValid) {
             const message = errorMessages.length > 0
                 ? errorMessages[0]
@@ -190,7 +232,7 @@ class FormHandler {
 
     getFormConfig(type) {
         const configs = {
-            'savings': {
+            savings: {
                 title: 'Add Savings Account',
                 singularTitle: 'Savings Account',
                 fields: [
@@ -199,7 +241,7 @@ class FormHandler {
                     { name: 'balance', label: 'Balance', type: 'number', step: '0.01', min: 0, required: true },
                 ]
             },
-            'fixedDeposits': {
+            fixedDeposits: {
                 title: 'Add Fixed Deposit',
                 singularTitle: 'Fixed Deposit',
                 fields: [
@@ -211,18 +253,19 @@ class FormHandler {
                     { name: 'maturityDate', label: 'Maturity Date', type: 'date', required: true }
                 ]
             },
-            'mutualFunds': {
+            mutualFunds: {
                 title: 'Add Mutual Fund',
                 singularTitle: 'Mutual Fund',
                 fields: [
-                    { name: 'fundName', label: 'Fund Name', type: 'text', required: true },
+                    { name: 'fundName', label: 'Fund Name', type: 'text', required: true, suggestions: this.fundNameSuggestions },
+                    { name: 'units', label: 'Units', type: 'number', step: '0.0001', min: 0, required: true },
                     { name: 'invested', label: 'Invested Amount', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'type', label: 'Type', type: 'select', options: ['Equity', 'Debt', 'Hybrid', 'Index'], required: true },
                     { name: 'sip', label: 'SIP Amount', type: 'number', step: '0.01', min: 0, required: false }
                 ]
             },
-            'stocks': {
+            stocks: {
                 title: 'Add Stock',
                 singularTitle: 'Stock',
                 fields: [
@@ -234,7 +277,7 @@ class FormHandler {
                     { name: 'sector', label: 'Sector', type: 'text', required: false }
                 ]
             },
-            'crypto': {
+            crypto: {
                 title: 'Add Crypto',
                 singularTitle: 'Crypto',
                 fields: [
@@ -245,7 +288,7 @@ class FormHandler {
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true }
                 ]
             },
-            'liabilities': {
+            liabilities: {
                 title: 'Add Liability',
                 singularTitle: 'Liability',
                 fields: [
@@ -257,7 +300,7 @@ class FormHandler {
                     { name: 'emi', label: 'EMI Amount', type: 'number', step: '0.01', min: 0, required: false }
                 ]
             },
-            'transactions': {
+            transactions: {
                 title: 'Add Transaction',
                 singularTitle: 'Transaction',
                 fields: [
@@ -265,7 +308,17 @@ class FormHandler {
                     { name: 'type', label: 'Type', type: 'select', options: ['income', 'expense'], required: true },
                     { name: 'category', label: 'Category', type: 'select', options: ['Salary', 'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Healthcare', 'Investment', 'Other'], required: true },
                     { name: 'amount', label: 'Amount', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'units', label: 'Units', type: 'number', step: '0.0001', min: 0, required: false },
                     { name: 'description', label: 'Description', type: 'text', required: false }
+                ]
+            },
+            budgets: {
+                title: 'Add Budget',
+                singularTitle: 'Budget',
+                fields: [
+                    { name: 'category', label: 'Category', type: 'select', options: ['Salary', 'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Healthcare', 'Investment', 'Other'], required: true },
+                    { name: 'limit', label: 'Monthly Limit', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'notes', label: 'Notes', type: 'text', required: false }
                 ]
             }
         };

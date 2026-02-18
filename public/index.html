@@ -7,8 +7,9 @@
     <meta name="description" content="Track your expenses and net worth in one place">
     <meta name="theme-color" content="#3b82f6">
     <title>Personal Finance Manager</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="Stylesheet" href="main.css">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./icon-192.svg">
+    <link rel="stylesheet" href="./styles/main.css">
 </head>
 
 <body>
@@ -19,43 +20,58 @@
                 <button id="themeToggle" class="theme-toggle">🌙</button>
             </div>
             <nav class="sidebar-nav">
-                <div class="sidebar-item active" onclick="app.switchTab('dashboard')">
+                <div class="sidebar-item active" onclick="window.app.switchTab('dashboard')">
+
                     📊 Dashboard
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('expenses')">
+                <div class="sidebar-item" onclick="window.app.switchTab('expenses')">
+
                     💸 Expenses
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('savings')">
+                <div class="sidebar-item" onclick="window.app.switchTab('savings')">
+
                     🏦 Savings
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('fixedDeposits')">
+                <div class="sidebar-item" onclick="window.app.switchTab('fixedDeposits')">
+
                     📈 Fixed Deposits
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('mutualFunds')">
+                <div class="sidebar-item" onclick="window.app.switchTab('mutualFunds')">
+
                     📊 Mutual Funds
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('stocks')">
+                <div class="sidebar-item" onclick="window.app.switchTab('stocks')">
+
                     📈 Stocks
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('crypto')">
+                <div class="sidebar-item" onclick="window.app.switchTab('crypto')">
+
                     🪙 Crypto
                 </div>
-                <div class="sidebar-item" onclick="app.switchTab('liabilities')">
+                <div class="sidebar-item" onclick="window.app.switchTab('liabilities')">
+
                     💳 Liabilities
                 </div>
-                <div class="sidebar-item" onclick="app.showSettings()">
+                <div class="sidebar-item" onclick="window.app.switchTab('budgets')">
+
+                    🧭 Budgets
+                </div>
+                <div class="sidebar-item" onclick="window.app.showSettings()">
+
                     ⚙️ Settings
                 </div>
-                <div class="sidebar-item" onclick="app.exportAllData()">
+                <div class="sidebar-item" onclick="window.app.exportAllData()">
+
                     💾 Export Data
                 </div>
-                <div class="sidebar-item" onclick="app.importAllData()">
+                <div class="sidebar-item" onclick="window.app.importAllData()">
+
                     📥 Import Data
                 </div>
             </nav>
         </aside>
 
-        <!-- <button id="sidebarToggle" class="sidebar-toggle-btn">✕</button> -->
+        <!-- <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button> -->
 
         <main class="main-content">
             <div id="content-dashboard" class="content active"></div>
@@ -66,6 +82,7 @@
             <div id="content-stocks" class="content"></div>
             <div id="content-crypto" class="content"></div>
             <div id="content-liabilities" class="content"></div>
+            <div id="content-budgets" class="content"></div>
         </main>
     </div>
 
@@ -77,18 +94,13 @@
             </div>
             <div id="modalBody" class="modal-body"></div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="app.saveModalData()">Save</button>
-                <button class="btn" onclick="app.closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="window.app.saveModalData()">Save</button>
+                <button class="btn" onclick="window.app.closeModal()">Cancel</button>
             </div>
         </div>
     </div>
 
-    <script src="db.js"></script>
-    <script src="utils.js"></script>
-    <script src="calculator.js"></script>
-    <script src="renderer.js"></script>
-    <script src="formHandler.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="/src/index.js"></script>
 
     <script>
         if ('serviceWorker' in navigator) {
