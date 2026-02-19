@@ -614,4 +614,20 @@ body {
     .section-header h2 {
         font-size: 1.5rem;
     }
+
+    /* Center headings and table text on small screens */
+    .section-header {
+        align-items: center;
+        text-align: center;
+    }
+
+    .section-header h2 {
+        width: 100%;
+        text-align: center;
+    }
+
+    .data-table th,
+    .data-table td {
+        text-align: center;
+    }
 }
