@@ -78,7 +78,10 @@ export async function getAllEntries() {
 export async function getUnsyncedEntries() {
     return withStore('readonly', (store, _tx, resolve) => {
         const idx = store.index('synced');
-        idx.getAll(IDBKeyRange.only(false)).onsuccess = (e) => resolve(e.target.result || []);
+        idx.getAll().onsuccess = (e) => {
+            const all = e.target.result || [];
+            resolve(all.filter(entry => entry && entry.synced === false));
+        };
     });
 }
 

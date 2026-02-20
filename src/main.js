@@ -120,6 +120,9 @@ async function bootstrap() {
     appInstance = new PersonalFinanceApp();
     await appInstance.init();
 
+    // Expose app for inline handlers (export/import buttons in UI)
+    window.app = appInstance;
+
     bindAuthButtons();
     bindConnectivityEvents();
     setupAuthListener();
