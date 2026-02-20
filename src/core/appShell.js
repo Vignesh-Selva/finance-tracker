@@ -473,12 +473,28 @@ class PersonalFinanceApp {
         await this.deleteEntry('transactions', id);
     }
 
-    async saveModalData() {
-        if (this.isSettingsModal) {
-            await this.saveSettings();
-        } else {
-            await this.formHandler.saveForm();
+    async deleteItem(storeName, id) {
+        await this.dbManager.delete(storeName, id);
+        if (window.syncAdapter) {
+            await window.syncAdapter.softDeleteEntry(id);
         }
+        await this.refreshCurrentTab();
+    }
+
+    async saveModalData() {
+        if (!this.formHandler) return;
+        const saved = await this.formHandler.saveCurrentForm();
+        if (saved) {
+            if (window.syncAdapter) {
+                await window.syncAdapter.saveEntry({
+                    id: saved.id,
+                    type: saved.type || saved.category || 'entry',
+                    amount: saved.amount || saved.value || 0,
+                    createdAt: saved.createdAt,
+                });
+            }
+        }
+        await this.refreshCurrentTab();
     }
 
     closeModal() {
@@ -561,6 +577,14 @@ class PersonalFinanceApp {
             settings.lastSync = new Date().toISOString();
 
             await this.dbManager.save('settings', settings);
+            if (window.syncAdapter) {
+                await window.syncAdapter.saveEntry({
+                    id: 'settings',
+                    type: 'settings',
+                    amount: 0,
+                    createdAt: settings.lastSync,
+                });
+            }
             Utilities.showNotification('Settings saved successfully');
             this.closeModal();
             await this.refreshCurrentTab();
@@ -581,6 +605,14 @@ class PersonalFinanceApp {
             };
 
             await this.dbManager.save('settings', defaults);
+            if (window.syncAdapter) {
+                await window.syncAdapter.saveEntry({
+                    id: 'settings',
+                    type: 'settings',
+                    amount: 0,
+                    createdAt: defaults.lastSync,
+                });
+            }
             Utilities.showNotification('Settings reset to defaults');
             this.closeModal();
             await this.refreshCurrentTab();

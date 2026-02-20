@@ -19,6 +19,7 @@
                 <h1>💰 Finance</h1>
                 <button id="themeToggle" class="theme-toggle">🌙</button>
             </div>
+
             <nav class="sidebar-nav">
                 <div class="sidebar-item active" data-tab="dashboard" onclick="window.app.switchTab('dashboard')">
 
@@ -68,12 +69,20 @@
 
                     📥 Import Data
                 </div>
+                <div class="sidebar-auth">
+                    <button id="loginBtn" class="btn btn-primary">Sign in with Google</button>
+                    <button id="logoutBtn" class="btn" hidden>Sign out</button>
+                </div>
             </nav>
         </aside>
 
         <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
 
         <main class="main-content">
+            <div class="topbar">
+                <div id="syncStatus" class="sync-status" aria-live="polite">🟢 All changes synced</div>
+            </div>
+
             <div id="content-dashboard" class="content active"></div>
             <div id="content-expenses" class="content"></div>
             <div id="content-savings" class="content"></div>
@@ -100,7 +109,7 @@
         </div>
     </div>
 
-    <script type="module" src="./src/index.js"></script>
+    <script type="module" src="./src/main.js"></script>
 
     <script>
         if ('serviceWorker' in navigator) {

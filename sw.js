@@ -1,4 +1,5 @@
 const CACHE_NAME = 'personal-finance-cache-v4';
+const SYNC_TAG = 'finance-sync';
 
 // Derive URLs relative to the service worker scope so it works on GitHub Pages or sub-path hosting.
 const ASSET_PATHS = [
@@ -8,7 +9,12 @@ const ASSET_PATHS = [
     './manifest.json',
     './icon-192.svg',
     './icon-512.svg',
-    './src/index.js',
+    './src/main.js',
+    './src/firebase.js',
+    './src/auth.js',
+    './src/crypto.js',
+    './src/sync.js',
+    './src/indexeddb.js',
     './src/core/appShell.js',
     './src/ui/features/dashboard.js',
     './src/ui/features/expenses.js',
@@ -104,4 +110,15 @@ self.addEventListener('activate', event => {
         })
     );
     self.clients.claim();
+});
+
+// Background Sync: ask clients to run sync logic when connectivity returns.
+self.addEventListener('sync', event => {
+    if (event.tag === SYNC_TAG) {
+        event.waitUntil(
+            self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(clients => {
+                clients.forEach(client => client.postMessage({ type: 'trigger-sync' }));
+            })
+        );
+    }
 });
