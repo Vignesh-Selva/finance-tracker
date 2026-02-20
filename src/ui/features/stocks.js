@@ -13,7 +13,10 @@ export async function renderStocks(dbManager) {
     let html = `
         <div class="section-header">
             <h2>Stocks</h2>
-            <button class="btn btn-primary" onclick="window.app.showAddForm('stocks')">➕ Add Stock</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="window.app.refreshStocksLive()">🔄 Refresh Live</button>
+                <button class="btn btn-primary" onclick="window.app.showAddForm('stocks')">➕ Add Stock</button>
+            </div>
         </div>
         <div class="stat-grid">
             <div class="stat-card">

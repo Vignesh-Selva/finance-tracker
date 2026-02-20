@@ -13,7 +13,10 @@ export async function renderCrypto(dbManager) {
     let html = `
         <div class="section-header">
             <h2>Cryptocurrency</h2>
-            <button class="btn btn-primary" onclick="window.app.showAddForm('crypto')">➕ Add Crypto</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="window.app.refreshCryptoLive()">🔄 Refresh Live</button>
+                <button class="btn btn-primary" onclick="window.app.showAddForm('crypto')">➕ Add Crypto</button>
+            </div>
         </div>
         <div class="stat-grid">
             <div class="stat-card">
@@ -70,7 +73,24 @@ export async function renderCrypto(dbManager) {
         });
     }
 
-    html += '</tbody></table></div>';
+    const btcHoldings = crypto.filter(c => {
+        const name = (c.coinName || '').toString().trim().toUpperCase();
+        return name === 'BTC' || name === 'BITCOIN';
+    });
+    const totalBtcQty = btcHoldings.reduce((sum, c) => sum + (parseFloat(c.quantity) || 0), 0);
+    const btcTarget = 0.05;
+    const btcProgress = btcTarget > 0 ? Math.min((totalBtcQty / btcTarget) * 100, 100).toFixed(2) : '0.00';
+    const btcOwnedPercent = btcTarget > 0 ? ((totalBtcQty / btcTarget) * 100).toFixed(2) : '0.00';
+
+    html += `</tbody></table></div>
+        <div class="breakdown" style="margin-top:20px;">
+            <h3>BTC Ownership</h3>
+            <p style="margin-bottom:8px;">Total BTC: ${totalBtcQty.toFixed(8)} / Target: ${btcTarget.toFixed(2)} BTC</p>
+            <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${btcProgress}">
+                <div class="progress-fill" style="width:${btcProgress}%"></div>
+            </div>
+            <p style="margin-top:8px; opacity:0.8;">${btcOwnedPercent}% owned (target ${btcTarget.toFixed(2)} BTC)</p>
+        </div>`;
     document.getElementById('content-crypto').innerHTML = html;
 }
 

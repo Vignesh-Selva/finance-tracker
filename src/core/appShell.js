@@ -54,6 +54,47 @@ class PersonalFinanceApp {
         }
     }
 
+    async refreshStocksLive() {
+        try {
+            const holdings = await this.dbManager.getAll('stocks');
+            const goldHoldings = holdings.filter(h => {
+                const ticker = (h.ticker || '').toString().trim().toUpperCase();
+                const name = (h.stockName || '').toString().trim().toUpperCase();
+                return ticker === 'GOLDBEES' || name === 'GOLDBEES';
+            });
+
+            if (goldHoldings.length === 0) {
+                Utilities.showNotification('No GOLDBEES holdings to refresh', 'error');
+                return;
+            }
+
+            // NSE GOLDBEES price via Yahoo Finance public quote (proxied to avoid CORS)
+            const yahooUrl = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=GOLDBEES.NS';
+            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`);
+            if (!response.ok) {
+                throw new Error('Price fetch failed');
+            }
+            const data = await response.json();
+            const price = data?.quoteResponse?.result?.[0]?.regularMarketPrice;
+
+            if (!price || isNaN(price)) {
+                throw new Error('Invalid price data');
+            }
+
+            for (const holding of goldHoldings) {
+                const qty = parseFloat(holding.quantity) || 0;
+                const current = qty * price;
+                await this.dbManager.save('stocks', { ...holding, current });
+            }
+
+            Utilities.showNotification('GOLDBEES price refreshed');
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.error('Stocks refresh error:', error);
+            Utilities.showNotification('Failed to refresh GOLDBEES price', 'error');
+        }
+    }
+
     async initializeDefaultData() {
         try {
             const settings = await this.dbManager.getAll('settings');
@@ -256,6 +297,76 @@ class PersonalFinanceApp {
 
     async refreshCurrentTab() {
         await this.renderCurrentTab();
+    }
+
+    async refreshCryptoLive() {
+        try {
+            const holdings = await this.dbManager.getAll('crypto');
+            const idMap = {
+                BTC: 'bitcoin',
+                BITCOIN: 'bitcoin',
+                ETH: 'ethereum',
+                ETHEREUM: 'ethereum',
+                SOL: 'solana',
+                SOLANA: 'solana',
+                ADA: 'cardano',
+                CARDANO: 'cardano',
+                MATIC: 'matic-network',
+                POLYGON: 'matic-network',
+                DOGE: 'dogecoin',
+                DOGECOIN: 'dogecoin',
+                XRP: 'ripple',
+                RIPPLE: 'ripple'
+            };
+
+            const coinIds = new Set();
+            const holdingsWithId = holdings.map(h => {
+                const name = (h.coinName || '').toString().trim();
+                const upper = name.toUpperCase();
+                const mapped = idMap[upper] || name.toLowerCase().replace(/\s+/g, '-');
+                if (mapped) {
+                    coinIds.add(mapped);
+                }
+                return { holding: h, id: mapped };
+            }).filter(item => item.id);
+
+            if (coinIds.size === 0) {
+                Utilities.showNotification('No recognizable coins to refresh', 'error');
+                return;
+            }
+
+            const idsParam = Array.from(coinIds).join(',');
+            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${idsParam}&vs_currencies=inr`);
+            if (!response.ok) {
+                throw new Error('Price fetch failed');
+            }
+
+            const prices = await response.json();
+            const updated = [];
+
+            for (const { holding, id } of holdingsWithId) {
+                const price = prices?.[id]?.inr;
+                if (!price || isNaN(price)) continue;
+                const qty = parseFloat(holding.quantity) || 0;
+                const current = qty * price;
+                updated.push({ ...holding, current });
+            }
+
+            for (const record of updated) {
+                await this.dbManager.save('crypto', record);
+            }
+
+            if (updated.length === 0) {
+                Utilities.showNotification('No prices updated (unmatched coins)', 'error');
+            } else {
+                Utilities.showNotification('Crypto prices refreshed');
+            }
+
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.error('Crypto refresh error:', error);
+            Utilities.showNotification('Failed to refresh BTC price', 'error');
+        }
     }
 
     showAddForm(type) {
