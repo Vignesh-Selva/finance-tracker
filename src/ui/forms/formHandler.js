@@ -193,6 +193,7 @@ export class FormHandler {
                 data.current = (match.current || 0) + (data.current || 0);
                 data.units = (match.units || 0) + (data.units || 0);
                 data.type = data.type || match.type;
+                data.schemeCode = data.schemeCode || match.schemeCode;
                 if (data.sip === undefined && match.sip !== undefined) {
                     data.sip = match.sip;
                 }
@@ -258,6 +259,7 @@ export class FormHandler {
                 singularTitle: 'Mutual Fund',
                 fields: [
                     { name: 'fundName', label: 'Fund Name', type: 'text', required: true, suggestions: this.fundNameSuggestions },
+                    { name: 'schemeCode', label: 'Scheme Code', type: 'text', required: true },
                     { name: 'units', label: 'Units', type: 'number', step: '0.0001', min: 0, required: true },
                     { name: 'invested', label: 'Invested Amount', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },

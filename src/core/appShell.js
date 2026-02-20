@@ -104,20 +104,16 @@ class PersonalFinanceApp {
             }
 
             const updated = [];
+            let missingCodes = 0;
 
             for (const fund of funds) {
-                const name = (fund.fundName || '').toString().trim();
-                if (!name) continue;
+                const schemeCode = (fund.schemeCode || '').toString().trim();
+                if (!schemeCode) {
+                    missingCodes += 1;
+                    continue;
+                }
 
-                // Search fund code via mfapi.in (proxied to avoid CORS)
-                const searchUrl = `https://api.mfapi.in/mf/search?q=${encodeURIComponent(name)}`;
-                const searchResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
-                if (!searchResp.ok) continue;
-                const searchData = await searchResp.json();
-                const schemeCode = Array.isArray(searchData) && searchData.length > 0 ? searchData[0].schemeCode : null;
-                if (!schemeCode) continue;
-
-                const navUrl = `https://api.mfapi.in/mf/${schemeCode}`;
+                const navUrl = `https://api.mfapi.in/mf/${schemeCode}/latest`;
                 const navResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(navUrl)}`);
                 if (!navResp.ok) continue;
                 const navData = await navResp.json();
@@ -138,6 +134,10 @@ class PersonalFinanceApp {
                 Utilities.showNotification('No mutual fund prices updated', 'error');
             } else {
                 Utilities.showNotification('Mutual fund prices refreshed');
+            }
+
+            if (missingCodes > 0) {
+                Utilities.showNotification(`${missingCodes} fund(s) missing scheme code; please edit to refresh`, 'error');
             }
 
             await this.renderCurrentTab();
@@ -656,7 +656,9 @@ class PersonalFinanceApp {
                         'rate': 'interestRate'
                     },
                     'mutualFunds': {
-                        'name': 'fundName'
+                        'name': 'fundName',
+                        'code': 'schemeCode',
+                        'scheme_code': 'schemeCode'
                     },
                     'stocks': {
                         'name': 'stockName'
