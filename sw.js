@@ -1,4 +1,4 @@
-const CACHE_NAME = 'personal-finance-cache-v4';
+const CACHE_NAME = 'personal-finance-cache-v5';
 const SYNC_TAG = 'finance-sync';
 
 // Derive URLs relative to the service worker scope so it works on GitHub Pages or sub-path hosting.

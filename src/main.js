@@ -6,7 +6,7 @@ import { upsertEntry, markDeleted, exportToFile } from './indexeddb.js';
 const STATUS = {
     synced: '🟢 All changes synced',
     syncing: '🟡 Syncing…',
-    offline: '🔴 Offline – changes queued',
+    offline: '🔴 Offline - changes queued',
 };
 
 let appInstance = null;
@@ -38,6 +38,7 @@ function bindAuthButtons() {
         try {
             await signInWithGoogle();
             await syncAll();
+            setStatus('synced');
         } catch (err) {
             console.error('Login failed', err);
         }
@@ -70,7 +71,12 @@ function setupAuthListener() {
             resetUserKey();
             setStatus(navigator.onLine ? 'syncing' : 'offline');
             if (navigator.onLine) {
-                await syncAll();
+                try {
+                    await syncAll();
+                    setStatus('synced');
+                } catch (err) {
+                    console.error('Auto-sync failed', err);
+                }
             }
         } else {
             logoutBtn?.setAttribute('hidden', 'true');
