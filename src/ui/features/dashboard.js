@@ -109,15 +109,32 @@ export async function renderDashboard(dbManager) {
         }).join('')}</div>`
         : '<p class="empty-state">Add assets to see allocation</p>';
 
+    const allocationLegendMap = {
+        'Savings': 'savings',
+        'Fixed Deposits': 'fixedDeposits',
+        'Mutual Funds': 'mutualFunds',
+        'Stocks': 'stocks',
+        'Crypto': 'crypto'
+    };
+
     const legendHTML = assetData.length > 0
         ? `<div class="allocation-legend">${assetData.map(a => {
             const pct = totalAssets > 0 ? ((a.value / totalAssets) * 100).toFixed(1) : 0;
-            return `<div class="legend-item"><span class="legend-color" style="background:${a.color}"></span><span class="legend-label">${a.name}</span><span class="legend-value">${pct}%</span></div>`;
+            const tab = allocationLegendMap[a.name];
+            const clickAttr = tab ? `onclick=\"window.app.switchTab('${tab}')\"` : '';
+            const keyAttr = tab ? `onkeydown=\"if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.switchTab('${tab}');}\"` : '';
+            const roleAttr = tab ? 'role="button" tabindex="0" style="cursor:pointer;"' : '';
+            return `<div class="legend-item" ${roleAttr} ${clickAttr} ${keyAttr}><span class="legend-color" style="background:${a.color}"></span><span class="legend-label">${a.name}</span><span class="legend-value">${pct}%</span></div>`;
         }).join('')}</div>`
         : '';
 
     const html = `
-        <div class="section-header"><h2>Dashboard</h2></div>
+        <div class="section-header">
+            <h2>Dashboard</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="window.app.refreshAllLive()">🔄 Refresh Live</button>
+            </div>
+        </div>
         <div class="stat-grid">
             <div class="stat-card">
                 <h3>Net Worth</h3>

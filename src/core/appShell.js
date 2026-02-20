@@ -95,6 +95,58 @@ class PersonalFinanceApp {
         }
     }
 
+    async refreshMutualFundsLive() {
+        try {
+            const funds = await this.dbManager.getAll('mutualFunds');
+            if (!funds.length) {
+                Utilities.showNotification('No mutual funds to refresh', 'error');
+                return;
+            }
+
+            const updated = [];
+
+            for (const fund of funds) {
+                const name = (fund.fundName || '').toString().trim();
+                if (!name) continue;
+
+                // Search fund code via mfapi.in (proxied to avoid CORS)
+                const searchUrl = `https://api.mfapi.in/mf/search?q=${encodeURIComponent(name)}`;
+                const searchResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(searchUrl)}`);
+                if (!searchResp.ok) continue;
+                const searchData = await searchResp.json();
+                const schemeCode = Array.isArray(searchData) && searchData.length > 0 ? searchData[0].schemeCode : null;
+                if (!schemeCode) continue;
+
+                const navUrl = `https://api.mfapi.in/mf/${schemeCode}`;
+                const navResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(navUrl)}`);
+                if (!navResp.ok) continue;
+                const navData = await navResp.json();
+                const latestNav = navData?.data?.[0]?.nav;
+                const navValue = parseFloat(latestNav);
+                if (!navValue || isNaN(navValue)) continue;
+
+                const units = parseFloat(fund.units) || 0;
+                const current = units * navValue;
+                updated.push({ ...fund, current });
+            }
+
+            for (const record of updated) {
+                await this.dbManager.save('mutualFunds', record);
+            }
+
+            if (updated.length === 0) {
+                Utilities.showNotification('No mutual fund prices updated', 'error');
+            } else {
+                Utilities.showNotification('Mutual fund prices refreshed');
+            }
+
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.error('Mutual fund refresh error:', error);
+            Utilities.showNotification('Failed to refresh mutual fund prices', 'error');
+        }
+    }
+
     async initializeDefaultData() {
         try {
             const settings = await this.dbManager.getAll('settings');
@@ -366,6 +418,20 @@ class PersonalFinanceApp {
         } catch (error) {
             console.error('Crypto refresh error:', error);
             Utilities.showNotification('Failed to refresh BTC price', 'error');
+        }
+    }
+
+    async refreshAllLive() {
+        try {
+            await Promise.all([
+                this.refreshCryptoLive(),
+                this.refreshStocksLive(),
+                this.refreshMutualFundsLive()
+            ]);
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.error('All live refresh error:', error);
+            Utilities.showNotification('Failed to refresh all prices', 'error');
         }
     }
 
