@@ -93,6 +93,10 @@ export class FormHandler {
         modal.style.display = 'block';
     }
 
+    async saveCurrentForm() {
+        return this.saveForm();
+    }
+
     async saveForm() {
         const formConfig = this.getFormConfig(this.currentFormType);
         if (!formConfig) return;
@@ -210,14 +214,22 @@ export class FormHandler {
 
         data.updated = new Date().toISOString();
 
+        if (!data.createdAt) {
+            data.createdAt = data.updated;
+        }
+
         try {
-            await this.dbManager.save(this.currentFormType, data);
+            const id = await this.dbManager.save(this.currentFormType, data);
+            if (!data.id) {
+                data.id = id;
+            }
             Utilities.showNotification(`${this.editingEntry ? 'Updated' : 'Added'} successfully`);
             this.closeModal();
 
             if (this.app) {
                 await this.app.refreshCurrentTab();
             }
+            return data;
         } catch (error) {
             console.error('Save error:', error);
             Utilities.showNotification('Failed to save data: ' + error.message, 'error');
