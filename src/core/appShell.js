@@ -34,6 +34,112 @@ class PersonalFinanceApp {
         };
     }
 
+    getRefreshMeta() {
+        try {
+            return JSON.parse(localStorage.getItem('refreshMeta') || '{}');
+        } catch (err) {
+            console.warn('Failed to parse refresh meta', err);
+            return {};
+        }
+    }
+
+    saveRefreshMeta(meta) {
+        try {
+            localStorage.setItem('refreshMeta', JSON.stringify(meta));
+        } catch (err) {
+            console.warn('Failed to save refresh meta', err);
+        }
+    }
+
+    shouldAutoRefresh(type) {
+        const now = new Date();
+        const hour = now.getHours();
+        const today = now.toISOString().slice(0, 10); // YYYY-MM-DD
+        const meta = this.getRefreshMeta();
+
+        if (type === 'stocks') {
+            return hour >= 17 && meta.stocksLast !== today;
+        }
+
+        if (type === 'mutualFunds') {
+            const window = hour < 10 ? 'morning' : hour >= 17 ? 'evening' : null;
+            if (!window) return false;
+            const last = (meta.mutualFundsLast || {})[window];
+            return last !== today;
+        }
+
+        if (type === 'crypto') {
+            return true; // unlimited for now
+        }
+
+        return false;
+    }
+
+    markRefresh(type) {
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+        const hour = now.getHours();
+        const meta = this.getRefreshMeta();
+
+        if (type === 'stocks') {
+            meta.stocksLast = today;
+        } else if (type === 'mutualFunds') {
+            const window = hour < 10 ? 'morning' : hour >= 17 ? 'evening' : null;
+            if (!meta.mutualFundsLast) meta.mutualFundsLast = {};
+            if (window) meta.mutualFundsLast[window] = today;
+        } else if (type === 'crypto') {
+            meta.cryptoLast = now.toISOString();
+        }
+
+        this.saveRefreshMeta(meta);
+    }
+
+    async autoRefreshOnOpen() {
+        const tasks = [];
+        if (this.shouldAutoRefresh('stocks')) tasks.push(this.refreshStocksLive());
+        if (this.shouldAutoRefresh('mutualFunds')) tasks.push(this.refreshMutualFundsLive());
+        if (this.shouldAutoRefresh('crypto')) tasks.push(this.refreshCryptoLive());
+
+        if (tasks.length === 0) return;
+
+        try {
+            await Promise.all(tasks);
+            await this.renderCurrentTab();
+        } catch (error) {
+            console.warn('Auto-refresh on open failed', error);
+        }
+    }
+
+    async fetchJsonWithProxies(targetUrl) {
+        const proxyBuilders = [
+            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            (url) => `https://cors.isomorphic-git.org/${url}`,
+        ];
+
+        for (const build of proxyBuilders) {
+            const proxiedUrl = build(targetUrl);
+            try {
+                const response = await fetch(proxiedUrl);
+                if (!response.ok) continue;
+                return await response.json();
+            } catch (err) {
+                console.warn('Proxy fetch failed', proxiedUrl, err);
+            }
+        }
+
+        throw new Error('All proxy fetch attempts failed');
+    }
+
+    async updateLastSync() {
+        try {
+            const settings = await Utilities.getSettings(this.dbManager);
+            settings.lastSync = new Date().toISOString();
+            await this.dbManager.save('settings', settings);
+        } catch (err) {
+            console.warn('Failed to update last sync timestamp', err);
+        }
+    }
+
     async init() {
         try {
             await this.dbManager.init();
@@ -47,6 +153,7 @@ class PersonalFinanceApp {
             await this.initializeDefaultData();
             this.setupEventListeners();
             await this.switchTab('dashboard');
+            this.autoRefreshOnOpen();
 
         } catch (error) {
             console.error('App initialization error:', error);
@@ -70,11 +177,7 @@ class PersonalFinanceApp {
 
             // NSE GOLDBEES price via Yahoo Finance public quote (proxied to avoid CORS)
             const yahooUrl = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=GOLDBEES.NS';
-            const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`);
-            if (!response.ok) {
-                throw new Error('Price fetch failed');
-            }
-            const data = await response.json();
+            const data = await this.fetchJsonWithProxies(yahooUrl);
             const price = data?.quoteResponse?.result?.[0]?.regularMarketPrice;
 
             if (!price || isNaN(price)) {
@@ -86,6 +189,9 @@ class PersonalFinanceApp {
                 const current = qty * price;
                 await this.dbManager.save('stocks', { ...holding, current });
             }
+
+            this.markRefresh('stocks');
+            await this.updateLastSync();
 
             Utilities.showNotification('GOLDBEES price refreshed');
             await this.renderCurrentTab();
@@ -114,9 +220,7 @@ class PersonalFinanceApp {
                 }
 
                 const navUrl = `https://api.mfapi.in/mf/${schemeCode}/latest`;
-                const navResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(navUrl)}`);
-                if (!navResp.ok) continue;
-                const navData = await navResp.json();
+                const navData = await this.fetchJsonWithProxies(navUrl);
                 const latestNav = navData?.data?.[0]?.nav;
                 const navValue = parseFloat(latestNav);
                 if (!navValue || isNaN(navValue)) continue;
@@ -128,6 +232,11 @@ class PersonalFinanceApp {
 
             for (const record of updated) {
                 await this.dbManager.save('mutualFunds', record);
+            }
+
+            if (updated.length > 0) {
+                this.markRefresh('mutualFunds');
+                await this.updateLastSync();
             }
 
             if (updated.length === 0) {
@@ -414,6 +523,11 @@ class PersonalFinanceApp {
                 Utilities.showNotification('Crypto prices refreshed');
             }
 
+            if (updated.length > 0) {
+                this.markRefresh('crypto');
+                await this.updateLastSync();
+            }
+
             await this.renderCurrentTab();
         } catch (error) {
             console.error('Crypto refresh error:', error);
@@ -428,6 +542,7 @@ class PersonalFinanceApp {
                 this.refreshStocksLive(),
                 this.refreshMutualFundsLive()
             ]);
+            await this.updateLastSync();
             await this.renderCurrentTab();
         } catch (error) {
             console.error('All live refresh error:', error);

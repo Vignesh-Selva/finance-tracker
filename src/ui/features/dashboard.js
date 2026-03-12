@@ -59,6 +59,20 @@ export async function renderDashboard(dbManager) {
         { name: 'PPF', value: netWorthTotals.ppf, color: '#ec4899' }
     ].filter(a => a.value > 0);
 
+    const formatLastRefresh = (isoString) => {
+        if (!isoString) return 'Not available';
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'Not available';
+        const pad = (n) => String(n).padStart(2, '0');
+        const day = pad(date.getDate());
+        const month = pad(date.getMonth() + 1);
+        const year = String(date.getFullYear()).slice(-2);
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${day}-${month}-${year} ${hours}:${minutes}`;
+    };
+    const lastRefreshedText = formatLastRefresh(settings.lastSync);
+
     const mfInvested = mutualFunds.reduce((s, i) => {
         const invested = parseFloat(i.invested);
         return s + (isNaN(invested) ? 0 : invested);
@@ -190,6 +204,7 @@ export async function renderDashboard(dbManager) {
                 <p class="stat-change">${cryptoTotalPLPercent}%</p>
             </div>
         </div>
+        <div class="last-refreshed">Last Refreshed ${lastRefreshedText}</div>
     `;
 
     document.getElementById('content-dashboard').innerHTML = html;
