@@ -111,17 +111,31 @@ class PersonalFinanceApp {
     }
 
     async fetchJsonWithProxies(targetUrl) {
-        const proxyBuilders = [
-            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-            (url) => `https://cors.isomorphic-git.org/${url}`,
+        const proxyStrategies = [
+            {
+                build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+                normalize: async (response) => {
+                    const wrapped = await response.json();
+                    // allorigins wraps payload under `contents`
+                    return JSON.parse(wrapped?.contents || '{}');
+                }
+            },
+            {
+                build: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                normalize: (response) => response.json(),
+            },
+            {
+                build: (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
+                normalize: (response) => response.json(),
+            },
         ];
 
-        for (const build of proxyBuilders) {
-            const proxiedUrl = build(targetUrl);
+        for (const strategy of proxyStrategies) {
+            const proxiedUrl = strategy.build(targetUrl);
             try {
-                const response = await fetch(proxiedUrl);
+                const response = await fetch(proxiedUrl, { mode: 'cors', cache: 'no-store' });
                 if (!response.ok) continue;
-                return await response.json();
+                return await strategy.normalize(response);
             } catch (err) {
                 console.warn('Proxy fetch failed', proxiedUrl, err);
             }
