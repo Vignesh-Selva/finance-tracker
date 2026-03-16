@@ -213,9 +213,18 @@ class PersonalFinanceApp {
             // NSE GOLDBEES price via Yahoo Finance public quote (proxied to avoid CORS)
             const yahooUrl = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=GOLDBEES.NS';
             const data = await this.fetchJsonWithProxies(yahooUrl);
-            const price = data?.quoteResponse?.result?.[0]?.regularMarketPrice;
+            const quote = data?.quoteResponse?.result?.[0] || {};
+            const priceValue = quote.regularMarketPrice
+                ?? quote.postMarketPrice
+                ?? quote.previousClose
+                ?? quote.ask
+                ?? quote.bid
+                ?? quote.lastPrice
+                ?? quote.lastTradePrice;
+            const price = parseFloat(priceValue);
 
-            if (!price || isNaN(price)) {
+            if (!price || Number.isNaN(price)) {
+                console.error('Unexpected Yahoo quote payload', quote);
                 throw new Error('Invalid price data');
             }
 
