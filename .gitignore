@@ -1,2 +1,21 @@
 node_modules/
 .vscode/settings.json
+
+# Database
+server/data/*.db
+server/data/*.db-journal
+server/data/*.db-wal
+
+# Environment
+.env
+server/.env
+
+# Build output
+client/dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

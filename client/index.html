@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track your expenses and net worth in one place">
+    <meta name="theme-color" content="#3b82f6">
+    <title>Personal Finance Manager</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="./icon-192.svg">
+    <link rel="stylesheet" href="./styles/main.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>💰 Finance</h1>
+                <button id="themeToggle" class="theme-toggle">🌙</button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-item active" data-tab="dashboard" onclick="window.app.switchTab('dashboard')">
+
+                    📊 Dashboard
+                </div>
+                <div class="sidebar-item" data-tab="savings" onclick="window.app.switchTab('savings')">
+
+                    🏦 Savings
+                </div>
+                <div class="sidebar-item" data-tab="fixedDeposits" onclick="window.app.switchTab('fixedDeposits')">
+
+                    🐷 Fixed Deposits
+                </div>
+                <div class="sidebar-item" data-tab="mutualFunds" onclick="window.app.switchTab('mutualFunds')">
+
+                    📜 Mutual Funds
+                </div>
+                <div class="sidebar-item" data-tab="stocks" onclick="window.app.switchTab('stocks')">
+
+                    📈 Stocks
+                </div>
+                <div class="sidebar-item" data-tab="crypto" onclick="window.app.switchTab('crypto')">
+
+                    🪙 Crypto
+                </div>
+                <div class="sidebar-item" data-tab="liabilities" onclick="window.app.switchTab('liabilities')">
+
+                    💳 Liabilities
+                </div>
+                <div class="sidebar-item" data-tab="expenses" onclick="window.app.switchTab('expenses')">
+
+                    💸 Expenses
+                </div>
+                <div class="sidebar-item" data-tab="budgets" onclick="window.app.switchTab('budgets')">
+
+                    🧭 Budgets
+                </div>
+                <div class="sidebar-item" data-tab="settings" onclick="window.app.showSettings()">
+
+                    ⚙️ Settings
+                </div>
+                <div class="sidebar-item" onclick="window.app.exportAllData()">
+
+                    💾 Export Data
+                </div>
+                <div class="sidebar-item" onclick="window.app.importAllData()">
+
+                    📥 Import Data
+                </div>
+            </nav>
+        </aside>
+
+        <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div id="syncStatus" class="sync-status" aria-live="polite">🟢 Connected</div>
+            </div>
+
+            <div id="content-dashboard" class="content active"></div>
+            <div id="content-expenses" class="content"></div>
+            <div id="content-savings" class="content"></div>
+            <div id="content-fixedDeposits" class="content"></div>
+            <div id="content-mutualFunds" class="content"></div>
+            <div id="content-stocks" class="content"></div>
+            <div id="content-crypto" class="content"></div>
+            <div id="content-liabilities" class="content"></div>
+            <div id="content-budgets" class="content"></div>
+        </main>
+    </div>
+
+    <div id="dataModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Entry</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="window.app.saveModalData()">Save</button>
+                <button class="btn" onclick="window.app.closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+
+</html>
