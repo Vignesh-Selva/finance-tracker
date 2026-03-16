@@ -10,6 +10,7 @@ import { renderCrypto } from '../ui/features/crypto.js';
 import { renderLiabilities } from '../ui/features/liabilities.js';
 import { renderBudgets } from '../ui/features/budgets.js';
 import api from '../services/api.js';
+import { refreshAllPrices } from '../services/priceFetcher.js';
 
 class PersonalFinanceApp {
     constructor() {
@@ -213,22 +214,38 @@ class PersonalFinanceApp {
         await this.renderCurrentTab();
     }
 
-    // ─── Live Price Refresh (now via server API in Phase 3, keep client-side for now) ─
+    // ─── Live Price Refresh ──────────────────────────────────
 
     async refreshStocksLive() {
-        Utilities.showNotification('Stock price refresh coming in Phase 3 (server-side jobs)', 'error');
+        await this.refreshAllLive();
     }
 
     async refreshMutualFundsLive() {
-        Utilities.showNotification('MF NAV refresh coming in Phase 3 (server-side jobs)', 'error');
+        await this.refreshAllLive();
     }
 
     async refreshCryptoLive() {
-        Utilities.showNotification('Crypto price refresh coming in Phase 3 (server-side jobs)', 'error');
+        await this.refreshAllLive();
     }
 
     async refreshAllLive() {
-        Utilities.showNotification('Live refresh coming in Phase 3 (server-side jobs)', 'error');
+        try {
+            Utilities.showNotification('Refreshing live prices...', 'info');
+            const { results, errors, refreshedAt } = await refreshAllPrices(this.portfolioId);
+
+            const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
+            if (errors.length > 0) {
+                console.warn('Price refresh errors:', errors);
+                Utilities.showNotification(`Updated ${updated} holdings. ${errors.length} error(s).`, 'warning');
+            } else {
+                Utilities.showNotification(`All ${updated} holdings updated!`, 'success');
+            }
+
+            await this.refreshCurrentTab();
+        } catch (error) {
+            console.error('Live refresh error:', error);
+            Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
+        }
     }
 
     // ─── CRUD helpers ────────────────────────────────────────
