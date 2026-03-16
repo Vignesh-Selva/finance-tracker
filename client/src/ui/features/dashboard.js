@@ -42,6 +42,7 @@ export async function renderDashboard(portfolioId) {
             : '';
 
         const progress = goal.progress;
+        const progressClamped = Math.min(progress, 100);
         const hasGoal = goal.target > 0;
 
         const formatLastRefresh = (isoString) => {
@@ -85,8 +86,8 @@ export async function renderDashboard(portfolioId) {
                 </div>
                 <div class="stat-card">
                     <h3>Goal Progress</h3>
-                    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
-                        <div class="progress-fill" style="width:${hasGoal ? progress : 0}%"></div>
+                    <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progressClamped}">
+                        <div class="progress-fill" style="width:${hasGoal ? progressClamped : 0}%"></div>
                     </div>
                     <p>${hasGoal ? `${progress}% of ${Utilities.formatCurrency(goal.target)}` : 'Set a goal to track progress'}</p>
                 </div>

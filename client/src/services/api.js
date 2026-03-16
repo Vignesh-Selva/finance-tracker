@@ -208,31 +208,45 @@ export const dashboard = {
       total: totalAssets - liabilitiesTotal,
     };
 
-    // Allocation
-    const allocation = [
-      { category: 'Savings', value: savingsTotal },
-      { category: 'Fixed Deposits', value: fdTotal },
-      { category: 'Mutual Funds', value: mfTotal },
-      { category: 'Stocks', value: stocksTotal },
-      { category: 'Crypto', value: cryptoTotal },
-      { category: 'EPF', value: epf },
-      { category: 'PPF', value: ppf },
+    // Allocation — dashboard.js expects: name, value, percentage, color
+    const allocationColors = {
+      'Savings': '#4CAF50',
+      'Fixed Deposits': '#FF9800',
+      'Mutual Funds': '#2196F3',
+      'Stocks': '#9C27B0',
+      'Crypto': '#F44336',
+      'EPF': '#00BCD4',
+      'PPF': '#795548',
+    };
+    const rawAllocation = [
+      { name: 'Savings', value: savingsTotal },
+      { name: 'Fixed Deposits', value: fdTotal },
+      { name: 'Mutual Funds', value: mfTotal },
+      { name: 'Stocks', value: stocksTotal },
+      { name: 'Crypto', value: cryptoTotal },
+      { name: 'EPF', value: epf },
+      { name: 'PPF', value: ppf },
     ].filter((a) => a.value > 0);
+    const allocationTotal = rawAllocation.reduce((s, a) => s + a.value, 0);
+    const allocation = rawAllocation.map((a) => ({
+      ...a,
+      percentage: allocationTotal > 0 ? parseFloat(((a.value / allocationTotal) * 100).toFixed(1)) : 0,
+      color: allocationColors[a.name] || '#999',
+    }));
 
     // Investment P&L
     const mfInvested = sum(mf, 'invested');
     const stInvested = sum(st, 'invested');
     const crInvested = sum(cr, 'invested');
+    const pct = (current, invested) => invested > 0 ? parseFloat(((current - invested) / invested * 100).toFixed(2)) : 0;
     const investmentPL = {
       total: {
         pl: (mfTotal + stocksTotal + cryptoTotal) - (mfInvested + stInvested + crInvested),
-        plPercent: (mfInvested + stInvested + crInvested) > 0
-          ? (((mfTotal + stocksTotal + cryptoTotal) - (mfInvested + stInvested + crInvested)) / (mfInvested + stInvested + crInvested)) * 100
-          : 0,
+        plPercent: pct(mfTotal + stocksTotal + cryptoTotal, mfInvested + stInvested + crInvested),
       },
-      mutualFunds: { pl: mfTotal - mfInvested, plPercent: mfInvested > 0 ? ((mfTotal - mfInvested) / mfInvested) * 100 : 0 },
-      stocks: { pl: stocksTotal - stInvested, plPercent: stInvested > 0 ? ((stocksTotal - stInvested) / stInvested) * 100 : 0 },
-      crypto: { pl: cryptoTotal - crInvested, plPercent: crInvested > 0 ? ((cryptoTotal - crInvested) / crInvested) * 100 : 0 },
+      mutualFunds: { pl: mfTotal - mfInvested, plPercent: pct(mfTotal, mfInvested) },
+      stocks: { pl: stocksTotal - stInvested, plPercent: pct(stocksTotal, stInvested) },
+      crypto: { pl: cryptoTotal - crInvested, plPercent: pct(cryptoTotal, crInvested) },
     };
 
     // Expense totals
@@ -247,10 +261,13 @@ export const dashboard = {
       categoryExpenses[cat] = (categoryExpenses[cat] || 0) + (parseFloat(t.amount) || 0);
     });
 
-    // Goal progress
+    // Goal progress — dashboard expects progress as a percentage
+    const goalTarget = parseFloat(se.goal) || 15000000;
+    const goalCurrent = totalAssets - liabilitiesTotal;
     const goal = {
-      target: parseFloat(se.goal) || 15000000,
-      progress: totalAssets - liabilitiesTotal,
+      target: goalTarget,
+      current: goalCurrent,
+      progress: goalTarget > 0 ? parseFloat(((goalCurrent / goalTarget) * 100).toFixed(1)) : 0,
     };
 
     return {
