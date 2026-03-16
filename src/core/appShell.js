@@ -113,10 +113,13 @@ class PersonalFinanceApp {
     async fetchJsonWithProxies(targetUrl) {
         const proxyStrategies = [
             {
+                build: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                normalize: (response) => response.json(),
+            },
+            {
                 build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
                 normalize: async (response) => {
                     const wrapped = await response.json();
-                    // allorigins wraps payload under `contents`
                     return JSON.parse(wrapped?.contents || '{}');
                 }
             },
@@ -128,15 +131,33 @@ class PersonalFinanceApp {
                 build: (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
                 normalize: (response) => response.json(),
             },
+            {
+                build: (url) => url,
+                normalize: (response) => response.json(),
+                options: { mode: 'cors', cache: 'no-store' },
+            },
         ];
+
+        const timeoutMs = 8000;
 
         for (const strategy of proxyStrategies) {
             const proxiedUrl = strategy.build(targetUrl);
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
             try {
-                const response = await fetch(proxiedUrl, { mode: 'cors', cache: 'no-store' });
+                const response = await fetch(proxiedUrl, {
+                    mode: 'cors',
+                    cache: 'no-store',
+                    signal: controller.signal,
+                    ...(strategy.options || {}),
+                });
+                clearTimeout(timer);
+
                 if (!response.ok) continue;
                 return await strategy.normalize(response);
             } catch (err) {
+                clearTimeout(timer);
                 console.warn('Proxy fetch failed', proxiedUrl, err);
             }
         }
