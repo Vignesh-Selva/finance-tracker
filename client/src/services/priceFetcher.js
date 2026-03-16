@@ -73,42 +73,43 @@ export async function fetchCryptoPrices(coinNames) {
   return result;
 }
 
-// ─── Stocks (via Google Finance scraping through allorigins CORS proxy) ──
+// ─── Stocks (Yahoo Finance via allorigins CORS proxy) ─────
+
+async function fetchViaProxy(yahooUrl) {
+  // allorigins /get endpoint wraps response in JSON with CORS headers
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(yahooUrl)}`;
+  const res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error(`Proxy error: ${res.status}`);
+  const wrapper = await res.json();
+
+  if (!wrapper.contents) throw new Error('Empty proxy response');
+  const json = JSON.parse(wrapper.contents);
+
+  const meta = json?.chart?.result?.[0]?.meta;
+  if (!meta?.regularMarketPrice) throw new Error('No price in response');
+
+  return {
+    price: meta.regularMarketPrice,
+    currency: meta.currency || 'INR',
+    symbol: meta.symbol,
+  };
+}
 
 export async function fetchStockPrice(ticker) {
-  // Try NSE ticker format for Indian stocks
+  // Try NSE ticker format first for Indian stocks
   const nseSymbol = ticker.includes('.') ? ticker : `${ticker}.NS`;
 
   try {
-    // Use a CORS proxy to fetch from Yahoo Finance v8
-    const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(
+    return await fetchViaProxy(
       `https://query1.finance.yahoo.com/v8/finance/chart/${nseSymbol}?interval=1d&range=1d`
-    )}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Yahoo proxy error: ${res.status}`);
-    const json = await res.json();
-
-    const meta = json?.chart?.result?.[0]?.meta;
-    if (!meta?.regularMarketPrice) throw new Error('No price data');
-
-    return {
-      price: meta.regularMarketPrice,
-      currency: meta.currency || 'INR',
-      symbol: meta.symbol,
-    };
+    );
   } catch (err) {
     // Fallback: try without .NS suffix
     if (!ticker.includes('.')) {
       try {
-        const url2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(
+        return await fetchViaProxy(
           `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`
-        )}`;
-        const res2 = await fetch(url2);
-        if (!res2.ok) throw err;
-        const json2 = await res2.json();
-        const meta2 = json2?.chart?.result?.[0]?.meta;
-        if (!meta2?.regularMarketPrice) throw err;
-        return { price: meta2.regularMarketPrice, currency: meta2.currency || 'INR', symbol: meta2.symbol };
+        );
       } catch {
         throw err;
       }
