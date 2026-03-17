@@ -241,10 +241,29 @@ class PersonalFinanceApp {
                 Utilities.showNotification(`All ${updated} holdings updated!`, 'success');
             }
 
+            // Auto-snapshot after price refresh
+            try {
+                await api.dashboard.takeSnapshot(this.portfolioId);
+            } catch (e) {
+                console.warn('Auto-snapshot failed:', e);
+            }
+
             await this.refreshCurrentTab();
         } catch (error) {
             console.error('Live refresh error:', error);
             Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
+        }
+    }
+
+    async takeSnapshot() {
+        try {
+            Utilities.showNotification('Taking snapshot...', 'info');
+            await api.dashboard.takeSnapshot(this.portfolioId);
+            Utilities.showNotification('Snapshot saved!', 'success');
+            await this.refreshCurrentTab();
+        } catch (error) {
+            console.error('Snapshot error:', error);
+            Utilities.showNotification('Failed to take snapshot: ' + error.message, 'error');
         }
     }
 

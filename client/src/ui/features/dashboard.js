@@ -1,5 +1,10 @@
 import Utilities from '../../utils/utils.js';
 import api from '../../services/api.js';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
+
+let netWorthChart = null;
 
 export async function renderDashboard(portfolioId) {
     const container = document.getElementById('content-dashboard');
@@ -122,12 +127,103 @@ export async function renderDashboard(portfolioId) {
                 </div>
             </div>
             <div class="last-refreshed">Last Refreshed ${lastRefreshedText}</div>
+
+            <div class="section-header" style="margin-top:24px;">
+                <h2>Net Worth History</h2>
+                <button class="btn btn-secondary" onclick="window.app.takeSnapshot()">📸 Take Snapshot</button>
+            </div>
+            <div class="chart-container" style="position:relative;height:300px;width:100%;">
+                <canvas id="netWorthChart"></canvas>
+            </div>
         `;
 
         container.innerHTML = html;
+
+        // Render net worth history chart
+        await renderNetWorthChart(portfolioId);
     } catch (error) {
         console.error('Dashboard render error:', error);
         container.innerHTML = `<div class="error-state"><p>Failed to load dashboard. Please check your connection.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>`;
+    }
+}
+
+async function renderNetWorthChart(portfolioId) {
+    try {
+        const resp = await api.dashboard.timeline(portfolioId);
+        const snapshots = resp.data || [];
+
+        if (snapshots.length === 0) {
+            const canvas = document.getElementById('netWorthChart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#888';
+                ctx.textAlign = 'center';
+                ctx.fillText('No snapshots yet. Click "Take Snapshot" to start tracking.', canvas.width / 2, canvas.height / 2);
+            }
+            return;
+        }
+
+        const labels = snapshots.map(s => s.snapshot_date);
+        const netWorthData = snapshots.map(s => parseFloat(s.net_worth) || 0);
+
+        const canvas = document.getElementById('netWorthChart');
+        if (!canvas) return;
+
+        if (netWorthChart) {
+            netWorthChart.destroy();
+            netWorthChart = null;
+        }
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        const textColor = isDark ? '#ccc' : '#666';
+
+        netWorthChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Net Worth',
+                    data: netWorthData,
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33,150,243,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: snapshots.length > 30 ? 0 : 4,
+                    pointHoverRadius: 6,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => Utilities.formatCurrency(ctx.parsed.y),
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, maxTicksLimit: 12 },
+                    },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: textColor,
+                            callback: (v) => Utilities.formatCurrency(v),
+                        },
+                    },
+                },
+            },
+        });
+    } catch (err) {
+        console.error('Chart render error:', err);
     }
 }
 
