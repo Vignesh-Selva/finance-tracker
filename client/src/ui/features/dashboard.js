@@ -19,8 +19,25 @@ export async function renderDashboard(portfolioId) {
         const resp = await api.dashboard.get(portfolioId);
         const { netWorth, allocation, investmentPL, goal, settings } = resp.data;
 
-        const changePercent = '+0.00';
-        const changePercentClass = 'positive';
+        // Fetch snapshots to compute 30-day net worth change (includes salary, savings, investments, liabilities)
+        const snapshotsRes = await api.dashboard.timeline(portfolioId, { limit: 120 });
+        const snapshots = snapshotsRes.data || [];
+
+        const computeChangePercent = () => {
+            if (!snapshots.length) return investmentPL?.total?.plPercent ?? 0;
+            const now = Date.now();
+            const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+            const recent = snapshots.filter((s) => new Date(s.snapshot_date).getTime() >= thirtyDaysAgo);
+            const baselineSnap = (recent.length ? recent[0] : snapshots[0]);
+            const baseline = baselineSnap?.net_worth || 0;
+            if (baseline <= 0) return 0;
+            const delta = netWorth.total - baseline;
+            return (delta / baseline) * 100;
+        };
+
+        const changePercentRaw = computeChangePercent();
+        const changePercent = changePercentRaw.toFixed(2);
+        const changePercentClass = changePercentRaw >= 0 ? 'positive' : 'negative';
 
         const allocationHTML = allocation.length > 0
             ? `<div class="allocation-bar">${allocation.map(a =>
