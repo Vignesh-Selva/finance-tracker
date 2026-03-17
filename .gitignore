@@ -1,17 +1,15 @@
 node_modules/
-.vscode/settings.json
+.vscode/
 
-# Database
-server/data/*.db
-server/data/*.db-journal
-server/data/*.db-wal
-
-# Environment
+# Environment (contains Supabase keys)
 .env
-server/.env
+.env.local
+.env.*.local
+client/.env
 
 # Build output
 client/dist/
+dist/
 
 # Logs
 *.log
@@ -19,3 +17,9 @@ client/dist/
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Editor
+*.swp
+*.swo
+*~

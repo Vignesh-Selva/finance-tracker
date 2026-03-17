@@ -229,6 +229,8 @@ class PersonalFinanceApp {
     }
 
     async refreshAllLive() {
+        if (this._refreshing) return;
+        this._refreshing = true;
         try {
             Utilities.showNotification('Refreshing live prices...', 'info');
             const { results, errors } = await refreshAllPrices(this.portfolioId);
@@ -252,6 +254,8 @@ class PersonalFinanceApp {
         } catch (error) {
             console.error('Live refresh error:', error);
             Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
+        } finally {
+            this._refreshing = false;
         }
     }
 

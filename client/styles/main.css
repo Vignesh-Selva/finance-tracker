@@ -9,10 +9,15 @@
     --secondary: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
+    --info: #3b82f6;
     --bg: #F0F0EB;
     --text: #191919;
+    --text-muted: #6b7280;
     --border: #b9b9b3;
     --card-bg: #FAFAF7;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --radius: 10px;
 }
 
 [data-theme="dark"] {
@@ -20,10 +25,14 @@
     --secondary: #34d399;
     --danger: #f87171;
     --warning: #fbbf24;
+    --info: #60a5fa;
     --bg: #121214;
     --text: #f3f4f6;
+    --text-muted: #9ca3af;
     --border: #374151;
     --card-bg: #242525;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 body {
@@ -231,8 +240,10 @@ body {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 1rem;
-    transition: transform 0.2s, opacity 0.2s;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+    user-select: none;
 }
 
 .btn:hover {
@@ -240,9 +251,31 @@ body {
     opacity: 0.9;
 }
 
+.btn:active {
+    transform: translateY(0);
+    opacity: 0.8;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .btn-primary {
     background: var(--primary);
     color: white;
+    box-shadow: 0 2px 6px rgba(212,162,127,0.3);
+}
+
+.btn-secondary {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
 }
 
 .btn-danger {
@@ -278,8 +311,15 @@ body {
 .stat-card {
     background: var(--card-bg);
     padding: 20px;
-    border-radius: 10px;
+    border-radius: var(--radius);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .stat-card h3 {
@@ -290,9 +330,10 @@ body {
 }
 
 .stat-value {
-    font-size: 2rem;
-    font-weight: bold;
+    font-size: 1.75rem;
+    font-weight: 700;
     margin-bottom: 5px;
+    letter-spacing: -0.02em;
 }
 
 .stat-change {
@@ -651,8 +692,46 @@ body {
 .last-refreshed {
     text-align: right;
     font-size: 0.8rem;
-    opacity: 0.5;
+    color: var(--text-muted);
     margin-top: 20px;
+}
+
+/* Chart container */
+.chart-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Notification variants */
+.notification-warning {
+    background: var(--warning) !important;
+    color: #1a1a1a !important;
+}
+
+.notification-info {
+    background: var(--info) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .actions {
@@ -695,13 +774,21 @@ body {
     .stat-grid,
     .asset-grid,
     .allocation-legend {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .data-table th,
     .data-table td {
         padding: 10px 8px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+    }
+
+    .chart-container {
+        height: 220px !important;
     }
 }
 
@@ -711,18 +798,26 @@ body {
     }
 
     .stat-grid {
+        grid-template-columns: 1fr;
         gap: 12px;
     }
 
     .stat-card {
-        padding: 16px;
+        padding: 14px;
+    }
+
+    .stat-card:hover {
+        transform: none;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
     }
 
     .section-header h2 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
 
-    /* Center headings and table text on small screens */
     .section-header {
         align-items: center;
         text-align: center;
@@ -735,6 +830,35 @@ body {
 
     .data-table th,
     .data-table td {
+        padding: 8px 6px;
+        font-size: 0.85rem;
         text-align: center;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+
+    .chart-container {
+        height: 180px !important;
+    }
+
+    .allocation-bar {
+        height: 30px;
+    }
+
+    .breakdown {
+        padding: 14px;
     }
 }

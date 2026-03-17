@@ -1,62 +1,53 @@
 # Personal Finance Tracker
 
-A full-stack personal finance tracking system built with Node.js, Express, SQLite, and vanilla JavaScript.
+A personal finance tracking app built with vanilla JavaScript and Supabase, deployed on GitHub Pages.
+
+**Live:** [vignesh-selva.github.io/finance-tracker](https://vignesh-selva.github.io/finance-tracker/)
 
 ## Features
 
 - **Multi-asset tracking** — savings, fixed deposits, mutual funds, stocks, crypto, liabilities
 - **Transaction & budget management** — income/expense tracking with category budgets
 - **Dashboard** — net worth overview, asset allocation, investment P/L, goal progress
-- **Multiple portfolios** — organize investments across separate portfolios
-- **Historical snapshots** — daily net worth snapshots for timeline analysis
-- **Financial intelligence** — CAGR, XIRR, FI projection, growth rate calculations
-- **Live price refresh** — crypto (CoinGecko), stocks (Yahoo Finance), mutual funds (mfapi.in)
+- **Net worth history** — daily snapshots with Chart.js timeline
+- **Live price refresh** — MF NAV (mfapi.in), crypto (CoinGecko), stocks (Yahoo Finance)
 - **Import/Export** — JSON backup and restore
-- **Dark/Light theme** — with responsive mobile layout
-- **Production-grade backend** — REST API, validation (Zod), rate limiting, structured logging
+- **Dark/Light theme** — responsive mobile layout
+- **CI/CD** — lint, test, and deploy via GitHub Actions
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Node.js, Express, SQLite (better-sqlite3), Knex.js |
-| **Validation** | Zod |
-| **Logging** | Pino |
-| **Security** | Helmet, CORS, express-rate-limit |
+| **Backend** | Supabase (PostgreSQL, RLS, REST API) |
 | **Frontend** | Vanilla JS (ES modules), Vite |
 | **Charts** | Chart.js |
-| **Testing** | Vitest, Supertest |
+| **Testing** | Vitest |
+| **Linting** | ESLint 9 (flat config) |
+| **Deploy** | GitHub Pages via GitHub Actions |
 
 ## Project Structure
 
 ```
-├── server/                 # Backend API
-│   ├── src/
-│   │   ├── config/         # Environment configuration
-│   │   ├── db/             # Knex migrations, seeds, connection
-│   │   ├── lib/            # Logger and shared utilities
-│   │   ├── middleware/      # Validation, error handling
-│   │   ├── repositories/   # Data access layer (CRUD)
-│   │   ├── routes/         # Express route handlers
-│   │   ├── services/       # Business logic (calculator, snapshots)
-│   │   ├── validators/     # Zod schemas
-│   │   ├── app.js          # Express app setup
-│   │   └── index.js        # Entry point
-│   ├── data/               # SQLite database (gitignored)
-│   └── package.json
 ├── client/                 # Frontend SPA
 │   ├── src/
-│   │   ├── core/           # App shell
-│   │   ├── services/       # API client
+│   │   ├── core/           # App shell (appShell.js)
+│   │   ├── services/       # Supabase API client, price fetcher
 │   │   ├── ui/             # Feature renderers & forms
-│   │   ├── utils/          # Formatting, sanitization
+│   │   ├── utils/          # Formatting, sanitization, finance utils
 │   │   └── main.js         # Entry point
-│   ├── styles/             # CSS
+│   ├── public/             # Static assets (icons, manifest)
+│   ├── styles/             # CSS (dark/light themes, responsive)
+│   ├── tests/              # Vitest unit tests
 │   ├── index.html
 │   ├── vite.config.js
 │   └── package.json
-├── package.json            # Root (npm workspaces)
-└── .gitignore
+├── supabase/
+│   ├── schema.sql          # Database schema (run in Supabase SQL Editor)
+│   └── import-backup.sql   # Legacy data import script
+├── .github/workflows/
+│   └── deploy.yml          # CI: lint → test → build → deploy
+└── package.json            # Root (npm workspace)
 ```
 
 ## Getting Started
@@ -64,89 +55,41 @@ A full-stack personal finance tracking system built with Node.js, Express, SQLit
 ### Prerequisites
 
 - **Node.js** >= 18
-- **npm** >= 9
+- A **Supabase** project (free tier works)
 
-### Installation
+### Setup
+
+1. Create a Supabase project and run `supabase/schema.sql` in the SQL Editor
+2. Copy `client/.env.example` to `client/.env` and fill in your Supabase URL and anon key
+3. Install and run:
 
 ```bash
 npm install
+npm run dev       # Vite dev server on http://localhost:5173
 ```
 
-### Development
-
-Start both server and client in parallel:
+### Testing & Linting
 
 ```bash
-npm run dev
+npm test          # Run Vitest (45 tests)
+npm run lint      # ESLint
 ```
 
-Or run them separately:
+### Build
 
 ```bash
-npm run dev:server   # Express API on http://localhost:3001
-npm run dev:client   # Vite dev server on http://localhost:5173
+npm run build     # Output to client/dist/
 ```
 
-The Vite dev server proxies `/api/*` requests to the Express backend.
+### Deploy to GitHub Pages
 
-### Database
-
-Migrations run automatically on server start. To run manually:
-
-```bash
-npm run db:migrate   # Apply migrations
-npm run db:seed      # Seed default portfolio
-```
-
-### Testing
-
-```bash
-npm test              # Run all tests
-npm run test:coverage # With coverage report
-```
-
-### Build for Production
-
-```bash
-npm run build   # Builds client to client/dist/
-npm start       # Starts production server
-```
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET/POST | `/api/portfolios` | List / create portfolios |
-| GET/PUT/DELETE | `/api/portfolios/:id` | Portfolio CRUD |
-| GET | `/api/dashboard/:portfolioId` | Full dashboard data |
-| GET | `/api/dashboard/:portfolioId/timeline` | Net worth history |
-| POST | `/api/dashboard/:portfolioId/snapshot` | Take snapshot |
-| GET | `/api/dashboard/:portfolioId/fi-projection` | FI projection |
-| CRUD | `/api/savings` | Savings accounts |
-| CRUD | `/api/fixed-deposits` | Fixed deposits |
-| CRUD | `/api/mutual-funds` | Mutual funds |
-| CRUD | `/api/stocks` | Stocks & ETFs |
-| CRUD | `/api/crypto` | Crypto holdings |
-| CRUD | `/api/liabilities` | Liabilities |
-| CRUD | `/api/transactions` | Income/expenses |
-| CRUD | `/api/budgets` | Category budgets |
-| CRUD | `/api/settings` | Portfolio settings |
-
-All list endpoints require `?portfolio_id=<uuid>` query parameter.
+1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as repository secrets
+2. Enable GitHub Pages (Settings → Pages → Source: GitHub Actions)
+3. Push to `main` — the workflow runs lint → test → build → deploy
 
 ## Environment Variables
 
-Copy `server/.env.example` to `server/.env` and adjust as needed:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | 3001 | Server port |
-| `NODE_ENV` | development | Environment |
-| `DATABASE_PATH` | ./data/finance.db | SQLite path |
-| `CORS_ORIGIN` | http://localhost:5173 | Allowed origin |
-| `LOG_LEVEL` | info | Pino log level |
-
-## Legacy Frontend
-
-The original client-side-only app (IndexedDB + Firebase) is preserved in the root `src/` directory for reference. The new full-stack version lives in `client/` and `server/`.
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
