@@ -231,7 +231,7 @@ class PersonalFinanceApp {
     async refreshAllLive() {
         try {
             Utilities.showNotification('Refreshing live prices...', 'info');
-            const { results, errors, refreshedAt } = await refreshAllPrices(this.portfolioId);
+            const { results, errors } = await refreshAllPrices(this.portfolioId);
 
             const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
             if (errors.length > 0) {
@@ -478,7 +478,7 @@ class PersonalFinanceApp {
                 for (const [key, resource] of Object.entries(importMap)) {
                     if (data[key] && Array.isArray(data[key])) {
                         for (const item of data[key]) {
-                            const { id, created_at, updated_at, ...rest } = item;
+                            const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = item;
                             await resource.create({ ...rest, portfolio_id: this.portfolioId });
                         }
                     }

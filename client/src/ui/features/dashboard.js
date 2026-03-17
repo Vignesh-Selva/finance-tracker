@@ -17,7 +17,7 @@ export async function renderDashboard(portfolioId) {
 
     try {
         const resp = await api.dashboard.get(portfolioId);
-        const { netWorth, allocation, investmentPL, expenseTotals, goal, settings } = resp.data;
+        const { netWorth, allocation, investmentPL, goal, settings } = resp.data;
 
         const changePercent = '+0.00';
         const changePercentClass = 'positive';

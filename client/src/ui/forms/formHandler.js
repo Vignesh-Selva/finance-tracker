@@ -177,7 +177,7 @@ export class FormHandler {
         const data = this.editingEntry ? { ...this.editingEntry } : {};
 
         let isValid = true;
-        let errorMessages = [];
+        const errorMessages = [];
 
         formConfig.fields.forEach(field => {
             const input = document.getElementById(`field-${field.name}`);
@@ -259,7 +259,7 @@ export class FormHandler {
             let result;
 
             if (this.editingEntry?.id) {
-                const { portfolio_id, id, created_at, updated_at, ...updateData } = apiData;
+                const { portfolio_id: _pid, id: _id, created_at: _ca, updated_at: _ua, ...updateData } = apiData;
                 const resp = await resource.update(this.editingEntry.id, updateData);
                 result = resp?.data;
             } else {
