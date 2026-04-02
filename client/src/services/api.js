@@ -5,6 +5,7 @@
  */
 
 import { supabase } from './supabaseClient.js';
+import { getSession } from './authService.js';
 
 class ApiError extends Error {
   constructor(message, status, details = null) {
@@ -103,9 +104,13 @@ export const portfolios = {
   },
 
   create: async (body) => {
+    const session = await getSession();
+    const userId = session?.user?.id;
+    if (!userId) throw new ApiError('Not authenticated', 401);
+
     const { data, error } = await supabase
       .from('portfolios')
-      .insert(body)
+      .insert({ ...body, user_id: userId })
       .select()
       .single();
     handleError(error);

@@ -10,6 +10,7 @@ import { renderCrypto } from '../ui/features/crypto.js';
 import { renderLiabilities } from '../ui/features/liabilities.js';
 import { renderBudgets } from '../ui/features/budgets.js';
 import api from '../services/api.js';
+import { signOut as authSignOut } from '../services/authService.js';
 import { refreshAllPrices } from '../services/priceFetcher.js';
 
 class PersonalFinanceApp {
@@ -452,6 +453,14 @@ class PersonalFinanceApp {
         } catch (error) {
             console.error('Export error:', error);
             Utilities.showNotification('Failed to export data', 'error');
+        }
+    }
+
+    async signOut() {
+        try {
+            await authSignOut();
+        } catch (error) {
+            console.error('Sign out error:', error);
         }
     }
 
