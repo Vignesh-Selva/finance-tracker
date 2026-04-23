@@ -134,6 +134,13 @@ export function renderFundCard(fund, options = {}) {
         </div>`).join('')}
     </div>` : '';
 
+  // ─── TODO: Top Holdings (future) ─────────────────────────
+  // Will fetch monthly portfolio disclosures from AMFI:
+  //   https://www.amfiindia.com/modules/AccountingMasterReport
+  // Parse Excel/PDF to extract stock name, sector, % allocation,
+  // and diff last 2 months to detect new entries & exits.
+  // ─────────────────────────────────────────────────────────
+
   // Holdings section (if portfolioContext provided)
   let holdingsHtml = '';
   if (holdings) {
@@ -195,10 +202,23 @@ export function renderFundCard(fund, options = {}) {
  * @returns {string} HTML
  */
 export function renderPortfolioSummary(summary) {
+  // Build TER display with optional change indicator
+  let terValue = '—';
+  let terTone  = 'neutral';
+  if (summary.avgExpenseRatio != null) {
+    terValue = summary.avgExpenseRatio.toFixed(2) + '%';
+    if (summary.terDelta != null && Math.abs(summary.terDelta) >= 0.001) {
+      const arrow = summary.terDelta > 0 ? '▲' : '▼';
+      const sign  = summary.terDelta > 0 ? '+' : '';
+      terTone     = summary.terDelta > 0 ? 'negative' : 'positive'; // higher TER is bad
+      terValue   += ` <span class="mft-ter-delta ${terTone}">${arrow}${sign}${summary.terDelta.toFixed(2)}%</span>`;
+    }
+  }
+
   const items = [
     { label: 'Funds Tracked', value: summary.fundCount || 0, tone: 'accent' },
     { label: 'Total Exposure', value: summary.totalExposure ? FormatUtils.formatCurrency(summary.totalExposure) : '—', tone: 'neutral' },
-    { label: 'Avg Expense Ratio', value: summary.avgExpenseRatio != null ? `${summary.avgExpenseRatio.toFixed(2)}%` : '—', tone: 'neutral' },
+    { label: 'Wtd. Expense Ratio', value: terValue, tone: terTone, raw: true },
     { label: 'Avg 1Y Return', value: summary.avgReturn1Y != null ? `${summary.avgReturn1Y >= 0 ? '+' : ''}${summary.avgReturn1Y.toFixed(2)}%` : '—', tone: summary.avgReturn1Y != null ? (summary.avgReturn1Y >= 0 ? 'positive' : 'negative') : 'neutral' },
   ];
 
@@ -218,18 +238,6 @@ export function renderPortfolioSummary(summary) {
           <div class="mft-summary-label">${item.label}</div>
           <div class="mft-summary-value mft-chip-value ${item.tone}">${item.value}</div>
         </div>`).join('')}
-    </div>`;
-}
-
-// ─── Loading State ────────────────────────────────────────
-
-export function renderLoading(message = 'Fetching fund data') {
-  return `
-    <div class="mft-loading">
-      <div class="mft-loading-dots">
-        <span></span><span></span><span></span>
-      </div>
-      ${message}…
     </div>`;
 }
 

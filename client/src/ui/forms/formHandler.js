@@ -11,6 +11,7 @@ const RESOURCE_MAP = {
     stocks: { api: api.stocks, fields: { stockName: 'stock_name' } },
     crypto: { api: api.crypto, fields: { coinName: 'coin_name' } },
     liabilities: { api: api.liabilities, fields: { loanAmount: 'loan_amount', interestRate: 'interest_rate' } },
+    creditCards: { api: api.creditCards, fields: { cardName: 'card_name', cardType: 'card_type', creditLimit: 'credit_limit', currentBalance: 'current_balance', statementBalance: 'statement_balance', amountToPay: 'amount_to_pay', billingDate: 'billing_date', dueDate: 'due_date' } },
     transactions: { api: api.transactions, fields: {} },
     budgets: { api: api.budgets, fields: { limit: 'monthly_limit' } },
 };
@@ -22,10 +23,6 @@ export class FormHandler {
         this.currentFormType = '';
         this.app = null;
         this.fundNameSuggestions = [];
-    }
-
-    setPortfolioId(id) {
-        this.portfolioId = id;
     }
 
     /**
@@ -134,6 +131,7 @@ export class FormHandler {
         fields.forEach(field => {
             html += '<div class="form-group">';
             html += `<label>${field.label}:</label>`;
+            if (field.hint) html += `<small class="form-hint">${field.hint}</small>`;
 
             if (field.type === 'select') {
                 html += `<select id="field-${field.name}" class="form-input" ${field.required ? 'required' : ''}>`;
@@ -368,6 +366,21 @@ export class FormHandler {
                     { name: 'amount', label: 'Amount', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'units', label: 'Units', type: 'number', step: '0.0001', min: 0, required: false },
                     { name: 'description', label: 'Description', type: 'text', required: false }
+                ]
+            },
+            creditCards: {
+                title: 'Add Credit Card',
+                singularTitle: 'Credit Card',
+                fields: [
+                    { name: 'cardName', label: 'Card Name', type: 'text', required: true },
+                    { name: 'issuer', label: 'Issuer (Bank)', type: 'text', required: true },
+                    { name: 'cardType', label: 'Network', type: 'select', options: ['Visa', 'Mastercard', 'Rupay', 'Amex', 'Diners Club'], required: true },
+                    { name: 'creditLimit', label: 'Credit Limit', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'currentBalance', label: 'Current Balance', type: 'number', step: '0.01', min: 0, required: false, hint: 'Statement balance + all unbilled transactions since last statement' },
+                    { name: 'statementBalance', label: 'Statement Balance', type: 'number', step: '0.01', min: 0, required: false, hint: 'Total charges on your last billing statement (billed amount)' },
+                    { name: 'amountToPay', label: 'Amount to Pay', type: 'number', step: '0.01', min: 0, required: false, hint: 'Minimum due, full statement, or a custom payment amount' },
+                    { name: 'billingDate', label: 'Billing Date (day of month)', type: 'number', step: '1', min: 1, required: false },
+                    { name: 'dueDate', label: 'Due Date (day of month)', type: 'number', step: '1', min: 1, required: false },
                 ]
             },
             budgets: {

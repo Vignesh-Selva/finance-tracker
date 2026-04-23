@@ -21,70 +21,57 @@
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>💰 Finance</h1>
-                <button id="themeToggle" class="theme-toggle">🌙</button>
+                <h1><span class="sidebar-logo-icon">💰</span><span class="sidebar-logo-text"> Networth Tracker</span></h1>
             </div>
 
             <nav class="sidebar-nav">
                 <div class="sidebar-item active" data-tab="dashboard" onclick="window.app.switchTab('dashboard')">
-
-                    📊 Dashboard
+                    <span class="sidebar-icon">📊</span><span class="sidebar-label">Dashboard</span>
                 </div>
                 <div class="sidebar-item" data-tab="savings" onclick="window.app.switchTab('savings')">
-
-                    🏦 Savings
+                    <span class="sidebar-icon">🏦</span><span class="sidebar-label">Savings</span>
                 </div>
                 <div class="sidebar-item" data-tab="fixedDeposits" onclick="window.app.switchTab('fixedDeposits')">
-
-                    🐷 Fixed Deposits
+                    <span class="sidebar-icon">🐷</span><span class="sidebar-label">Fixed Deposits</span>
                 </div>
                 <div class="sidebar-item" data-tab="mutualFunds" onclick="window.app.switchTab('mutualFunds')">
-
-                    📜 Mutual Funds
+                    <span class="sidebar-icon">📜</span><span class="sidebar-label">Mutual Funds</span>
                 </div>
                 <div class="sidebar-item" data-tab="stocks" onclick="window.app.switchTab('stocks')">
-
-                    📈 Stocks
+                    <span class="sidebar-icon">📈</span><span class="sidebar-label">Stocks & ETFs</span>
                 </div>
                 <div class="sidebar-item" data-tab="crypto" onclick="window.app.switchTab('crypto')">
-
-                    🪙 Crypto
+                    <span class="sidebar-icon">🪙</span><span class="sidebar-label">Crypto</span>
                 </div>
                 <div class="sidebar-item" data-tab="liabilities" onclick="window.app.switchTab('liabilities')">
-
-                    💳 Liabilities
+                    <span class="sidebar-icon">📋</span><span class="sidebar-label">Liabilities</span>
+                </div>
+                <div class="sidebar-item" data-tab="creditCards" onclick="window.app.switchTab('creditCards')">
+                    <span class="sidebar-icon">💳</span><span class="sidebar-label">Credit Cards</span>
                 </div>
                 <div class="sidebar-item" data-tab="expenses" onclick="window.app.switchTab('expenses')">
-
-                    💸 Expenses
+                    <span class="sidebar-icon">💸</span><span class="sidebar-label">Expenses</span>
                 </div>
                 <div class="sidebar-item" data-tab="budgets" onclick="window.app.switchTab('budgets')">
-
-                    🧭 Budgets
+                    <span class="sidebar-icon">🧭</span><span class="sidebar-label">Budgets</span>
                 </div>
-                <div class="sidebar-item" data-tab="settings" onclick="window.app.showSettings()">
-
-                    ⚙️ Settings
+                <div class="sidebar-separator"></div>
+                <div class="sidebar-item" onclick="window.app.showSettings()">
+                    <span class="sidebar-icon">⚙️</span><span class="sidebar-label">Settings</span>
                 </div>
-                <div class="sidebar-item" onclick="window.app.exportAllData()">
-
-                    💾 Export Data
+                <div class="sidebar-item" id="themeToggle">
+                    <span class="sidebar-icon" id="themeIcon">🌙</span><span class="sidebar-label">Toggle Theme</span>
                 </div>
-                <div class="sidebar-item" onclick="window.app.importAllData()">
-
-                    📥 Import Data
+                <div class="sidebar-item" onclick="window.app.signOut()">
+                    <span class="sidebar-icon">🚪</span><span class="sidebar-label">Sign Out</span>
                 </div>
             </nav>
         </aside>
 
         <button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
 
         <main class="main-content">
-            <div class="topbar">
-                <div id="syncStatus" class="sync-status" aria-live="polite">🟢 Connected</div>
-                <button id="signOutBtn" class="btn btn-secondary btn-sm" onclick="window.app.signOut()">Sign Out</button>
-            </div>
-
             <div id="content-dashboard" class="content active"></div>
             <div id="content-expenses" class="content"></div>
             <div id="content-savings" class="content"></div>
@@ -93,6 +80,7 @@
             <div id="content-stocks" class="content"></div>
             <div id="content-crypto" class="content"></div>
             <div id="content-liabilities" class="content"></div>
+            <div id="content-creditCards" class="content"></div>
             <div id="content-budgets" class="content"></div>
         </main>
     </div>

@@ -112,6 +112,25 @@ CREATE TABLE IF NOT EXISTS liabilities (
 );
 
 -- ============================================================
+-- CREDIT CARDS
+-- ============================================================
+CREATE TABLE IF NOT EXISTS credit_cards (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  portfolio_id UUID NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+  card_name TEXT NOT NULL,
+  issuer TEXT NOT NULL,
+  card_type TEXT NOT NULL,
+  credit_limit NUMERIC DEFAULT 0,
+  current_balance NUMERIC DEFAULT 0,
+  statement_balance NUMERIC DEFAULT 0,
+  amount_to_pay NUMERIC DEFAULT 0,
+  billing_date TEXT,
+  due_date TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================================
 -- TRANSACTIONS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS transactions (
@@ -200,6 +219,7 @@ ALTER TABLE mutual_funds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stocks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE crypto ENABLE ROW LEVEL SECURITY;
 ALTER TABLE liabilities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE credit_cards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
@@ -215,6 +235,7 @@ CREATE POLICY "Allow all for anon" ON mutual_funds FOR ALL USING (true) WITH CHE
 CREATE POLICY "Allow all for anon" ON stocks FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON crypto FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON liabilities FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for anon" ON credit_cards FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON transactions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON budgets FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for anon" ON settings FOR ALL USING (true) WITH CHECK (true);
@@ -239,6 +260,7 @@ CREATE TRIGGER update_mutual_funds_updated_at BEFORE UPDATE ON mutual_funds FOR 
 CREATE TRIGGER update_stocks_updated_at BEFORE UPDATE ON stocks FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_crypto_updated_at BEFORE UPDATE ON crypto FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_liabilities_updated_at BEFORE UPDATE ON liabilities FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_credit_cards_updated_at BEFORE UPDATE ON credit_cards FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_budgets_updated_at BEFORE UPDATE ON budgets FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings FOR EACH ROW EXECUTE FUNCTION update_updated_at();

@@ -11,9 +11,10 @@ import {
     fetchFullFundData, fetchAllTrackedFunds,
     computePortfolioSummary, exportFundData,
     setPortfolioContext,
+    loadPortfolioTerSnapshot, savePortfolioTerSnapshot,
 } from './mf-tracker/fundStore.js';
 
-// ─── Module state ─────────────────────────────────────────
+// ─── Module state ──────────────────────────────────────────
 let _activeTab = 'portfolio';     // 'portfolio' | 'tracker'
 let _fundDataCache = [];
 let _sortBy = 'name';
@@ -21,6 +22,7 @@ let _filterCategory = 'all';
 let _searchDebounce = null;
 let _onDataUpdate = null;
 let _currentPortfolioId = null;
+let _terDelta = null;             // TER change since last saved snapshot
 
 // ─── Public: set integration props ────────────────────────
 export function setMfTrackerProps(props = {}) {
@@ -79,6 +81,24 @@ function attachTabEvents(container, portfolioId) {
     });
 }
 
+function sortData(data, col, dir) {
+    if (!col) return data;
+    return [...data].sort((a, b) => {
+        const av = parseFloat(a[col]) || (typeof a[col] === 'string' ? a[col].toLowerCase() : 0);
+        const bv = parseFloat(b[col]) || (typeof b[col] === 'string' ? b[col].toLowerCase() : 0);
+        if (av < bv) return dir === 'asc' ? -1 : 1;
+        if (av > bv) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function th(label, col, sort) {
+    const active = sort.col === col;
+    const icon = active ? (sort.dir === 'asc' ? '▴' : '▾') : '▴▾';
+    const cls = active ? (sort.dir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc') : 'sortable';
+    return `<th class="${cls}" onclick="window.app.setSortState('mutualFunds','${col}')">${label} <span class="sort-icon">${icon}</span></th>`;
+}
+
 // ─── Tab 1: Portfolio (original Supabase tracker) ─────────
 async function renderPortfolioTab(container, portfolioId) {
     const content = container.querySelector('#mft-tab-content');
@@ -86,7 +106,8 @@ async function renderPortfolioTab(container, portfolioId) {
 
     try {
         const resp = await api.mutualFunds.list(portfolioId);
-        const funds = resp?.data || [];
+        const sort = window.app?.getSortState('mutualFunds') || { col: null, dir: 'asc' };
+        const funds = sortData(resp?.data || [], sort.col, sort.dir);
 
         const totalInvested = funds.reduce((s, i) => s + (parseFloat(i.invested) || 0), 0);
         const totalCurrent = funds.reduce((s, i) => s + (parseFloat(i.current) || 0), 0);
@@ -99,11 +120,11 @@ async function renderPortfolioTab(container, portfolioId) {
             const plPct = parseFloat(item.invested) > 0 ? ((pl / item.invested) * 100).toFixed(2) : '0.00';
             tableRows += `
                 <tr>
-                    <td>${item.fund_name}</td>
-                    <td>${item.fund_type || 'Equity'}</td>
-                    <td class="mono">${Utilities.formatCurrency(item.invested)}</td>
-                    <td class="mono">${Utilities.formatCurrency(item.current)}</td>
-                    <td class="mono ${pl >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(pl)} (${plPct}%)</td>
+                    <td data-label="Fund">${item.fund_name}</td>
+                    <td data-label="Type">${item.fund_type || 'Equity'}</td>
+                    <td data-label="Invested" class="mono">${Utilities.formatCurrency(item.invested)}</td>
+                    <td data-label="Current" class="mono">${Utilities.formatCurrency(item.current)}</td>
+                    <td data-label="P/L" class="mono ${pl >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(pl)} (${plPct}%)</td>
                     <td class="actions">
                         <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('mutualFunds','${item.id}')">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('mutualFunds','${item.id}')">Delete</button>
@@ -136,7 +157,14 @@ async function renderPortfolioTab(container, portfolioId) {
             ${funds.length > 0 ? `
             <div class="data-table-container">
                 <table class="data-table">
-                    <thead><tr><th>Fund</th><th>Type</th><th>Invested</th><th>Current</th><th>P/L</th><th>Actions</th></tr></thead>
+                    <thead><tr>
+                        ${th('Fund', 'fund_name', sort)}
+                        ${th('Type', 'fund_type', sort)}
+                        ${th('Invested', 'invested', sort)}
+                        ${th('Current', 'current', sort)}
+                        ${th('P/L', 'current', sort)}
+                        <th>Actions</th>
+                    </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No mutual funds added yet.</p>'}
@@ -164,6 +192,7 @@ async function renderTrackerTab(container) {
 
     try {
         _fundDataCache = [];
+        _terDelta = null;
         await fetchAllTrackedFunds((code, data) => {
             _fundDataCache.push(data);
             const loadingCard = listEl?.querySelector(`[data-scheme-code="${code}"]`);
@@ -193,6 +222,17 @@ async function renderTrackerTab(container) {
             }
             updateTrackerSummary(content);
         });
+
+        // Compute portfolio TER delta vs last saved snapshot, then save new value
+        const summary = computePortfolioSummary(_fundDataCache.filter(f => !f.error));
+        if (summary.avgExpenseRatio != null) {
+            const prevTer = loadPortfolioTerSnapshot();
+            _terDelta = prevTer != null
+                ? parseFloat((summary.avgExpenseRatio - prevTer).toFixed(3))
+                : null;
+            savePortfolioTerSnapshot(summary.avgExpenseRatio);
+            updateTrackerSummary(content);
+        }
 
         if (_onDataUpdate) _onDataUpdate(exportFundData(_fundDataCache));
     } catch (error) {
@@ -273,6 +313,30 @@ function attachTrackerShellEvents(content) {
         refreshBtn.addEventListener('click', async () => {
             refreshBtn.disabled = true;
             refreshBtn.textContent = '⏳ Refreshing…';
+
+            // Auto-populate from Portfolio (Supabase) scheme codes
+            if (_currentPortfolioId) {
+                try {
+                    const resp = await api.mutualFunds.list(_currentPortfolioId);
+                    const portfolioFunds = resp?.data || [];
+                    let addedCount = 0;
+                    for (const fund of portfolioFunds) {
+                        if (fund.scheme_code) {
+                            const code = String(fund.scheme_code);
+                            if (!getTrackedFunds().includes(code)) {
+                                trackFund(code);
+                                addedCount++;
+                            }
+                        }
+                    }
+                    if (addedCount > 0) {
+                        Utilities.showNotification(`Auto-added ${addedCount} fund(s) from portfolio`, 'info');
+                    }
+                } catch (err) {
+                    console.warn('Auto-populate from portfolio failed:', err);
+                }
+            }
+
             await renderMutualFunds(_currentPortfolioId);
         });
     }
@@ -426,7 +490,7 @@ function updateFilters(content) {
 function updateTrackerSummary(content) {
     const summaryEl = content.querySelector('#mft-summary');
     if (!summaryEl) return;
-    summaryEl.innerHTML = renderPortfolioSummary(computePortfolioSummary(_fundDataCache.filter(f => !f.error)));
+    summaryEl.innerHTML = renderPortfolioSummary({ ...computePortfolioSummary(_fundDataCache.filter(f => !f.error)), terDelta: _terDelta });
     const lastEl = content.querySelector('#mft-last-refreshed');
     if (lastEl && _fundDataCache.length > 0) lastEl.textContent = `Last refreshed: ${new Date().toLocaleTimeString()}`;
 }

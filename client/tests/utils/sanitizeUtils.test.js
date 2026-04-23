@@ -1,5 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SanitizeUtils } from '../../src/utils/sanitizeUtils.js';
+
+vi.stubGlobal('document', {
+  createElement: () => {
+    const el = { _text: '' };
+    Object.defineProperty(el, 'textContent', {
+      set(v) { el._text = String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); },
+    });
+    Object.defineProperty(el, 'innerHTML', { get() { return el._text; } });
+    return el;
+  },
+});
 
 describe('SanitizeUtils', () => {
   describe('sanitizeNumber', () => {
@@ -42,6 +53,27 @@ describe('SanitizeUtils', () => {
       const clone = SanitizeUtils.deepClone(original);
       expect(clone).toEqual(original);
       expect(clone[1]).not.toBe(original[1]);
+    });
+  });
+
+  describe('sanitizeString', () => {
+    it('returns empty string for falsy input', () => {
+      expect(SanitizeUtils.sanitizeString('')).toBe('');
+      expect(SanitizeUtils.sanitizeString(null)).toBe('');
+      expect(SanitizeUtils.sanitizeString(undefined)).toBe('');
+    });
+
+    it('escapes HTML special characters', () => {
+      expect(SanitizeUtils.sanitizeString('<script>')).toBe('&lt;script&gt;');
+      expect(SanitizeUtils.sanitizeString('<b>bold</b>')).toBe('&lt;b&gt;bold&lt;/b&gt;');
+    });
+
+    it('passes through plain strings unchanged', () => {
+      expect(SanitizeUtils.sanitizeString('Hello World')).toBe('Hello World');
+    });
+
+    it('escapes ampersands', () => {
+      expect(SanitizeUtils.sanitizeString('A & B')).toBe('A &amp; B');
     });
   });
 });

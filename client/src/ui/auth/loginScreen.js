@@ -138,6 +138,10 @@ export function renderLoginScreen() {
       <div class="auth-success" id="auth-success"></div>
 
       <form id="auth-form" autocomplete="on">
+        <div class="form-group" id="username-group" style="display:none;">
+          <label for="auth-username">Username</label>
+          <input type="text" id="auth-username" class="form-input" placeholder="Your name" autocomplete="name" />
+        </div>
         <div class="form-group">
           <label for="auth-email">Email</label>
           <input type="email" id="auth-email" class="form-input" placeholder="you@example.com" required autocomplete="email" />
@@ -171,6 +175,8 @@ export function renderLoginScreen() {
   const successDiv = document.getElementById('auth-success');
   const emailInput = document.getElementById('auth-email');
   const passwordInput = document.getElementById('auth-password');
+  const usernameInput = document.getElementById('auth-username');
+  const usernameGroup = document.getElementById('username-group');
 
   function showError(msg) {
     successDiv.style.display = 'none';
@@ -199,6 +205,8 @@ export function renderLoginScreen() {
       toggleText.textContent = 'Already have an account?';
       toggleLink.textContent = 'Sign In';
       passwordInput.setAttribute('autocomplete', 'new-password');
+      usernameGroup.style.display = 'block';
+      usernameInput.required = true;
     } else {
       title.textContent = 'Sign In';
       subtitle.textContent = 'Welcome back! Enter your credentials.';
@@ -206,6 +214,8 @@ export function renderLoginScreen() {
       toggleText.textContent = "Don't have an account?";
       toggleLink.textContent = 'Sign Up';
       passwordInput.setAttribute('autocomplete', 'current-password');
+      usernameGroup.style.display = 'none';
+      usernameInput.required = false;
     }
   }
 
@@ -217,9 +227,15 @@ export function renderLoginScreen() {
 
     const email = emailInput.value.trim();
     const password = passwordInput.value;
+    const username = usernameInput.value.trim();
 
     if (!email || !password) {
       showError('Please enter both email and password.');
+      return;
+    }
+
+    if (isSignUp && !username) {
+      showError('Please enter a username.');
       return;
     }
 
@@ -228,7 +244,7 @@ export function renderLoginScreen() {
 
     try {
       if (isSignUp) {
-        const data = await signUp(email, password);
+        const data = await signUp(email, password, username);
         // If email confirmation is required, the session may be null
         if (data.session) {
           // Auto-signed in — the onAuthStateChange listener will handle the rest

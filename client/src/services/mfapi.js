@@ -155,23 +155,6 @@ export async function computeReturns(schemeCode) {
 }
 
 /**
- * Get NAV history for chart rendering (date + nav pairs, chronological order).
- * @param {string} schemeCode
- * @param {number} years - How many years of history (default 3)
- * @returns {Promise<Array<{date: Date, nav: number}>>}
- */
-export async function getNavTimeSeries(schemeCode, years = 3) {
-  const json = await fetchNavHistory(schemeCode);
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - years);
-
-  return json.data
-    .map(entry => ({ date: parseMfDate(entry.date), nav: parseFloat(entry.nav) }))
-    .filter(entry => entry.date >= cutoff)
-    .reverse(); // chronological order
-}
-
-/**
  * Full fund data fetch — combines latest NAV + computed returns.
  * @param {string} schemeCode
  * @returns {Promise<Object>}
@@ -194,9 +177,4 @@ export async function getFundData(schemeCode) {
     return3Y: returns.return3Y,
     return5Y: returns.return5Y,
   };
-}
-
-/** Clear the in-memory NAV cache. */
-export function clearCache() {
-  navCache.clear();
 }

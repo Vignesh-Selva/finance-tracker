@@ -10,10 +10,31 @@ export async function signIn(email, password) {
   return data;
 }
 
-export async function signUp(email, password) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+export async function signUp(email, password, username) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { username } },
+  });
   if (error) throw error;
   return data;
+}
+
+export async function updateUser(updates) {
+  const { data, error } = await supabase.auth.updateUser({ data: updates });
+  if (error) throw error;
+  return data;
+}
+
+export async function getCurrentUser() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return user;
+}
+
+export function extractUsernameFromEmail(email) {
+  if (!email) return '';
+  return email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export async function signOut() {

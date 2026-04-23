@@ -8,10 +8,11 @@ import { renderMutualFunds } from '../ui/features/mutualFunds.js';
 import { renderStocks } from '../ui/features/stocks.js';
 import { renderCrypto } from '../ui/features/crypto.js';
 import { renderLiabilities } from '../ui/features/liabilities.js';
+import { renderCreditCards } from '../ui/features/creditCards.js';
 import { renderBudgets } from '../ui/features/budgets.js';
 import api from '../services/api.js';
-import { signOut as authSignOut } from '../services/authService.js';
-import { refreshAllPrices } from '../services/priceFetcher.js';
+import { signOut as authSignOut, updateUser, getCurrentUser, extractUsernameFromEmail } from '../services/authService.js';
+import { refreshAllPrices, refreshMutualFundPrices, refreshStockPricesOnly, refreshCryptoPricesOnly } from '../services/priceFetcher.js';
 
 class PersonalFinanceApp {
     constructor() {
@@ -31,6 +32,7 @@ class PersonalFinanceApp {
             stocks: renderStocks,
             crypto: renderCrypto,
             liabilities: renderLiabilities,
+            creditCards: renderCreditCards,
             budgets: renderBudgets,
         };
     }
@@ -78,9 +80,9 @@ class PersonalFinanceApp {
         try {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
-            const themeBtn = document.getElementById('themeToggle');
-            if (themeBtn) {
-                themeBtn.textContent = savedTheme === 'light' ? '🌙' : '☀️';
+            const themeIcon = document.getElementById('themeIcon');
+            if (themeIcon) {
+                themeIcon.textContent = savedTheme === 'light' ? '🌙' : '☀️';
             }
         } catch (error) {
             console.error('Theme load error:', error);
@@ -98,15 +100,15 @@ class PersonalFinanceApp {
     }
 
     toggleSidebar() {
-        this.setSidebarCollapsed(!this.sidebarCollapsed, true);
+        this.setSidebarCollapsed(!this.sidebarCollapsed, false);
     }
 
-    setSidebarCollapsed(collapsed, persist = false) {
+    setSidebarCollapsed(collapsed, _persist = false) {
         this.sidebarCollapsed = collapsed;
-
         const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
         const toggleBtn = document.getElementById('sidebarToggle');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        const mainContent = document.querySelector('.main-content');
 
         if (sidebar) sidebar.classList.toggle('collapsed', collapsed);
         if (mainContent) mainContent.classList.toggle('expanded', collapsed);
@@ -114,27 +116,13 @@ class PersonalFinanceApp {
             toggleBtn.textContent = collapsed ? '☰' : '✕';
             toggleBtn.setAttribute('aria-expanded', (!collapsed).toString());
         }
-
-        if (persist) {
-            this.userSidebarPref = collapsed;
-            localStorage.setItem('sidebarCollapsed', collapsed);
+        if (backdrop) {
+            backdrop.style.display = (!collapsed && window.innerWidth <= 900) ? 'block' : 'none';
         }
     }
 
     updateResponsiveLayout() {
-        const isMobile = window.innerWidth <= 900;
-        const appContainer = document.querySelector('.app-container');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        const toggleBtn = document.getElementById('sidebarToggle');
-
-        if (appContainer) appContainer.classList.toggle('mobile', isMobile);
-        if (sidebar) sidebar.classList.toggle('mobile', isMobile);
-        if (mainContent) mainContent.classList.toggle('mobile', isMobile);
-        if (toggleBtn) toggleBtn.classList.toggle('mobile', isMobile);
-
-        const shouldCollapse = isMobile ? true : (this.userSidebarPref ?? false);
-        this.setSidebarCollapsed(shouldCollapse, false);
+        this.setSidebarCollapsed(true, false);
     }
 
     setupEventListeners() {
@@ -156,6 +144,9 @@ class PersonalFinanceApp {
 
         const sidebarToggle = document.getElementById('sidebarToggle');
         if (sidebarToggle) sidebarToggle.onclick = () => this.toggleSidebar();
+
+        const backdrop = document.getElementById('sidebarBackdrop');
+        if (backdrop) backdrop.onclick = () => this.setSidebarCollapsed(true, false);
 
         window.addEventListener('resize', () => this.updateResponsiveLayout());
 
@@ -218,15 +209,60 @@ class PersonalFinanceApp {
     // ─── Live Price Refresh ──────────────────────────────────
 
     async refreshStocksLive() {
-        await this.refreshAllLive();
+        if (this._refreshing) return;
+        this._refreshing = true;
+        try {
+            Utilities.showNotification('Refreshing stock & ETF prices...', 'info');
+            const { results, errors } = await refreshStockPricesOnly(this.portfolioId);
+            if (errors.length > 0) {
+                Utilities.showNotification(`Updated ${results.length} stocks. ${errors.length} error(s).`, 'warning');
+            } else {
+                Utilities.showNotification(`All ${results.length} stocks updated!`, 'success');
+            }
+            await this.refreshCurrentTab();
+        } catch (error) {
+            Utilities.showNotification('Failed to refresh stock prices: ' + error.message, 'error');
+        } finally {
+            this._refreshing = false;
+        }
     }
 
     async refreshMutualFundsLive() {
-        await this.refreshAllLive();
+        if (this._refreshing) return;
+        this._refreshing = true;
+        try {
+            Utilities.showNotification('Refreshing mutual fund NAVs...', 'info');
+            const { results, errors } = await refreshMutualFundPrices(this.portfolioId);
+            if (errors.length > 0) {
+                Utilities.showNotification(`Updated ${results.length} funds. ${errors.length} error(s).`, 'warning');
+            } else {
+                Utilities.showNotification(`All ${results.length} funds updated!`, 'success');
+            }
+            await this.refreshCurrentTab();
+        } catch (error) {
+            Utilities.showNotification('Failed to refresh NAVs: ' + error.message, 'error');
+        } finally {
+            this._refreshing = false;
+        }
     }
 
     async refreshCryptoLive() {
-        await this.refreshAllLive();
+        if (this._refreshing) return;
+        this._refreshing = true;
+        try {
+            Utilities.showNotification('Refreshing crypto prices...', 'info');
+            const { results, errors } = await refreshCryptoPricesOnly(this.portfolioId);
+            if (errors.length > 0) {
+                Utilities.showNotification(`Updated ${results.length} coins. ${errors.length} error(s).`, 'warning');
+            } else {
+                Utilities.showNotification(`All ${results.length} coins updated!`, 'success');
+            }
+            await this.refreshCurrentTab();
+        } catch (error) {
+            Utilities.showNotification('Failed to refresh crypto prices: ' + error.message, 'error');
+        } finally {
+            this._refreshing = false;
+        }
     }
 
     async refreshAllLive() {
@@ -306,6 +342,7 @@ class PersonalFinanceApp {
                 stocks: api.stocks,
                 crypto: api.crypto,
                 liabilities: api.liabilities,
+                creditCards: api.creditCards,
                 transactions: api.transactions,
                 budgets: api.budgets,
             };
@@ -340,8 +377,12 @@ class PersonalFinanceApp {
     closeModal() {
         const modal = document.getElementById('dataModal');
         modal.style.display = 'none';
+        const wasSettings = this.isSettingsModal;
         this.isSettingsModal = false;
         if (this.formHandler) this.formHandler.closeModal();
+        if (wasSettings) {
+            this.switchTab('dashboard');
+        }
     }
 
     // ─── Settings ────────────────────────────────────────────
@@ -350,11 +391,19 @@ class PersonalFinanceApp {
         try {
             this.isSettingsModal = true;
 
-            const resp = await api.settings.list(this.portfolioId);
+            const [resp, user] = await Promise.all([
+                api.settings.list(this.portfolioId),
+                getCurrentUser().catch(() => null),
+            ]);
             const settingsArr = resp?.data || [];
             const settings = settingsArr[0] || { currency: 'INR', goal: 15000000, epf: 0, ppf: 0 };
+            const currentUsername = user?.user_metadata?.username || extractUsernameFromEmail(user?.email) || '';
 
             const formHTML = `
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="setting-username" value="${currentUsername}" class="form-input" placeholder="Your display name" />
+                </div>
                 <div class="form-group">
                     <label>Currency:</label>
                     <input type="text" id="setting-currency" value="${settings.currency}" class="form-input" />
@@ -371,14 +420,25 @@ class PersonalFinanceApp {
                     <label>PPF Balance:</label>
                     <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" />
                 </div>
+                <div style="border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px;">
+                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">Data Management</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
+                        <button type="button" class="btn btn-secondary" id="settings-import-btn">📥 Import Data</button>
+                    </div>
+                </div>
             `;
 
             const modal = document.getElementById('dataModal');
             document.getElementById('modalTitle').textContent = 'Settings';
             document.getElementById('modalBody').innerHTML = formHTML;
             modal.style.display = 'block';
+
+            const exportBtn = document.getElementById('settings-export-btn');
+            if (exportBtn) exportBtn.addEventListener('click', () => this.exportAllData());
+            const importBtn = document.getElementById('settings-import-btn');
+            if (importBtn) importBtn.addEventListener('click', () => this.importAllData());
         } catch (error) {
-            console.error('Show settings error:', error);
             Utilities.showNotification('Failed to load settings', 'error');
         }
     }
@@ -392,6 +452,7 @@ class PersonalFinanceApp {
             const goal = parseFloat(document.getElementById('setting-goal').value);
             const epf = parseFloat(document.getElementById('setting-epf').value);
             const ppf = parseFloat(document.getElementById('setting-ppf').value);
+            const username = document.getElementById('setting-username')?.value?.trim() || '';
 
             if (goal < 0 || epf < 0 || ppf < 0) {
                 Utilities.showNotification('Values cannot be negative', 'error');
@@ -405,11 +466,12 @@ class PersonalFinanceApp {
                 ppf,
             };
 
-            if (existing?.id) {
-                await api.settings.update(existing.id, data);
-            } else {
-                await api.settings.create({ ...data, portfolio_id: this.portfolioId });
-            }
+            const saves = [existing?.id
+                ? api.settings.update(existing.id, data)
+                : api.settings.create({ ...data, portfolio_id: this.portfolioId }),
+            ];
+            if (username) saves.push(updateUser({ username }));
+            await Promise.all(saves);
 
             Utilities.showNotification('Settings saved successfully');
             this.closeModal();
@@ -424,13 +486,14 @@ class PersonalFinanceApp {
 
     async exportAllData() {
         try {
-            const [savingsR, fdsR, mfsR, stocksR, cryptoR, liabR, txR, budgR, settR] = await Promise.all([
+            const [savingsR, fdsR, mfsR, stocksR, cryptoR, liabR, ccR, txR, budgR, settR] = await Promise.all([
                 api.savings.list(this.portfolioId),
                 api.fixedDeposits.list(this.portfolioId),
                 api.mutualFunds.list(this.portfolioId),
                 api.stocks.list(this.portfolioId),
                 api.crypto.list(this.portfolioId),
                 api.liabilities.list(this.portfolioId),
+                api.creditCards.list(this.portfolioId),
                 api.transactions.list(this.portfolioId),
                 api.budgets.list(this.portfolioId),
                 api.settings.list(this.portfolioId),
@@ -443,6 +506,7 @@ class PersonalFinanceApp {
                 stocks: stocksR?.data || [],
                 crypto: cryptoR?.data || [],
                 liabilities: liabR?.data || [],
+                creditCards: ccR?.data || [],
                 transactions: txR?.data || [],
                 budgets: budgR?.data || [],
                 settings: settR?.data || [],
@@ -456,11 +520,48 @@ class PersonalFinanceApp {
         }
     }
 
+    _sortStates = {};
+
+    setSortState(module, col) {
+        if (!this._sortStates[module]) this._sortStates[module] = { col: null, dir: 'asc' };
+        const s = this._sortStates[module];
+        if (s.col === col) {
+            s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            s.col = col;
+            s.dir = 'asc';
+        }
+        this.renderCurrentTab();
+    }
+
+    getSortState(module) {
+        return this._sortStates[module] || { col: null, dir: 'asc' };
+    }
+
+    _dashCCIndex = 0;
+
+    _cycleDashCC(targetIdx) {
+        const stack = document.getElementById('cc-dash-stack');
+        if (!stack) return;
+        const cards = stack.querySelectorAll('.cc-dash-card');
+        if (cards.length <= 1) return;
+        cards.forEach(c => c.classList.remove('cc-dash-active'));
+        this._dashCCIndex = targetIdx !== undefined ? targetIdx : (this._dashCCIndex + 1) % cards.length;
+        cards[this._dashCCIndex].classList.add('cc-dash-active');
+        document.querySelectorAll('.cc-dash-dot').forEach((d, i) => d.classList.toggle('active', i === this._dashCCIndex));
+    }
+
+    navToCreditCard(id) {
+        window._ccExpanded = window._ccExpanded || {};
+        window._ccExpanded[id] = true;
+        this.switchTab('creditCards');
+    }
+
     async signOut() {
         try {
             await authSignOut();
         } catch (error) {
-            console.error('Sign out error:', error);
+            Utilities.showNotification('Sign out failed', 'error');
         }
     }
 
@@ -484,6 +585,7 @@ class PersonalFinanceApp {
                     stocks: api.stocks,
                     crypto: api.crypto,
                     liabilities: api.liabilities,
+                    creditCards: api.creditCards,
                     transactions: api.transactions,
                     budgets: api.budgets,
                 };

@@ -1,13 +1,32 @@
 import Utilities from '../../utils/utils.js';
 import api from '../../services/api.js';
 
+function sortData(data, col, dir) {
+    if (!col) return data;
+    return [...data].sort((a, b) => {
+        const av = parseFloat(a[col]) || (typeof a[col] === 'string' ? a[col].toLowerCase() : 0);
+        const bv = parseFloat(b[col]) || (typeof b[col] === 'string' ? b[col].toLowerCase() : 0);
+        if (av < bv) return dir === 'asc' ? -1 : 1;
+        if (av > bv) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function th(label, col, sort) {
+    const active = sort.col === col;
+    const icon = active ? (sort.dir === 'asc' ? '▴' : '▾') : '▴▾';
+    const cls = active ? (sort.dir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc') : 'sortable';
+    return `<th class="${cls}" onclick="window.app.setSortState('fixedDeposits','${col}')">${label} <span class="sort-icon">${icon}</span></th>`;
+}
+
 export async function renderFixedDeposits(portfolioId) {
     const container = document.getElementById('content-fixedDeposits');
     container.innerHTML = '<div class="skeleton-card"></div>';
 
     try {
         const resp = await api.fixedDeposits.list(portfolioId);
-        const fds = resp?.data || [];
+        const sort = window.app?.getSortState('fixedDeposits') || { col: null, dir: 'asc' };
+        const fds = sortData(resp?.data || [], sort.col, sort.dir);
 
         const totalInvested = fds.reduce((sum, item) => sum + (parseFloat(item.invested) || 0), 0);
         const totalMaturity = fds.reduce((sum, item) => sum + (parseFloat(item.maturity) || 0), 0);
@@ -16,14 +35,14 @@ export async function renderFixedDeposits(portfolioId) {
         fds.forEach(item => {
             tableRows += `
                 <tr>
-                    <td>${item.bank_name}</td>
-                    <td>${Utilities.formatCurrency(item.invested)}</td>
-                    <td>${Utilities.formatCurrency(item.maturity)}</td>
-                    <td>${item.interest_rate}%</td>
-                    <td>${Utilities.formatDate(item.start_date)}</td>
-                    <td>${Utilities.formatDate(item.maturity_date)}</td>
+                    <td data-label="Bank">${item.bank_name}</td>
+                    <td data-label="Invested" class="mono">${Utilities.formatCurrency(item.invested)}</td>
+                    <td data-label="Maturity" class="mono">${Utilities.formatCurrency(item.maturity)}</td>
+                    <td data-label="Rate">${item.interest_rate}%</td>
+                    <td data-label="Start">${Utilities.formatDate(item.start_date)}</td>
+                    <td data-label="Maturity Date">${Utilities.formatDate(item.maturity_date)}</td>
                     <td class="actions">
-                        <button class="btn btn-sm" onclick="window.app.editEntry('fixedDeposits','${item.id}')">Edit</button>
+                        <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('fixedDeposits','${item.id}')">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('fixedDeposits','${item.id}')">Delete</button>
                     </td>
                 </tr>`;
@@ -41,7 +60,15 @@ export async function renderFixedDeposits(portfolioId) {
             ${fds.length > 0 ? `
             <div class="data-table-container">
                 <table class="data-table">
-                    <thead><tr><th>Bank</th><th>Invested</th><th>Maturity</th><th>Rate</th><th>Start</th><th>Maturity Date</th><th>Actions</th></tr></thead>
+                    <thead><tr>
+                        ${th('Bank', 'bank_name', sort)}
+                        ${th('Invested', 'invested', sort)}
+                        ${th('Maturity', 'maturity', sort)}
+                        ${th('Rate', 'interest_rate', sort)}
+                        ${th('Start', 'start_date', sort)}
+                        ${th('Maturity Date', 'maturity_date', sort)}
+                        <th>Actions</th>
+                    </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No fixed deposits added yet.</p>'}
@@ -54,4 +81,3 @@ export async function renderFixedDeposits(portfolioId) {
     }
 }
 
-export default renderFixedDeposits;

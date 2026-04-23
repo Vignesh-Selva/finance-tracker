@@ -53,27 +53,6 @@ export function deleteSnapshot(schemeCode) {
   }
 }
 
-/**
- * List all stored snapshots.
- * @returns {Map<string, Object>}
- */
-export function listSnapshots() {
-  const map = new Map();
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith(STORAGE_KEY_PREFIX)) {
-        const code = key.slice(STORAGE_KEY_PREFIX.length);
-        const data = JSON.parse(localStorage.getItem(key));
-        map.set(code, data);
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to list MF snapshots:', e);
-  }
-  return map;
-}
-
 // ─── Diff engine ──────────────────────────────────────────
 
 /**

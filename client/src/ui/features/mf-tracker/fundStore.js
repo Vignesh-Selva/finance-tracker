@@ -5,11 +5,12 @@
  * from mfapi.in + AMFI, runs snapshot diffs, and computes portfolio metrics.
  */
 
-import { getFundData, searchFunds, computeReturns } from '../../../services/mfapi.js';
-import { getAmfiFundInfo, computeAlpha, getBenchmarkForCategory } from '../../../services/amfi.js';
-import { processRefresh, loadSnapshot, getDismissedAlerts, deleteSnapshot } from '../../../services/mfSnapshot.js';
+import { getFundData } from '../../../services/mfapi.js';
+import { getAmfiFundInfo, computeAlpha } from '../../../services/amfi.js';
+import { processRefresh, getDismissedAlerts, deleteSnapshot } from '../../../services/mfSnapshot.js';
 
 const TRACKED_FUNDS_KEY = 'mf_tracked_funds';
+const PORTFOLIO_TER_KEY  = 'mf_portfolio_ter';
 
 // ─── Tracked fund list persistence ────────────────────────
 
@@ -210,6 +211,25 @@ export async function fetchAllTrackedFunds(onFundLoaded) {
   return results;
 }
 
+// ─── Portfolio TER snapshot ──────────────────────────────
+
+export function loadPortfolioTerSnapshot() {
+  try {
+    const raw = localStorage.getItem(PORTFOLIO_TER_KEY);
+    return raw ? parseFloat(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePortfolioTerSnapshot(ter) {
+  try {
+    if (ter != null) localStorage.setItem(PORTFOLIO_TER_KEY, String(ter));
+  } catch (e) {
+    console.warn('Failed to save portfolio TER snapshot:', e);
+  }
+}
+
 // ─── Portfolio summary computation ────────────────────────
 
 /**
@@ -221,11 +241,19 @@ export function computePortfolioSummary(funds) {
   const validFunds = funds.filter(f => !f.error);
   const fundCount = validFunds.length;
 
-  // Average expense ratio (weighted could be done if AUM known)
+  // Weighted expense ratio by current value; falls back to simple average
   const fundsWithER = validFunds.filter(f => f.expenseRatio != null);
-  const avgExpenseRatio = fundsWithER.length > 0
-    ? fundsWithER.reduce((s, f) => s + f.expenseRatio, 0) / fundsWithER.length
-    : null;
+  let avgExpenseRatio = null;
+  if (fundsWithER.length > 0) {
+    const weighted = fundsWithER.filter(f => f.holdings?.currentValue > 0);
+    if (weighted.length > 0) {
+      const totalVal = weighted.reduce((s, f) => s + f.holdings.currentValue, 0);
+      const wtdSum   = weighted.reduce((s, f) => s + (f.expenseRatio * f.holdings.currentValue), 0);
+      avgExpenseRatio = totalVal > 0 ? parseFloat((wtdSum / totalVal).toFixed(3)) : null;
+    } else {
+      avgExpenseRatio = parseFloat((fundsWithER.reduce((s, f) => s + f.expenseRatio, 0) / fundsWithER.length).toFixed(3));
+    }
+  }
 
   // Average 1Y return
   const fundsWithReturn = validFunds.filter(f => f.return1Y != null);

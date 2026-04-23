@@ -157,6 +157,7 @@ export const mutualFunds = createResourceApi('mutual_funds');
 export const stocks = createResourceApi('stocks');
 export const crypto = createResourceApi('crypto');
 export const liabilities = createResourceApi('liabilities');
+export const creditCards = createResourceApi('credit_cards');
 export const transactions = createResourceApi('transactions');
 export const budgets = createResourceApi('budgets');
 export const settings = createResourceApi('settings');
@@ -381,6 +382,7 @@ export default {
   stocks,
   crypto,
   liabilities,
+  creditCards,
   transactions,
   budgets,
   settings,

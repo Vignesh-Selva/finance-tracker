@@ -26,6 +26,7 @@ DROP POLICY IF EXISTS "Allow all for anon" ON mutual_funds;
 DROP POLICY IF EXISTS "Allow all for anon" ON stocks;
 DROP POLICY IF EXISTS "Allow all for anon" ON crypto;
 DROP POLICY IF EXISTS "Allow all for anon" ON liabilities;
+DROP POLICY IF EXISTS "Allow all for anon" ON credit_cards;
 DROP POLICY IF EXISTS "Allow all for anon" ON transactions;
 DROP POLICY IF EXISTS "Allow all for anon" ON budgets;
 DROP POLICY IF EXISTS "Allow all for anon" ON settings;
@@ -167,6 +168,24 @@ CREATE POLICY "Users can update own liabilities"
 CREATE POLICY "Users can delete own liabilities"
   ON liabilities FOR DELETE
   USING (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = liabilities.portfolio_id AND portfolios.user_id = auth.uid()));
+
+-- ── credit_cards ──
+CREATE POLICY "Users can view own credit_cards"
+  ON credit_cards FOR SELECT
+  USING (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = credit_cards.portfolio_id AND portfolios.user_id = auth.uid()));
+
+CREATE POLICY "Users can create own credit_cards"
+  ON credit_cards FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = credit_cards.portfolio_id AND portfolios.user_id = auth.uid()));
+
+CREATE POLICY "Users can update own credit_cards"
+  ON credit_cards FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = credit_cards.portfolio_id AND portfolios.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = credit_cards.portfolio_id AND portfolios.user_id = auth.uid()));
+
+CREATE POLICY "Users can delete own credit_cards"
+  ON credit_cards FOR DELETE
+  USING (EXISTS (SELECT 1 FROM portfolios WHERE portfolios.id = credit_cards.portfolio_id AND portfolios.user_id = auth.uid()));
 
 -- ── transactions ──
 CREATE POLICY "Users can view own transactions"

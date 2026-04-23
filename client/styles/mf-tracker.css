@@ -410,6 +410,18 @@
 .mft-chip-value.neutral  { color: var(--mft-text); }
 .mft-chip-value.accent   { color: var(--mft-accent); }
 
+.mft-ter-delta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.02em;
+}
+.mft-ter-delta.positive { color: var(--mft-green); background: rgba(16,185,129,0.12); }
+.mft-ter-delta.negative { color: var(--mft-red);   background: rgba(239,68,68,0.12);  }
+
 /* ─── Change Alert Badges ─────────────────────────────── */
 .mft-alerts {
   display: flex;

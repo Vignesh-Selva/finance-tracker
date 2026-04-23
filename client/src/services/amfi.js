@@ -144,27 +144,6 @@ export async function getAmfiFundInfo(schemeCode) {
   return data.get(schemeCode) || null;
 }
 
-/**
- * Search AMFI data by fund name (case-insensitive partial match).
- * @param {string} query
- * @param {number} limit
- * @returns {Promise<Array>}
- */
-export async function searchAmfiFunds(query, limit = 20) {
-  const data = await fetchAmfiData();
-  const q = query.toLowerCase();
-  const results = [];
-
-  for (const [, record] of data) {
-    if (record.schemeName.toLowerCase().includes(q)) {
-      results.push(record);
-      if (results.length >= limit) break;
-    }
-  }
-
-  return results;
-}
-
 // ─── Benchmark approximate trailing returns ───────────────
 // These are hardcoded approximate values updated periodically.
 // In production, these would be fetched from NSE India or Yahoo Finance.
@@ -247,19 +226,3 @@ export function computeAlpha(fundReturn1Y, category) {
   };
 }
 
-/**
- * Update benchmark returns manually (for when you fetch fresh data).
- * @param {string} benchmarkName
- * @param {{return1Y?: number, return3Y?: number, return5Y?: number}} returns
- */
-export function updateBenchmarkReturns(benchmarkName, returns) {
-  if (BENCHMARK_RETURNS[benchmarkName]) {
-    Object.assign(BENCHMARK_RETURNS[benchmarkName], returns);
-  }
-}
-
-/** Clear the AMFI cache. */
-export function clearAmfiCache() {
-  amfiCache = null;
-  amfiCacheTs = 0;
-}

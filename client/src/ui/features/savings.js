@@ -1,13 +1,32 @@
 import Utilities from '../../utils/utils.js';
 import api from '../../services/api.js';
 
+function sortData(data, col, dir) {
+    if (!col) return data;
+    return [...data].sort((a, b) => {
+        const av = parseFloat(a[col]) || (typeof a[col] === 'string' ? a[col].toLowerCase() : 0);
+        const bv = parseFloat(b[col]) || (typeof b[col] === 'string' ? b[col].toLowerCase() : 0);
+        if (av < bv) return dir === 'asc' ? -1 : 1;
+        if (av > bv) return dir === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function th(label, col, sort) {
+    const active = sort.col === col;
+    const icon = active ? (sort.dir === 'asc' ? '▴' : '▾') : '▴▾';
+    const cls = active ? (sort.dir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc') : 'sortable';
+    return `<th class="${cls}" onclick="window.app.setSortState('savings','${col}')">${label} <span class="sort-icon">${icon}</span></th>`;
+}
+
 export async function renderSavings(portfolioId) {
     const container = document.getElementById('content-savings');
     container.innerHTML = '<div class="skeleton-card"></div>';
 
     try {
         const resp = await api.savings.list(portfolioId);
-        const savings = resp?.data || [];
+        const sort = window.app?.getSortState('savings') || { col: null, dir: 'asc' };
+        const savings = sortData(resp?.data || [], sort.col, sort.dir);
 
         const total = savings.reduce((sum, item) => sum + (parseFloat(item.balance) || 0), 0);
 
@@ -15,11 +34,11 @@ export async function renderSavings(portfolioId) {
         savings.forEach(item => {
             tableRows += `
                 <tr>
-                    <td>${item.bank_name}</td>
-                    <td>${item.account_type}</td>
-                    <td>${Utilities.formatCurrency(item.balance)}</td>
+                    <td data-label="Bank">${item.bank_name}</td>
+                    <td data-label="Type">${item.account_type}</td>
+                    <td data-label="Balance" class="mono">${Utilities.formatCurrency(item.balance)}</td>
                     <td class="actions">
-                        <button class="btn btn-sm" onclick="window.app.editEntry('savings','${item.id}')">Edit</button>
+                        <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('savings','${item.id}')">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('savings','${item.id}')">Delete</button>
                     </td>
                 </tr>`;
@@ -39,7 +58,12 @@ export async function renderSavings(portfolioId) {
             ${savings.length > 0 ? `
             <div class="data-table-container">
                 <table class="data-table">
-                    <thead><tr><th>Bank</th><th>Type</th><th>Balance</th><th>Actions</th></tr></thead>
+                    <thead><tr>
+                        ${th('Bank', 'bank_name', sort)}
+                        ${th('Type', 'account_type', sort)}
+                        ${th('Balance', 'balance', sort)}
+                        <th>Actions</th>
+                    </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No savings accounts added yet. Click "+ Add Account" to get started.</p>'}
@@ -52,4 +76,3 @@ export async function renderSavings(portfolioId) {
     }
 }
 
-export default renderSavings;

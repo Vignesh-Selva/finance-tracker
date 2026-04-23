@@ -1,5 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fetchAllTrackedFunds, getTrackedFunds, trackFund, untrackFund } from '../../../../src/ui/features/mf-tracker/fundStore.js';
+import {
+  fetchAllTrackedFunds,
+  getTrackedFunds,
+  trackFund,
+  untrackFund,
+  computePortfolioSummary,
+  loadPortfolioTerSnapshot,
+  savePortfolioTerSnapshot,
+  getManualData,
+  setManualData,
+  setPortfolioContext,
+  getPortfolioContext,
+  exportFundData,
+} from '../../../../src/ui/features/mf-tracker/fundStore.js';
 
 // Mock the dependencies
 vi.mock('../../../../src/services/mfapi.js', () => ({
@@ -146,5 +159,142 @@ describe('fundStore', () => {
       const tracked = getTrackedFunds();
       expect(tracked).toHaveLength(2);
     });
+  });
+});
+
+describe('computePortfolioSummary', () => {
+  it('counts only valid (non-error) funds', () => {
+    const funds = [
+      { schemeCode: '1', return1Y: 10 },
+      { schemeCode: '2', error: 'Failed' },
+    ];
+    const summary = computePortfolioSummary(funds);
+    expect(summary.fundCount).toBe(1);
+  });
+
+  it('computes weighted expense ratio using currentValue', () => {
+    const funds = [
+      { schemeCode: '1', expenseRatio: 1.0, holdings: { currentValue: 100000, gainLoss: 0 } },
+      { schemeCode: '2', expenseRatio: 2.0, holdings: { currentValue: 100000, gainLoss: 0 } },
+    ];
+    const { avgExpenseRatio } = computePortfolioSummary(funds);
+    expect(avgExpenseRatio).toBeCloseTo(1.5, 2);
+  });
+
+  it('falls back to simple average when no holdings have currentValue', () => {
+    const funds = [
+      { schemeCode: '1', expenseRatio: 1.0 },
+      { schemeCode: '2', expenseRatio: 3.0 },
+    ];
+    const { avgExpenseRatio } = computePortfolioSummary(funds);
+    expect(avgExpenseRatio).toBeCloseTo(2.0, 2);
+  });
+
+  it('returns null avgExpenseRatio when no funds have expenseRatio', () => {
+    const funds = [{ schemeCode: '1', return1Y: 10 }];
+    expect(computePortfolioSummary(funds).avgExpenseRatio).toBeNull();
+  });
+
+  it('computes average 1Y return', () => {
+    const funds = [
+      { schemeCode: '1', return1Y: 10 },
+      { schemeCode: '2', return1Y: 20 },
+    ];
+    expect(computePortfolioSummary(funds).avgReturn1Y).toBeCloseTo(15);
+  });
+
+  it('returns empty summary for empty array', () => {
+    const s = computePortfolioSummary([]);
+    expect(s.fundCount).toBe(0);
+    expect(s.avgExpenseRatio).toBeNull();
+    expect(s.avgReturn1Y).toBeNull();
+    expect(s.totalExposure).toBeNull();
+  });
+});
+
+describe('loadPortfolioTerSnapshot / savePortfolioTerSnapshot', () => {
+  beforeEach(() => mockLocalStorage.clear());
+
+  it('returns null when no snapshot stored', () => {
+    expect(loadPortfolioTerSnapshot()).toBeNull();
+  });
+
+  it('saves and loads a TER value', () => {
+    savePortfolioTerSnapshot(1.75);
+    expect(loadPortfolioTerSnapshot()).toBeCloseTo(1.75);
+  });
+
+  it('ignores null save', () => {
+    savePortfolioTerSnapshot(null);
+    expect(loadPortfolioTerSnapshot()).toBeNull();
+  });
+});
+
+describe('getManualData / setManualData', () => {
+  beforeEach(() => mockLocalStorage.clear());
+
+  it('returns empty object for unknown code', () => {
+    expect(getManualData('999')).toEqual({});
+  });
+
+  it('stores and retrieves manual data', () => {
+    setManualData('119551', { expenseRatio: 1.5, fundManager: 'John' });
+    const data = getManualData('119551');
+    expect(data.expenseRatio).toBe(1.5);
+    expect(data.fundManager).toBe('John');
+  });
+
+  it('merges additional fields without losing existing ones', () => {
+    setManualData('119551', { expenseRatio: 1.5 });
+    setManualData('119551', { fundManager: 'Jane' });
+    const data = getManualData('119551');
+    expect(data.expenseRatio).toBe(1.5);
+    expect(data.fundManager).toBe('Jane');
+  });
+});
+
+describe('setPortfolioContext / getPortfolioContext', () => {
+  it('stores and retrieves context array', () => {
+    const ctx = [{ schemeCode: '1', units: 100, buyNav: 50 }];
+    setPortfolioContext(ctx);
+    expect(getPortfolioContext()).toEqual(ctx);
+  });
+
+  it('defaults to empty array for non-array input', () => {
+    setPortfolioContext(null);
+    expect(getPortfolioContext()).toEqual([]);
+  });
+});
+
+describe('exportFundData', () => {
+  it('filters out error funds', () => {
+    const funds = [
+      { schemeCode: '1', name: 'Fund A', nav: 100, return1Y: 10, return3Y: 12, return5Y: 14, expenseRatio: 1.5, aum: 1000, alpha: 2, changes: {} },
+      { schemeCode: '2', error: 'Failed' },
+    ];
+    const exported = exportFundData(funds);
+    expect(exported).toHaveLength(1);
+    expect(exported[0].schemeCode).toBe('1');
+  });
+
+  it('maps fields to integration shape', () => {
+    const funds = [
+      {
+        schemeCode: '1', name: 'Fund A', nav: 100, return1Y: 10, return3Y: 12,
+        return5Y: 14, expenseRatio: 1.5, aum: 500, alpha: 2, changes: {},
+        holdings: { currentValue: 50000, gainLoss: 5000, gainLossPct: 11 },
+      },
+    ];
+    const [e] = exportFundData(funds);
+    expect(e.currentValue).toBe(50000);
+    expect(e.gainLoss).toBe(5000);
+    expect(e.gainLossPct).toBe(11);
+  });
+
+  it('handles missing holdings gracefully', () => {
+    const funds = [{ schemeCode: '1', name: 'X', nav: 10, changes: {} }];
+    const [e] = exportFundData(funds);
+    expect(e.currentValue).toBeNull();
+    expect(e.gainLoss).toBeNull();
   });
 });

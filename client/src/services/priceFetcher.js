@@ -118,6 +118,113 @@ export async function fetchStockPrice(ticker) {
   }
 }
 
+// ─── Refresh Mutual Fund Prices Only ──────────────────────
+
+export async function refreshMutualFundPrices(portfolioId) {
+  const errors = [];
+  const results = [];
+
+  const { data: mfHoldings } = await supabase
+    .from('mutual_funds').select('*').eq('portfolio_id', portfolioId);
+
+  for (const mf of (mfHoldings || [])) {
+    if (!mf.scheme_code) continue;
+    try {
+      const { nav } = await fetchMutualFundNAV(mf.scheme_code);
+      const units = parseFloat(mf.units) || 0;
+      const current = parseFloat((units * nav).toFixed(2));
+      await supabase.from('mutual_funds').update({ current }).eq('id', mf.id);
+      await supabase.from('price_cache').upsert({
+        asset_type: 'mutual_fund', identifier: mf.scheme_code,
+        price: nav, currency: 'INR', fetched_at: new Date().toISOString(),
+      }, { onConflict: 'asset_type,identifier,currency' });
+      results.push({ id: mf.id, fund_name: mf.fund_name, nav, current });
+    } catch (err) {
+      errors.push(`MF ${mf.fund_name}: ${err.message}`);
+    }
+  }
+  await updateLastSync(portfolioId);
+  return { results, errors, refreshedAt: new Date().toISOString() };
+}
+
+// ─── Refresh Stock Prices Only ────────────────────────────
+
+export async function refreshStockPricesOnly(portfolioId) {
+  const errors = [];
+  const results = [];
+
+  const { data: stockHoldings } = await supabase
+    .from('stocks').select('*').eq('portfolio_id', portfolioId);
+
+  for (const stock of (stockHoldings || [])) {
+    if (!stock.ticker) continue;
+    try {
+      const { price } = await fetchStockPrice(stock.ticker);
+      const quantity = parseFloat(stock.quantity) || 0;
+      const current = parseFloat((quantity * price).toFixed(2));
+      await supabase.from('stocks').update({ current }).eq('id', stock.id);
+      await supabase.from('price_cache').upsert({
+        asset_type: 'stock', identifier: stock.ticker,
+        price, currency: 'INR', fetched_at: new Date().toISOString(),
+      }, { onConflict: 'asset_type,identifier,currency' });
+      results.push({ id: stock.id, stock_name: stock.stock_name, price, current });
+    } catch (err) {
+      errors.push(`Stock ${stock.stock_name} (${stock.ticker}): ${err.message}`);
+    }
+  }
+  await updateLastSync(portfolioId);
+  return { results, errors, refreshedAt: new Date().toISOString() };
+}
+
+// ─── Refresh Crypto Prices Only ───────────────────────────
+
+export async function refreshCryptoPricesOnly(portfolioId) {
+  const errors = [];
+  const results = [];
+
+  const { data: cryptoHoldings } = await supabase
+    .from('crypto').select('*').eq('portfolio_id', portfolioId);
+
+  const coinNames = [...new Set((cryptoHoldings || []).map(c => c.coin_name).filter(Boolean))];
+  if (coinNames.length > 0) {
+    try {
+      const prices = await fetchCryptoPrices(coinNames);
+      for (const crypto of (cryptoHoldings || [])) {
+        if (!crypto.coin_name || !prices[crypto.coin_name]) continue;
+        try {
+          const price = prices[crypto.coin_name];
+          const quantity = parseFloat(crypto.quantity) || 0;
+          const current = parseFloat((quantity * price).toFixed(2));
+          await supabase.from('crypto').update({ current }).eq('id', crypto.id);
+          await supabase.from('price_cache').upsert({
+            asset_type: 'crypto', identifier: crypto.coin_name,
+            price, currency: 'INR', fetched_at: new Date().toISOString(),
+          }, { onConflict: 'asset_type,identifier,currency' });
+          results.push({ id: crypto.id, coin_name: crypto.coin_name, price, current });
+        } catch (err) {
+          errors.push(`Crypto ${crypto.coin_name}: ${err.message}`);
+        }
+      }
+    } catch (err) {
+      errors.push(`Crypto batch: ${err.message}`);
+    }
+  }
+  await updateLastSync(portfolioId);
+  return { results, errors, refreshedAt: new Date().toISOString() };
+}
+
+// ─── Update last_sync in settings ─────────────────────────
+
+async function updateLastSync(portfolioId) {
+  const { data: settingsData } = await supabase
+    .from('settings').select('id').eq('portfolio_id', portfolioId).limit(1).single();
+  if (settingsData?.id) {
+    await supabase.from('settings').update({
+      last_sync: new Date().toISOString(),
+    }).eq('id', settingsData.id);
+  }
+}
+
 // ─── Refresh All Prices for a Portfolio ───────────────────
 
 export async function refreshAllPrices(portfolioId) {
@@ -217,19 +324,7 @@ export async function refreshAllPrices(portfolioId) {
     }
   }
 
-  // Update last_sync timestamp in settings
-  const { data: settingsData } = await supabase
-    .from('settings')
-    .select('id')
-    .eq('portfolio_id', portfolioId)
-    .limit(1)
-    .single();
-
-  if (settingsData?.id) {
-    await supabase.from('settings').update({
-      last_sync: new Date().toISOString(),
-    }).eq('id', settingsData.id);
-  }
+  await updateLastSync(portfolioId);
 
   return { results, errors, refreshedAt: new Date().toISOString() };
 }
