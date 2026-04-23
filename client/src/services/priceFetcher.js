@@ -233,5 +233,3 @@ export async function refreshAllPrices(portfolioId) {
 
   return { results, errors, refreshedAt: new Date().toISOString() };
 }
-
-export default { fetchMutualFundNAV, fetchCryptoPrices, fetchStockPrice, refreshAllPrices };

@@ -1,0 +1,706 @@
+/* ═══════════════════════════════════════════════════════════
+   Mutual Fund Tracker — Scoped Styles
+   Design: Dark theme cards with glow effects, DM Sans/Mono
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Design Tokens (scoped under .mft) ───────────────── */
+.mft {
+  /* Inherit all tokens from parent design system */
+  --mft-bg:         var(--bg-primary);
+  --mft-card:       var(--bg-card);
+  --mft-card-border:var(--border);
+  --mft-accent:     var(--accent);
+  --mft-accent-glow:var(--accent-glow);
+  --mft-green:      var(--green);
+  --mft-red:        var(--red);
+  --mft-yellow:     var(--yellow);
+  --mft-orange:     #f97316;
+  --mft-highlight:  var(--highlight);
+  --mft-text:       var(--text-primary);
+  --mft-muted:      var(--text-muted);
+  --mft-font-ui:    var(--font-ui);
+  --mft-font-mono:  var(--font-mono);
+}
+
+.mft {
+  font-family: var(--mft-font-ui);
+  color: var(--mft-text);
+}
+
+/* ─── Portfolio Summary Bar ───────────────────────────── */
+.mft-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mft-summary-card {
+  background: var(--mft-card);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.mft-summary-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mft-accent);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.mft-summary-label {
+  font-size: 0.78rem;
+  color: var(--mft-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.mft-summary-value {
+  font-family: var(--mft-font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Controls Bar ────────────────────────────────────── */
+.mft-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.mft-search-box {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+}
+
+.mft-search-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: var(--mft-card);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 8px;
+  color: var(--mft-text);
+  font-family: var(--mft-font-ui);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mft-search-input:focus {
+  border-color: var(--mft-accent);
+  box-shadow: 0 0 0 3px var(--mft-accent-glow);
+}
+
+.mft-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mft-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.mft-search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--mft-card);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: var(--shadow-card);
+}
+
+.mft-search-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--mft-card-border);
+  transition: background 0.15s;
+}
+
+.mft-search-item:last-child {
+  border-bottom: none;
+}
+
+.mft-search-item:hover {
+  background: var(--mft-highlight);
+}
+
+.mft-search-item-code {
+  font-family: var(--mft-font-mono);
+  color: var(--mft-muted);
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+/* Filter / Sort pills */
+.mft-filter-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mft-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--mft-card-border);
+  background: var(--mft-card);
+  color: var(--mft-text);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.mft-pill:hover,
+.mft-pill.active {
+  border-color: var(--mft-accent);
+  background: var(--mft-accent-glow);
+  color: var(--mft-accent);
+}
+
+.mft-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--mft-font-ui);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mft-btn-primary {
+  background: var(--mft-accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.mft-btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.mft-btn-ghost {
+  background: transparent;
+  color: var(--mft-muted);
+  border: 1px solid var(--mft-card-border);
+}
+
+.mft-btn-ghost:hover {
+  color: var(--mft-text);
+  border-color: var(--mft-text);
+}
+
+.mft-btn-sm {
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
+.mft-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--mft-muted);
+  font-size: 1rem;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.mft-btn-icon:hover {
+  color: var(--mft-text);
+  transform: scale(1.15);
+}
+
+/* ─── Fund Card ───────────────────────────────────────── */
+.mft-card {
+  background: var(--mft-card);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  animation: mftFadeIn 0.35s ease-out both;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mft-card:hover {
+  border-color: var(--mft-accent);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+@keyframes mftFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation delay for each card */
+.mft-card:nth-child(1) { animation-delay: 0s; }
+.mft-card:nth-child(2) { animation-delay: 0.06s; }
+.mft-card:nth-child(3) { animation-delay: 0.12s; }
+.mft-card:nth-child(4) { animation-delay: 0.18s; }
+.mft-card:nth-child(5) { animation-delay: 0.24s; }
+.mft-card:nth-child(6) { animation-delay: 0.30s; }
+.mft-card:nth-child(7) { animation-delay: 0.36s; }
+.mft-card:nth-child(8) { animation-delay: 0.42s; }
+
+.mft-card-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  gap: 12px;
+  user-select: none;
+}
+
+.mft-card-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Status dot with glow */
+.mft-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mft-status-dot.green {
+  background: var(--mft-green);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.mft-status-dot.yellow {
+  background: var(--mft-yellow);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.mft-status-dot.red {
+  background: var(--mft-red);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.mft-status-dot.orange {
+  background: var(--mft-orange);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}
+
+.mft-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.mft-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mft-card-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+/* Category badge */
+.mft-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mft-badge-category {
+  background: var(--mft-accent-glow);
+  color: var(--mft-accent);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.mft-badge-amc {
+  color: var(--mft-muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  text-transform: none;
+}
+
+/* Card header actions */
+.mft-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mft-expand-arrow {
+  color: var(--mft-muted);
+  font-size: 0.75rem;
+  transition: transform 0.25s;
+  margin-left: 4px;
+}
+
+.mft-card.expanded .mft-expand-arrow {
+  transform: rotate(180deg);
+}
+
+/* ─── Metric Chips Row ────────────────────────────────── */
+.mft-metrics {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 14px;
+  flex-wrap: wrap;
+}
+
+.mft-chip {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 8px;
+  min-width: 100px;
+  transition: background 0.2s;
+}
+
+.mft-chip:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mft-chip-label {
+  font-size: 0.68rem;
+  color: var(--mft-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.mft-chip-value {
+  font-family: var(--mft-font-mono);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.mft-chip-value.positive { color: var(--mft-green); }
+.mft-chip-value.negative { color: var(--mft-red); }
+.mft-chip-value.neutral  { color: var(--mft-text); }
+.mft-chip-value.accent   { color: var(--mft-accent); }
+
+/* ─── Change Alert Badges ─────────────────────────────── */
+.mft-alerts {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 12px;
+  flex-wrap: wrap;
+}
+
+.mft-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  animation: mftFadeIn 0.3s ease-out;
+}
+
+.mft-alert-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--mft-red);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.mft-alert-yellow {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--mft-yellow);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.mft-alert-orange {
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--mft-orange);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.mft-alert-green {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--mft-green);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.mft-alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--mft-accent);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.mft-alert-dismiss {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.8rem;
+  margin-left: 2px;
+}
+
+.mft-alert-dismiss:hover {
+  opacity: 1;
+}
+
+/* ─── Expanded Card Body ──────────────────────────────── */
+.mft-card-body {
+  display: none;
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--mft-card-border);
+  animation: mftSlideDown 0.25s ease-out;
+}
+
+.mft-card.expanded .mft-card-body {
+  display: block;
+}
+
+@keyframes mftSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mft-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.mft-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mft-detail-label {
+  font-size: 0.72rem;
+  color: var(--mft-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mft-detail-value {
+  font-family: var(--mft-font-mono);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* Holdings value (when portfolioContext is provided) */
+.mft-holdings {
+  background: var(--mft-highlight);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.mft-holdings-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mft-holdings-label {
+  font-size: 0.68rem;
+  color: var(--mft-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mft-holdings-value {
+  font-family: var(--mft-font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* AI Summary section */
+.mft-ai-summary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.12);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--mft-text);
+}
+
+.mft-ai-summary-header {
+  font-size: 0.7rem;
+  color: var(--mft-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* ─── Loading State ───────────────────────────────────── */
+.mft-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--mft-muted);
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.mft-loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mft-loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mft-accent);
+  animation: mftBounce 1.4s infinite ease-in-out both;
+}
+
+.mft-loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.mft-loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+.mft-loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+@keyframes mftBounce {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* Card-level loading spinner */
+.mft-card-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  color: var(--mft-muted);
+  font-size: 0.82rem;
+}
+
+.mft-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--mft-card-border);
+  border-top-color: var(--mft-accent);
+  border-radius: 50%;
+  animation: mftSpin 0.8s linear infinite;
+}
+
+@keyframes mftSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Empty State ─────────────────────────────────────── */
+.mft-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--mft-muted);
+}
+
+.mft-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.mft-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--mft-text);
+  margin-bottom: 6px;
+}
+
+.mft-empty-sub {
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+/* ─── Sort Dropdown ───────────────────────────────────── */
+.mft-sort-select {
+  padding: 8px 12px;
+  background: var(--mft-card);
+  border: 1px solid var(--mft-card-border);
+  border-radius: 8px;
+  color: var(--mft-text);
+  font-family: var(--mft-font-ui);
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.mft-sort-select:focus {
+  border-color: var(--mft-accent);
+}
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mft-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mft-metrics {
+    gap: 6px;
+  }
+
+  .mft-chip {
+    min-width: 80px;
+    padding: 6px 10px;
+  }
+
+  .mft-chip-value {
+    font-size: 0.82rem;
+  }
+
+  .mft-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mft-holdings {
+    grid-template-columns: 1fr;
+  }
+
+  .mft-card-name {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mft-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .mft-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

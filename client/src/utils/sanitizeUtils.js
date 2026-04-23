@@ -36,5 +36,3 @@ export const SanitizeUtils = {
         }
     }
 };
-
-export default SanitizeUtils;

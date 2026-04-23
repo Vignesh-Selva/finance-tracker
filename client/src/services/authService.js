@@ -33,5 +33,3 @@ export function onAuthStateChange(callback) {
   });
   return subscription;
 }
-
-export default { signIn, signUp, signOut, getSession, onAuthStateChange };

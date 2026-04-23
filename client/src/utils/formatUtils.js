@@ -54,5 +54,3 @@ export const FormatUtils = {
         }
     }
 };
-
-export default FormatUtils;

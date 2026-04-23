@@ -72,5 +72,3 @@ export const DataUtils = {
         });
     }
 };
-
-export default DataUtils;
