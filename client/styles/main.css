@@ -536,8 +536,8 @@ body {
 .negative { color: var(--red); }
 
 /* Finance value classes with monospace font */
-.value-positive { color: var(--green); font-family: var(--font-mono); font-weight: 600; }
-.value-negative { color: var(--red);   font-family: var(--font-mono); font-weight: 600; }
+.value-positive { color: var(--green) !important; font-family: var(--font-mono); font-weight: 600; }
+.value-negative { color: var(--red) !important;   font-family: var(--font-mono); font-weight: 600; }
 .value-neutral  { color: var(--text-secondary); font-family: var(--font-mono); }
 .mono           { font-family: var(--font-mono); }
 
@@ -944,6 +944,26 @@ body {
     border-radius: 14px;
     padding: 20px;
     box-shadow: var(--shadow-card);
+}
+
+/* Drill-down expand button in allocation legend */
+.btn-drill {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 5px;
+    margin-left: auto;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.btn-drill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 /* Notification variants */

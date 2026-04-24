@@ -14,7 +14,7 @@ function sortData(data, col, dir) {
 
 function th(label, col, sort) {
     const active = sort.col === col;
-    const icon = active ? (sort.dir === 'asc' ? '▴' : '▾') : '▴▾';
+    const icon = active ? (sort.dir === 'asc' ? '▲' : '▼') : '▲▼';
     const cls = active ? (sort.dir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc') : 'sortable';
     return `<th class="${cls}" onclick="window.app.setSortState('fixedDeposits','${col}')">${label} <span class="sort-icon">${icon}</span></th>`;
 }

@@ -1,4 +1,5 @@
 import Utilities from '../../utils/utils.js';
+import { FinanceUtils } from '../../utils/financeUtils.js';
 import api from '../../services/api.js';
 import { searchFunds } from '../../services/mfapi.js';
 import { dismissAlert } from '../../services/mfSnapshot.js';
@@ -13,9 +14,12 @@ import {
     setPortfolioContext,
     loadPortfolioTerSnapshot, savePortfolioTerSnapshot,
 } from './mf-tracker/fundStore.js';
+import { renderOrderHistoryTab, preSelectOrderHistoryHolding } from './order-history/orderHistory.js';
+import { computeDerivedPosition, groupOrdersByHolding } from '../../services/orderEngine.js';
 
 // ─── Module state ──────────────────────────────────────────
-let _activeTab = 'portfolio';     // 'portfolio' | 'tracker'
+let _activeTab = 'portfolio';     // 'portfolio' | 'tracker' | 'sip' | 'tax' | 'orderHistory'
+let _mfShowClosed = false;
 let _fundDataCache = [];
 let _sortBy = 'name';
 let _filterCategory = 'all';
@@ -40,6 +44,13 @@ export async function renderMutualFunds(portfolioId) {
 
     if (_activeTab === 'portfolio') {
         await renderPortfolioTab(container, portfolioId);
+    } else if (_activeTab === 'sip') {
+        await renderSIPTab(container, portfolioId);
+    } else if (_activeTab === 'tax') {
+        await renderTaxTab(container, portfolioId);
+    } else if (_activeTab === 'orderHistory') {
+        const content = container.querySelector('#mft-tab-content');
+        await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
     } else {
         await renderTrackerTab(container);
     }
@@ -56,8 +67,17 @@ function buildPageShell() {
                 <button class="mft-tab ${_activeTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">
                     📊 Portfolio
                 </button>
+                <button class="mft-tab ${_activeTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">
+                    📋 Order History
+                </button>
+                <button class="mft-tab ${_activeTab === 'sip' ? 'active' : ''}" data-tab="sip">
+                    📅 SIP Tracker
+                </button>
                 <button class="mft-tab ${_activeTab === 'tracker' ? 'active' : ''}" data-tab="tracker">
                     🔍 Fund Research
+                </button>
+                <button class="mft-tab ${_activeTab === 'tax' ? 'active' : ''}" data-tab="tax">
+                    🧾 Tax Harvest
                 </button>
             </div>
             <div id="mft-tab-content"></div>
@@ -74,6 +94,12 @@ function attachTabEvents(container, portfolioId) {
             content.innerHTML = '';
             if (_activeTab === 'portfolio') {
                 await renderPortfolioTab(container, portfolioId);
+            } else if (_activeTab === 'sip') {
+                await renderSIPTab(container, portfolioId);
+            } else if (_activeTab === 'tax') {
+                await renderTaxTab(container, portfolioId);
+            } else if (_activeTab === 'orderHistory') {
+                await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
             } else {
                 await renderTrackerTab(container);
             }
@@ -94,7 +120,7 @@ function sortData(data, col, dir) {
 
 function th(label, col, sort) {
     const active = sort.col === col;
-    const icon = active ? (sort.dir === 'asc' ? '▴' : '▾') : '▴▾';
+    const icon = active ? (sort.dir === 'asc' ? '▲' : '▼') : '▲▼';
     const cls = active ? (sort.dir === 'asc' ? 'sortable sort-asc' : 'sortable sort-desc') : 'sortable';
     return `<th class="${cls}" onclick="window.app.setSortState('mutualFunds','${col}')">${label} <span class="sort-icon">${icon}</span></th>`;
 }
@@ -105,26 +131,71 @@ async function renderPortfolioTab(container, portfolioId) {
     content.innerHTML = '<div class="skeleton-card"></div>';
 
     try {
-        const resp = await api.mutualFunds.list(portfolioId);
+        const [mfResp, ordersResp] = await Promise.all([
+            api.mutualFunds.list(portfolioId),
+            api.mfOrders.list(portfolioId),
+        ]);
         const sort = window.app?.getSortState('mutualFunds') || { col: null, dir: 'asc' };
-        const funds = sortData(resp?.data || [], sort.col, sort.dir);
+        const allFunds = mfResp?.data || [];
+        const allOrders = ordersResp?.data || [];
+        const ordersByHolding = groupOrdersByHolding(allOrders, 'mf_id');
 
-        const totalInvested = funds.reduce((s, i) => s + (parseFloat(i.invested) || 0), 0);
-        const totalCurrent = funds.reduce((s, i) => s + (parseFloat(i.current) || 0), 0);
+        const resolvedFunds = allFunds.map(item => {
+            const holdingOrders = ordersByHolding.get(item.id) || [];
+            if (holdingOrders.length > 0) {
+                const pos = computeDerivedPosition(holdingOrders, 'units');
+                const firstOrderDate = holdingOrders.map(o => o.execution_date).filter(Boolean).sort()[0] || null;
+                return { ...item, _derived: true, _units: pos.units, _invested: pos.invested, _firstOrderDate: firstOrderDate };
+            }
+            return { ...item, _derived: false, _units: parseFloat(item.units) || 0, _invested: parseFloat(item.invested) || 0, _firstOrderDate: null };
+        });
+
+        const visibleFunds = _mfShowClosed
+            ? resolvedFunds
+            : resolvedFunds.filter(f => !(f._derived && f._units === 0));
+        const funds = sortData(visibleFunds, sort.col, sort.dir);
+
+        const totalInvested = funds.reduce((s, f) => s + f._invested, 0);
+        const totalCurrent = funds.reduce((s, f) => s + (parseFloat(f.current) || 0), 0);
         const totalPL = totalCurrent - totalInvested;
         const plPercent = totalInvested > 0 ? ((totalPL / totalInvested) * 100).toFixed(2) : '0.00';
+        const closedCount = resolvedFunds.filter(f => f._derived && f._units === 0).length;
 
         let tableRows = '';
         funds.forEach(item => {
-            const pl = (parseFloat(item.current) || 0) - (parseFloat(item.invested) || 0);
-            const plPct = parseFloat(item.invested) > 0 ? ((pl / item.invested) * 100).toFixed(2) : '0.00';
+            const invested = item._invested;
+            const current = parseFloat(item.current) || 0;
+            const pl = current - invested;
+            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+            const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
+            const xirrCell = xirr !== null
+                ? `<span class="${parseFloat(xirr.value) >= 0 ? 'value-positive' : 'value-negative'}" ${xirr.hint ? `title="${xirr.hint}"` : ''}>${xirr.value}%${xirr.hint ? '*' : ''}</span>`
+                : '<span style="color:var(--text-muted)">—</span>';
+
+            const isClosed = item._derived && item._units === 0;
+            const rowStyle = isClosed ? 'opacity:0.5;' : '';
+
+            let unitsCell;
+            if (isClosed) {
+                unitsCell = `<span class="badge badge-muted">Closed</span>`;
+            } else if (!item._derived) {
+                unitsCell = `
+                    <span class="mono" style="font-size:12px;">${item._units.toFixed(4)}</span>
+                    <span class="badge badge-muted" style="cursor:pointer;margin-left:4px;font-size:10px;"
+                        data-legacy-fund="${item.id}" title="No order history — click to add orders">No history</span>`;
+            } else {
+                unitsCell = `<span class="mono" style="font-size:12px;">${item._units.toFixed(4)}</span>`;
+            }
+
             tableRows += `
-                <tr>
+                <tr style="${rowStyle}">
                     <td data-label="Fund">${item.fund_name}</td>
                     <td data-label="Type">${item.fund_type || 'Equity'}</td>
-                    <td data-label="Invested" class="mono">${Utilities.formatCurrency(item.invested)}</td>
-                    <td data-label="Current" class="mono">${Utilities.formatCurrency(item.current)}</td>
+                    <td data-label="Units">${unitsCell}</td>
+                    <td data-label="Invested" class="mono">${Utilities.formatCurrency(invested)}</td>
+                    <td data-label="Current" class="mono">${Utilities.formatCurrency(current)}</td>
                     <td data-label="P/L" class="mono ${pl >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(pl)} (${plPct}%)</td>
+                    <td data-label="XIRR" class="mono">${xirrCell}</td>
                     <td class="actions">
                         <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('mutualFunds','${item.id}')">Edit</button>
                         <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('mutualFunds','${item.id}')">Delete</button>
@@ -134,7 +205,12 @@ async function renderPortfolioTab(container, portfolioId) {
 
         content.innerHTML = `
             <div class="section-header" style="margin-top:20px;">
-                <div></div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    ${closedCount > 0 ? `
+                    <button class="btn btn-ghost btn-sm" id="mf-toggle-closed">
+                        ${_mfShowClosed ? '📁 Hide Closed' : '📂 Show Closed'} (${closedCount})
+                    </button>` : ''}
+                </div>
                 <div style="display:flex; gap:10px;">
                     <button class="btn btn-primary" onclick="window.app.showAddForm('mutualFunds')">+ Add Fund</button>
                     <button class="btn btn-ghost" onclick="window.app.refreshMutualFundsLive()">🔄 Refresh NAV</button>
@@ -160,18 +236,265 @@ async function renderPortfolioTab(container, portfolioId) {
                     <thead><tr>
                         ${th('Fund', 'fund_name', sort)}
                         ${th('Type', 'fund_type', sort)}
+                        <th>Units</th>
                         ${th('Invested', 'invested', sort)}
                         ${th('Current', 'current', sort)}
                         ${th('P/L', 'current', sort)}
+                        <th title="Extended IRR — uses first order date if available, otherwise record creation date">XIRR</th>
                         <th>Actions</th>
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No mutual funds added yet.</p>'}
         `;
-    } catch (error) {
-        console.error('MF portfolio render error:', error);
+
+        const toggleClosedBtn = content.querySelector('#mf-toggle-closed');
+        if (toggleClosedBtn) toggleClosedBtn.addEventListener('click', async () => {
+            _mfShowClosed = !_mfShowClosed;
+            await renderPortfolioTab(container, portfolioId);
+        });
+
+        content.querySelectorAll('[data-legacy-fund]').forEach(badge => {
+            badge.addEventListener('click', () => {
+                const fundId = badge.dataset.legacyFund;
+                preSelectOrderHistoryHolding('mutualFunds', fundId);
+                _activeTab = 'orderHistory';
+                container.querySelectorAll('[data-tab]').forEach(b => {
+                    b.classList.toggle('active', b.dataset.tab === 'orderHistory');
+                });
+                const tabContent = container.querySelector('#mft-tab-content');
+                tabContent.innerHTML = '';
+                renderOrderHistoryTab(tabContent, portfolioId, 'mutualFunds');
+            });
+        });
+    } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load mutual funds.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
+    }
+}
+
+// ─── Tab 4: Tax Harvesting ─────────────────────────────
+
+const LTCG_THRESHOLD_MONTHS = 12;
+const LTCG_EXEMPTION = 100000;
+
+function holdingAgeMonths(createdAt) {
+    const start = new Date(createdAt);
+    if (isNaN(start.getTime())) return null;
+    const now = new Date();
+    return (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+}
+
+async function renderTaxTab(container, portfolioId) {
+    const content = container.querySelector('#mft-tab-content');
+    content.innerHTML = '<div class="skeleton-card"></div>';
+
+    try {
+        const [mfResp, stResp] = await Promise.all([
+            api.mutualFunds.list(portfolioId),
+            api.stocks ? api.stocks.list(portfolioId) : Promise.resolve({ data: [] }),
+        ]);
+        const mfItems = (mfResp?.data || []).map(i => ({ ...i, assetType: 'MF' }));
+        const stItems = (stResp?.data || []).map(i => ({ ...i, assetType: 'Stock', fund_name: i.stock_name }));
+        const allItems = [...mfItems, ...stItems];
+
+        let totalLTCG = 0;
+        let totalSTCL = 0;
+        let harvestableSTCL = 0;
+
+        const rows = allItems.map(item => {
+            const invested = parseFloat(item.invested) || 0;
+            const current = parseFloat(item.current) || 0;
+            const pl = current - invested;
+            const ageMonths = holdingAgeMonths(item.created_at);
+            if (ageMonths === null) return '';
+
+            const isLTCG = ageMonths >= LTCG_THRESHOLD_MONTHS;
+            const tenure = ageMonths >= 12
+                ? Math.floor(ageMonths / 12) + 'y ' + (ageMonths % 12) + 'm'
+                : ageMonths + ' months';
+            const monthsToLT = Math.max(0, LTCG_THRESHOLD_MONTHS - ageMonths);
+
+            let tag = '';
+            let action = '';
+            let rowClass = '';
+
+            if (pl < 0 && !isLTCG) {
+                tag = '<span class="badge badge-red">STCL</span>';
+                action = 'Harvest loss to offset gains';
+                rowClass = 'value-negative';
+                totalSTCL += Math.abs(pl);
+                harvestableSTCL += Math.abs(pl);
+            } else if (pl < 0 && isLTCG) {
+                tag = '<span class="badge badge-red">LTCL</span>';
+                action = 'Harvest long-term loss';
+                totalSTCL += Math.abs(pl);
+            } else if (pl > 0 && isLTCG) {
+                totalLTCG += pl;
+                if (pl > LTCG_EXEMPTION * 0.9) {
+                    tag = '<span class="badge badge-yellow">LTCG Alert</span>';
+                    action = 'Near exemption limit \u2014 consider booking in stages';
+                    rowClass = '';
+                } else {
+                    tag = '<span class="badge badge-green">LTCG</span>';
+                    action = 'Tax-free up to \u20b91L exemption';
+                }
+            } else if (pl > 0 && !isLTCG) {
+                tag = '<span class="badge badge-yellow">STCG</span>';
+                action = monthsToLT > 0 ? monthsToLT + ' months to LTCG' : 'Just became LTCG';
+            } else {
+                tag = '<span class="badge badge-muted">Neutral</span>';
+                action = '\u2014';
+            }
+
+            return `
+                <tr>
+                    <td data-label="Asset">${item.fund_name}</td>
+                    <td data-label="Type"><span class="badge badge-muted">${item.assetType}</span></td>
+                    <td data-label="P/L" class="mono ${pl >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(pl)}</td>
+                    <td data-label="Age">${tenure}</td>
+                    <td data-label="Status">${tag}</td>
+                    <td data-label="Action" class="${rowClass}" style="font-size:12px;">${action}</td>
+                </tr>`;
+        }).join('');
+
+        const remainingLTCGExemption = Math.max(0, LTCG_EXEMPTION - totalLTCG);
+
+        content.innerHTML = `
+            <div class="cc-warning-banner" style="margin-top:16px;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.25);color:var(--text-primary);">
+                Tenures use record creation date as a proxy for purchase date. Add actual purchase dates if available for accuracy.
+            </div>
+            <div class="stat-grid" style="margin-top:12px;">
+                <div class="stat-card">
+                    <h3>Accumulated LTCG</h3>
+                    <p class="stat-value mono ${totalLTCG > LTCG_EXEMPTION ? 'value-negative' : 'value-positive'}">${Utilities.formatCurrency(totalLTCG)}</p>
+                    <p class="stat-change">Limit: \u20b91,00,000 / yr</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Remaining Exemption</h3>
+                    <p class="stat-value mono">${Utilities.formatCurrency(remainingLTCGExemption)}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Harvestable STCL</h3>
+                    <p class="stat-value mono">${Utilities.formatCurrency(harvestableSTCL)}</p>
+                    <p class="stat-change">Can offset STCG</p>
+                </div>
+            </div>
+            <div class="data-table-container" style="margin-top:16px;">
+                <table class="data-table">
+                    <thead><tr>
+                        <th>Asset</th><th>Type</th><th>P/L</th>
+                        <th>Age</th><th>Status</th><th>Action</th>
+                    </tr></thead>
+                    <tbody>${rows || '<tr><td colspan="6" class="empty-state">No holdings found.</td></tr>'}</tbody>
+                </table>
+            </div>`;
+    } catch (error) {
+        content.innerHTML = '<div class="error-state"><p>Failed to load tax data.</p></div>';
+    }
+}
+
+// ─── Tab 3: SIP Tracker ───────────────────────────────────
+
+const SIP_DAYS_KEY = 'sip_days_v1';
+
+function getSIPDays() {
+    try { return JSON.parse(localStorage.getItem(SIP_DAYS_KEY) || '{}'); } catch { return {}; }
+}
+
+function setSIPDay(fundId, day) {
+    const days = getSIPDays();
+    days[fundId] = day;
+    localStorage.setItem(SIP_DAYS_KEY, JSON.stringify(days));
+}
+
+function nextSIPDate(dayOfMonth) {
+    const day = parseInt(dayOfMonth);
+    if (!day || day < 1 || day > 31) return null;
+    const today = new Date();
+    let candidate = new Date(today.getFullYear(), today.getMonth(), day);
+    if (candidate <= today) candidate.setMonth(candidate.getMonth() + 1);
+    return candidate;
+}
+
+function estimateYTDSIP(sipAmount, startDate) {
+    const start = new Date(startDate);
+    if (isNaN(start.getTime())) return 0;
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const from = start > yearStart ? start : yearStart;
+    const months = Math.max(0, (now.getFullYear() - from.getFullYear()) * 12 + now.getMonth() - from.getMonth());
+    return sipAmount * months;
+}
+
+async function renderSIPTab(container, portfolioId) {
+    const content = container.querySelector('#mft-tab-content');
+    content.innerHTML = '<div class="skeleton-card"></div>';
+
+    try {
+        const resp = await api.mutualFunds.list(portfolioId);
+        const funds = resp?.data || [];
+        const sipFunds = funds.filter(f => parseFloat(f.sip) > 0);
+
+        const sipDays = getSIPDays();
+        const monthlyTotal = sipFunds.reduce((s, f) => s + (parseFloat(f.sip) || 0), 0);
+        const ytdTotal = sipFunds.reduce((s, f) => s + estimateYTDSIP(parseFloat(f.sip) || 0, f.created_at), 0);
+
+        const rows = sipFunds.map(f => {
+            const sip = parseFloat(f.sip) || 0;
+            const day = sipDays[f.id] || '';
+            const next = nextSIPDate(day);
+            const nextLabel = next ? next.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+            const ytd = estimateYTDSIP(sip, f.created_at);
+            const daysUntil = next ? Math.ceil((next - new Date()) / 86400000) : null;
+            const urgency = daysUntil !== null && daysUntil <= 5 ? 'value-negative' : daysUntil !== null && daysUntil <= 10 ? '' : 'value-neutral';
+            return `
+                <tr>
+                    <td data-label="Fund">${f.fund_name}</td>
+                    <td data-label="SIP Amount" class="mono">${Utilities.formatCurrency(sip)}</td>
+                    <td data-label="SIP Day">
+                        <input type="number" min="1" max="31" value="${day}" placeholder="1–31"
+                            class="form-input" style="width:64px;padding:5px 8px;font-size:13px;"
+                            onchange="window._setSIPDay('${f.id}', this.value)">
+                    </td>
+                    <td data-label="Next Date" class="mono ${urgency}">${nextLabel}${daysUntil !== null ? ` <small>(${daysUntil}d)</small>` : ''}</td>
+                    <td data-label="YTD Invested" class="mono">${Utilities.formatCurrency(ytd)}</td>
+                </tr>`;
+        }).join('');
+
+        content.innerHTML = `
+            <div class="stat-grid" style="margin-top:20px;">
+                <div class="stat-card">
+                    <h3>Monthly SIP Outflow</h3>
+                    <p class="stat-value mono">${Utilities.formatCurrency(monthlyTotal)}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>YTD SIP Invested</h3>
+                    <p class="stat-value mono">${Utilities.formatCurrency(ytdTotal)}</p>
+                    <p class="stat-change">Jan – ${new Date().toLocaleDateString('en-IN', { month: 'short' })} ${new Date().getFullYear()}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active SIPs</h3>
+                    <p class="stat-value">${sipFunds.length}</p>
+                </div>
+            </div>
+            ${sipFunds.length > 0 ? `
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead><tr>
+                        <th>Fund</th><th>SIP Amount</th>
+                        <th title="Set day of month for SIP payment">SIP Day</th>
+                        <th>Next Date</th><th>YTD Invested</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>` : '<p class="empty-state">No SIPs set. Edit a fund and enter a monthly SIP amount to track here.</p>'}`;
+
+        window._setSIPDay = (id, day) => {
+            setSIPDay(id, parseInt(day) || '');
+            renderSIPTab(container, portfolioId);
+        };
+    } catch (error) {
+        content.innerHTML = '<div class="error-state"><p>Failed to load SIP data.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
 }
 

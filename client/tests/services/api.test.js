@@ -207,3 +207,105 @@ describe('dashboard.get', () => {
     expect(result.data.goal.progress).toBe(10); // 10 lakh / 1 crore = 10%
   });
 });
+
+describe('createResourceApi (via api.recurringTransactions)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('list returns data array', async () => {
+    const mockData = [
+      { id: '1', name: 'Rent', amount: 15000, type: 'expense', frequency: 'monthly' },
+      { id: '2', name: 'Salary', amount: 100000, type: 'income', frequency: 'monthly' },
+    ];
+    supabase.from.mockReturnValue(buildChain({ data: mockData, error: null }));
+
+    const result = await api.recurringTransactions.list('portfolio-id');
+    expect(result.data).toEqual(mockData);
+    expect(result.count).toBe(2);
+    expect(supabase.from).toHaveBeenCalledWith('recurring_transactions');
+  });
+
+  it('list throws ApiError on supabase error', async () => {
+    supabase.from.mockReturnValue(
+      buildChain({ data: null, error: { message: 'DB error', code: 500 } })
+    );
+
+    await expect(api.recurringTransactions.list('pid')).rejects.toThrow('DB error');
+  });
+
+  it('get returns single item', async () => {
+    const item = { id: '1', name: 'Rent', amount: 15000, type: 'expense', frequency: 'monthly' };
+    const chain = buildChain({ data: item, error: null });
+    chain.single.mockResolvedValue({ data: item, error: null });
+    supabase.from.mockReturnValue(chain);
+
+    const result = await api.recurringTransactions.get('1');
+    expect(result.data).toEqual(item);
+  });
+
+  it('create inserts new recurring transaction', async () => {
+    const newItem = { name: 'Netflix', amount: 649, type: 'expense', frequency: 'monthly' };
+    supabase.from.mockReturnValue(buildChain({ data: { id: 'new-id', ...newItem }, error: null }));
+
+    const result = await api.recurringTransactions.create(newItem);
+    expect(result.data).toHaveProperty('id');
+    expect(result.data.name).toBe('Netflix');
+    expect(supabase.from).toHaveBeenCalledWith('recurring_transactions');
+  });
+
+  it('update modifies existing recurring transaction', async () => {
+    const updated = { id: '1', name: 'Rent Updated', amount: 16000, type: 'expense', frequency: 'monthly' };
+    supabase.from.mockReturnValue(buildChain({ data: updated, error: null }));
+
+    const result = await api.recurringTransactions.update('1', updated);
+    expect(result.data).toEqual(updated);
+  });
+
+  it('delete removes recurring transaction', async () => {
+    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
+
+    const result = await api.recurringTransactions.delete('1');
+    expect(result).toBeNull();
+  });
+
+  it('handles null portfolio_id gracefully', async () => {
+    const mockData = [{ id: '1', name: 'Rent', amount: 15000 }];
+    supabase.from.mockReturnValue(buildChain({ data: mockData, error: null }));
+
+    const result = await api.recurringTransactions.list(null);
+    expect(result.data).toEqual(mockData);
+  });
+
+  it('handles empty array on list', async () => {
+    supabase.from.mockReturnValue(buildChain({ data: [], error: null }));
+
+    const result = await api.recurringTransactions.list('pid');
+    expect(result.data).toEqual([]);
+    expect(result.count).toBe(0);
+  });
+
+  it('handles all frequency types', async () => {
+    const mockData = [
+      { id: '1', name: 'Daily Coffee', frequency: 'daily' },
+      { id: '2', name: 'Weekly Grocery', frequency: 'weekly' },
+      { id: '3', name: 'Monthly Rent', frequency: 'monthly' },
+      { id: '4', name: 'Yearly Insurance', frequency: 'yearly' },
+    ];
+    supabase.from.mockReturnValue(buildChain({ data: mockData, error: null }));
+
+    const result = await api.recurringTransactions.list('pid');
+    expect(result.data).toHaveLength(4);
+  });
+
+  it('handles income and expense types', async () => {
+    const mockData = [
+      { id: '1', name: 'Salary', type: 'income' },
+      { id: '2', name: 'Rent', type: 'expense' },
+    ];
+    supabase.from.mockReturnValue(buildChain({ data: mockData, error: null }));
+
+    const result = await api.recurringTransactions.list('pid');
+    expect(result.data).toHaveLength(2);
+  });
+});

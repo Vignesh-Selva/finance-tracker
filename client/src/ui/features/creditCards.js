@@ -17,6 +17,26 @@ const NETWORK_ICONS = {
     'Diners Club': 'DC',
 };
 
+function computeBillingCycle(billingDay) {
+    const day = parseInt(billingDay);
+    if (!day || day < 1 || day > 31) return null;
+    const today = new Date();
+    const todayDay = today.getDate();
+
+    let cycleEnd, cycleStart;
+    if (todayDay <= day) {
+        cycleEnd = new Date(today.getFullYear(), today.getMonth(), day);
+        cycleStart = new Date(today.getFullYear(), today.getMonth() - 1, day + 1);
+    } else {
+        cycleEnd = new Date(today.getFullYear(), today.getMonth() + 1, day);
+        cycleStart = new Date(today.getFullYear(), today.getMonth(), day + 1);
+    }
+    const daysTotal = Math.round((cycleEnd - cycleStart) / 86400000);
+    const daysElapsed = Math.round((today - cycleStart) / 86400000);
+    const daysRemaining = Math.max(0, Math.round((cycleEnd - today) / 86400000));
+    return { cycleStart, cycleEnd, daysTotal, daysElapsed, daysRemaining };
+}
+
 function nextDueDateLabel(dayOfMonth) {
     const day = parseInt(dayOfMonth);
     if (!day) return '';
@@ -146,6 +166,33 @@ function renderCardItem(card, expanded) {
                 <span class="cc-detail-label">Due date</span>
                 <span class="cc-detail-value">${card.due_date ? `<span class="cc-due-badge">${nextDueDateLabel(card.due_date)}</span>` : '—'}</span>
             </div>
+            ${(() => {
+                const cycle = card.billing_date ? computeBillingCycle(card.billing_date) : null;
+                if (!cycle) return '';
+                const spendRate = cycle.daysElapsed > 0 ? (total / cycle.daysElapsed) : 0;
+                const projectedSpend = spendRate * cycle.daysTotal;
+                const paceWarning = limit > 0 && projectedSpend > limit * 0.8
+                    ? `<div class="cc-warning-banner" style="margin-top:8px;">⚠️ At current pace, projected spend ${Utilities.formatCurrency(projectedSpend)} may approach limit</div>` : '';
+                const fmt = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                return `
+                    <div class="cc-detail-row">
+                        <span class="cc-detail-label">Current cycle</span>
+                        <span class="cc-detail-value">${fmt(cycle.cycleStart)} – ${fmt(cycle.cycleEnd)}</span>
+                    </div>
+                    <div class="cc-detail-row">
+                        <span class="cc-detail-label">Days remaining</span>
+                        <span class="cc-detail-value ${cycle.daysRemaining <= 3 ? 'value-negative' : ''}"><b>${cycle.daysRemaining}</b> of ${cycle.daysTotal} days</span>
+                    </div>
+                    <div class="cc-detail-row">
+                        <span class="cc-detail-label">Cycle progress</span>
+                        <span class="cc-detail-value" style="flex:1;">
+                            <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;min-width:80px;">
+                                <div style="height:100%;background:var(--accent);width:${Math.min(100,(cycle.daysElapsed/cycle.daysTotal)*100).toFixed(0)}%;"></div>
+                            </div>
+                        </span>
+                    </div>
+                    ${paceWarning}`;
+            })()}
             <div class="cc-btn-row">
                 <button class="cc-action-btn" onclick="event.stopPropagation(); window.app.editEntry('creditCards','${card.id}')">Edit</button>
                 <button class="cc-action-btn" onclick="event.stopPropagation(); window._ccMarkPaid('${card.id}')">Mark paid</button>

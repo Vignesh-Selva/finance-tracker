@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Track your expenses and net worth in one place">
     <meta name="theme-color" content="#3b82f6">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.supabase.co https://api.mfapi.in https://api.coingecko.com https://api.allorigins.win https://www.amfiindia.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.supabase.co https://api.mfapi.in https://api.coingecko.com https://api.allorigins.win https://www.amfiindia.com https://open.er-api.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com;">
     <title>Personal Finance Manager</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon-192.svg">
@@ -55,6 +55,9 @@
                 <div class="sidebar-item" data-tab="budgets" onclick="window.app.switchTab('budgets')">
                     <span class="sidebar-icon">🧭</span><span class="sidebar-label">Budgets</span>
                 </div>
+                <div class="sidebar-item" data-tab="rebalancing" onclick="window.app.switchTab('rebalancing')">
+                    <span class="sidebar-icon">⚖️</span><span class="sidebar-label">Rebalancing</span>
+                </div>
                 <div class="sidebar-separator"></div>
                 <div class="sidebar-item" onclick="window.app.showSettings()">
                     <span class="sidebar-icon">⚙️</span><span class="sidebar-label">Settings</span>
@@ -82,7 +85,18 @@
             <div id="content-liabilities" class="content"></div>
             <div id="content-creditCards" class="content"></div>
             <div id="content-budgets" class="content"></div>
+            <div id="content-rebalancing" class="content"></div>
         </main>
+    </div>
+
+    <div id="drillModal" class="modal" onclick="if(event.target===this)window.app.closeDrillModal()">
+        <div class="modal-content" style="max-width:560px;">
+            <div class="modal-header">
+                <h2 id="drillModalTitle">Details</h2>
+                <span class="close" onclick="window.app.closeDrillModal()">&times;</span>
+            </div>
+            <div id="drillModalBody" class="modal-body"></div>
+        </div>
     </div>
 
     <div id="dataModal" class="modal">

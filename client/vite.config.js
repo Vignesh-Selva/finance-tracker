@@ -30,5 +30,17 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['tests/**/*.test.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '*.config.js',
+        'dist/',
+        'landing.html',
+        'index.html',
+      ],
+    },
   },
 });

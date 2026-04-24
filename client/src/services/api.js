@@ -161,6 +161,29 @@ export const creditCards = createResourceApi('credit_cards');
 export const transactions = createResourceApi('transactions');
 export const budgets = createResourceApi('budgets');
 export const settings = createResourceApi('settings');
+export const recurringTransactions = createResourceApi('recurring_transactions');
+
+// ─── Order table API factory ──────────────────────────────
+
+function createOrderApi(tableName, holdingIdField) {
+  const base = createResourceApi(tableName);
+  return {
+    ...base,
+    listByHolding: async (holdingId) => {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq(holdingIdField, holdingId)
+        .order('execution_date', { ascending: true });
+      handleError(error);
+      return { data, count: data.length };
+    },
+  };
+}
+
+export const mfOrders = createOrderApi('mf_orders', 'mf_id');
+export const stockOrders = createOrderApi('stock_orders', 'stock_id');
+export const cryptoOrders = createOrderApi('crypto_orders', 'crypto_id');
 
 // ─── Dashboard & Analytics (computed client-side) ────────
 
@@ -335,16 +358,22 @@ export const dashboard = {
     const currentNetWorth = nw.total;
     const goalTarget = parseFloat(se.goal) || 15000000;
     const annualReturn = parseFloat(params.annual_return) || 12;
+    const monthlyContribution = parseFloat(params.monthly_contribution) || 0;
     const monthlyRate = annualReturn / 100 / 12;
 
-    // Simple projection: how many months to reach goal at given return rate
     const projection = [];
     let balance = currentNetWorth;
-    for (let month = 0; month <= 360 && balance < goalTarget * 2; month++) {
+    let yearsToGoal = null;
+
+    for (let month = 0; month <= 360; month++) {
       if (month % 12 === 0) {
         projection.push({ year: Math.floor(month / 12), value: Math.round(balance) });
       }
-      balance *= (1 + monthlyRate);
+      if (yearsToGoal === null && balance >= goalTarget) {
+        yearsToGoal = parseFloat((month / 12).toFixed(1));
+      }
+      balance = balance * (1 + monthlyRate) + monthlyContribution;
+      if (balance > goalTarget * 3) break;
     }
 
     return {
@@ -352,12 +381,58 @@ export const dashboard = {
         currentNetWorth,
         goalTarget,
         annualReturn,
+        monthlyContribution,
         projection,
-        yearsToGoal: balance >= goalTarget
-          ? projection.findIndex((p) => p.value >= goalTarget)
-          : null,
+        yearsToGoal,
       },
     };
+  },
+
+  healthScore: async (portfolioId) => {
+    const [dashData, ccRes, txRes] = await Promise.all([
+      dashboard.get(portfolioId),
+      creditCards.list(portfolioId).catch(() => ({ data: [] })),
+      transactions.list(portfolioId).catch(() => ({ data: [] })),
+    ]);
+
+    const { netWorth, allocation } = dashData.data;
+    const cards = ccRes.data || [];
+    const txs = txRes.data || [];
+
+    const scores = {};
+
+    // 1. Diversification (0-25): reward spreading across multiple asset classes
+    const activeBuckets = allocation.filter(a => a.percentage >= 5).length;
+    scores.diversification = Math.min(activeBuckets * 5, 25);
+
+    // 2. Credit utilization (0-20): <10% = 20, <30% = 15, <50% = 10, <75% = 5, else 0
+    const totalLimit = cards.reduce((s, c) => s + (parseFloat(c.credit_limit) || 0), 0);
+    const totalOutstanding = cards.reduce((s, c) => s + Math.max(parseFloat(c.current_balance) || 0, parseFloat(c.statement_balance) || 0), 0);
+    const utilPct = totalLimit > 0 ? (totalOutstanding / totalLimit) * 100 : 0;
+    scores.creditUtil = cards.length === 0 ? 20 :
+      utilPct < 10 ? 20 : utilPct < 30 ? 15 : utilPct < 50 ? 10 : utilPct < 75 ? 5 : 0;
+
+    // 3. Emergency fund ratio (0-20): savings >= 3 months expenses = 20
+    const now = new Date();
+    const monthlyExpenses = txs
+      .filter(t => t.type === 'expense' && new Date(t.date).getMonth() === now.getMonth() && new Date(t.date).getFullYear() === now.getFullYear())
+      .reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
+    const emergencyMonths = monthlyExpenses > 0 ? netWorth.savings / monthlyExpenses : (netWorth.savings > 0 ? 6 : 0);
+    scores.emergencyFund = emergencyMonths >= 6 ? 20 : emergencyMonths >= 3 ? 15 : emergencyMonths >= 1 ? 8 : 0;
+
+    // 4. Liability-to-asset ratio (0-20): <10% = 20, <25% = 15, <40% = 10, <60% = 5, else 0
+    const totalAssets = netWorth.total + netWorth.liabilities;
+    const liabRatio = totalAssets > 0 ? (netWorth.liabilities / totalAssets) * 100 : 0;
+    scores.liabilityRatio = liabRatio < 10 ? 20 : liabRatio < 25 ? 15 : liabRatio < 40 ? 10 : liabRatio < 60 ? 5 : 0;
+
+    // 5. Goal progress (0-15): proportional up to 15
+    const goalPct = dashData.data.goal.progress;
+    scores.goalProgress = Math.min(Math.round(goalPct * 0.15), 15);
+
+    const total = Object.values(scores).reduce((s, v) => s + v, 0);
+    const grade = total >= 85 ? 'Excellent' : total >= 70 ? 'Good' : total >= 50 ? 'Fair' : 'Needs Attention';
+
+    return { data: { score: total, grade, breakdown: scores, utilPct, emergencyMonths, liabRatio } };
   },
 };
 
@@ -374,6 +449,8 @@ export const health = {
 
 export { ApiError };
 
+export { fetchFXRates, convertCurrency, COMMON_CURRENCIES } from './fxRates.js';
+
 export default {
   portfolios,
   savings,
@@ -386,6 +463,10 @@ export default {
   transactions,
   budgets,
   settings,
+  recurringTransactions,
+  mfOrders,
+  stockOrders,
+  cryptoOrders,
   dashboard,
   health,
 };

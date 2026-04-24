@@ -6,6 +6,7 @@ import { Chart, registerables } from 'chart.js';
 Chart.register(...registerables);
 
 let netWorthChart = null;
+let fiProjectionChart = null;
 
 function getDashboardGreeting(username) {
     const hour = new Date().getHours();
@@ -42,10 +43,12 @@ export async function renderDashboard(portfolioId) {
     </div>`;
 
     try {
-        const [resp, ccResp] = await Promise.all([
+        const [resp, ccResp, healthResp] = await Promise.all([
             api.dashboard.get(portfolioId),
             api.creditCards.list(portfolioId).catch(() => ({ data: [] })),
+            api.dashboard.healthScore(portfolioId).catch(() => null),
         ]);
+        const health = healthResp?.data || null;
         const { netWorth, allocation, investmentPL, goal, settings } = resp.data;
         const creditCards = ccResp?.data || [];
         const totalCCDue = creditCards.reduce((s, c) => s + (parseFloat(c.amount_to_pay) || 0), 0);
@@ -124,7 +127,7 @@ export async function renderDashboard(portfolioId) {
                 const clickAttr = tab ? `onclick="window.app.switchTab('${tab}')"` : '';
                 const keyAttr = tab ? `onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.app.switchTab('${tab}');}"` : '';
                 const roleAttr = tab ? 'role="button" tabindex="0" style="cursor:pointer;"' : '';
-                return `<div class="legend-item" ${roleAttr} ${clickAttr} ${keyAttr}><span class="legend-color" style="background:${a.color}"></span><span class="legend-label">${a.name}</span><span class="legend-value">${a.percentage}%</span></div>`;
+                return `<div class="legend-item" ${roleAttr} ${clickAttr} ${keyAttr}><span class="legend-color" style="background:${a.color}"></span><span class="legend-label">${a.name}</span><span class="legend-value">${a.percentage}%</span><button class="btn-drill" onclick="event.stopPropagation();window.app.showDrillDown('${a.name}')" title="Drill down" aria-label="View ${a.name} holdings">⊞</button></div>`;
             }).join('')}</div>`
             : '';
 
@@ -149,6 +152,26 @@ export async function renderDashboard(portfolioId) {
         const authUser = await getCurrentUser().catch(() => null);
         const username = authUser?.user_metadata?.username || extractUsernameFromEmail(authUser?.email) || '';
         const { greeting, emoji, tip } = getDashboardGreeting(username);
+
+        const healthScoreHTML = health ? (() => {
+            const s = health.score;
+            const gradeColor = s >= 85 ? 'var(--green)' : s >= 70 ? 'var(--accent)' : s >= 50 ? 'var(--yellow)' : 'var(--red)';
+            const scoreCircle = 2 * Math.PI * 15.9155;
+            const dash = (s / 100) * scoreCircle;
+            return `<div class="stat-card health-score-card" onclick="window.app.showHealthBreakdown()" style="cursor:pointer;" title="Click to see breakdown">
+                <h3>Health Score</h3>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
+                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg);">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-subtle)" stroke-width="3"/>
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="${gradeColor}" stroke-width="3" stroke-dasharray="${dash.toFixed(2)}, ${scoreCircle.toFixed(2)}" stroke-linecap="round"/>
+                        </svg>
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;font-size:13px;">${s}</div>
+                    </div>
+                    <div><p style="font-weight:700;font-size:1.1rem;color:${gradeColor};">${health.grade}</p><p style="font-size:11px;color:var(--text-muted);margin-top:2px;">out of 100</p></div>
+                </div>
+            </div>`;
+        })() : '';
 
         const html = `
             <div class="section-header">
@@ -181,6 +204,7 @@ export async function renderDashboard(portfolioId) {
                     <h3>Liabilities</h3>
                     <p class="stat-value">${Utilities.formatCurrency(netWorth.liabilities)}</p>
                 </div>
+                ${healthScoreHTML}
                 ${creditCards.length > 0 ? `
                 <div class="stat-card cc-stat-card" onclick="window.app.switchTab('creditCards')" style="cursor:pointer;">
                     <h3>Credit Cards</h3>
@@ -294,14 +318,42 @@ export async function renderDashboard(portfolioId) {
                     <canvas id="netWorthChart"></canvas>
                 </div>
             </div>
+
+            <div class="breakdown fi-projection-section" style="margin-top:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                    <h3>FI Projection</h3>
+                    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                        <label style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+                            Monthly invest
+                            <input type="number" id="fi-monthly" value="0" min="0" step="1000" class="form-input" style="width:110px;padding:6px 10px;font-size:13px;">
+                        </label>
+                        <label style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+                            Annual return
+                            <input type="number" id="fi-return" value="12" min="1" max="30" step="0.5" class="form-input" style="width:70px;padding:6px 10px;font-size:13px;">
+                            <span style="font-size:12px;">%</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="fi-summary" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;"></div>
+                <div style="position:relative;height:260px;">
+                    <canvas id="fiProjectionChart"></canvas>
+                </div>
+            </div>
+
             <div class="last-refreshed">Last Refreshed ${lastRefreshedText}</div>
         `;
 
         container.innerHTML = html;
 
-        // Render net worth history chart
         await renderNetWorthChart(portfolioId);
         await renderNetWorthSparkline(snapshots);
+        renderFIProjection(netWorth.total, goal.target);
+
+        document.getElementById('fi-monthly')?.addEventListener('input', () => renderFIProjection(netWorth.total, goal.target));
+        document.getElementById('fi-return')?.addEventListener('input', () => renderFIProjection(netWorth.total, goal.target));
+
+        window._dashHealthData = health;
+        window._dashAllocationData = { allocation, portfolioId };
     } catch (error) {
         console.error('Dashboard render error:', error);
         container.innerHTML = `<div class="error-state"><p>Failed to load dashboard. Please check your connection.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>`;
@@ -429,3 +481,114 @@ async function renderNetWorthChart(portfolioId) {
     }
 }
 
+function computeProjection(currentNW, goalTarget, annualReturn, monthlyContribution) {
+    const monthlyRate = annualReturn / 100 / 12;
+    const points = [];
+    let balance = currentNW;
+    let yearsToGoal = null;
+
+    for (let month = 0; month <= 360; month++) {
+        if (month % 12 === 0) {
+            points.push({ year: Math.floor(month / 12), value: Math.round(balance) });
+        }
+        if (yearsToGoal === null && balance >= goalTarget && goalTarget > 0) {
+            yearsToGoal = parseFloat((month / 12).toFixed(1));
+        }
+        balance = balance * (1 + monthlyRate) + monthlyContribution;
+        if (balance > goalTarget * 3 && goalTarget > 0) break;
+        if (month === 360) break;
+    }
+
+    const totalInvested = currentNW + monthlyContribution * Math.min(yearsToGoal ? yearsToGoal * 12 : 360, 360);
+    return { points, yearsToGoal, totalInvested };
+}
+
+export function renderFIProjection(currentNW, goalTarget) {
+    const canvas = document.getElementById('fiProjectionChart');
+    const summaryEl = document.getElementById('fi-summary');
+    if (!canvas || !summaryEl) return;
+
+    const monthlyContrib = Math.max(0, parseFloat(document.getElementById('fi-monthly')?.value) || 0);
+    const annualReturn = Math.max(0.1, parseFloat(document.getElementById('fi-return')?.value) || 12);
+
+    const { points, yearsToGoal, totalInvested } = computeProjection(currentNW, goalTarget, annualReturn, monthlyContrib);
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const accentColor = isDark ? '#3b82f6' : '#d97757';
+    const goalColor = isDark ? '#10b981' : '#059669';
+    const textColor = isDark ? '#ccc' : '#666';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+    const labels = points.map(p => `Year ${p.year}`);
+    const values = points.map(p => p.value);
+    const goalLine = points.map(() => goalTarget);
+
+    summaryEl.innerHTML = `
+        <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:140px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.06em;">Years to Goal</div>
+            <div style="font-size:1.4rem;font-weight:700;color:${yearsToGoal ? 'var(--green)' : 'var(--text-muted)'};">${yearsToGoal !== null ? yearsToGoal + ' yrs' : '30+ yrs'}</div>
+        </div>
+        <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:140px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.06em;">Goal Target</div>
+            <div style="font-size:1.1rem;font-weight:700;font-family:var(--font-mono);">${Utilities.formatCurrency(goalTarget)}</div>
+        </div>
+        ${monthlyContrib > 0 ? `
+        <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:140px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:.06em;">Total Invested</div>
+            <div style="font-size:1.1rem;font-weight:700;font-family:var(--font-mono);">${Utilities.formatCurrency(totalInvested)}</div>
+        </div>` : ''}
+    `;
+
+    if (fiProjectionChart) {
+        fiProjectionChart.destroy();
+        fiProjectionChart = null;
+    }
+
+    fiProjectionChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Projected Balance',
+                    data: values,
+                    borderColor: accentColor,
+                    backgroundColor: accentColor + '18',
+                    fill: true,
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    tension: 0.4,
+                },
+                ...(goalTarget > 0 ? [{
+                    label: 'Goal',
+                    data: goalLine,
+                    borderColor: goalColor,
+                    borderWidth: 1.5,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false,
+                }] : []),
+            ],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: textColor, font: { size: 12 } } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.dataset.label}: ${Utilities.formatCurrency(ctx.parsed.y)}`,
+                    },
+                },
+            },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 10 } },
+                y: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, callback: (v) => Utilities.formatCurrency(v) },
+                },
+            },
+        },
+    });
+}

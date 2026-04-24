@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   portfolio_id UUID NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
   currency TEXT DEFAULT 'INR',
+  display_currency TEXT DEFAULT 'INR',
   goal NUMERIC DEFAULT 15000000,
   epf NUMERIC DEFAULT 0,
   ppf NUMERIC DEFAULT 0,

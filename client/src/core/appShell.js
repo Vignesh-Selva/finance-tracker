@@ -1,4 +1,6 @@
 import Utilities from '../utils/utils.js';
+import { setDisplayCurrency } from '../utils/formatUtils.js';
+import { fetchFXRates, COMMON_CURRENCIES } from '../services/fxRates.js';
 import { FormHandler } from '../ui/forms/formHandler.js';
 import { renderDashboard } from '../ui/features/dashboard.js';
 import { renderExpenses } from '../ui/features/expenses.js';
@@ -10,6 +12,7 @@ import { renderCrypto } from '../ui/features/crypto.js';
 import { renderLiabilities } from '../ui/features/liabilities.js';
 import { renderCreditCards } from '../ui/features/creditCards.js';
 import { renderBudgets } from '../ui/features/budgets.js';
+import { renderRebalancing } from '../ui/features/rebalancing.js';
 import api from '../services/api.js';
 import { signOut as authSignOut, updateUser, getCurrentUser, extractUsernameFromEmail } from '../services/authService.js';
 import { refreshAllPrices, refreshMutualFundPrices, refreshStockPricesOnly, refreshCryptoPricesOnly } from '../services/priceFetcher.js';
@@ -34,6 +37,7 @@ class PersonalFinanceApp {
             liabilities: renderLiabilities,
             creditCards: renderCreditCards,
             budgets: renderBudgets,
+            rebalancing: renderRebalancing,
         };
     }
 
@@ -48,10 +52,24 @@ class PersonalFinanceApp {
             this.loadTheme();
             this.loadSidebarState();
             this.setupEventListeners();
+            await this.initFXRates();
             await this.switchTab('dashboard');
         } catch (error) {
             console.error('App initialization error:', error);
             Utilities.showNotification('Failed to initialize app. Is the server running?', 'error');
+        }
+    }
+
+    async initFXRates() {
+        try {
+            const resp = await api.settings.list(this.portfolioId);
+            const settings = (resp?.data || [])[0] || {};
+            const baseCurrency = settings.currency || 'INR';
+            const displayCurrency = settings.display_currency || baseCurrency;
+            const rates = await fetchFXRates('INR').catch(() => ({}));
+            setDisplayCurrency(displayCurrency, rates, 'INR');
+        } catch {
+            setDisplayCurrency('INR', {}, 'INR');
         }
     }
 
@@ -126,7 +144,7 @@ class PersonalFinanceApp {
     }
 
     setupEventListeners() {
-        const closeBtn = document.querySelector('.close');
+        const closeBtn = document.querySelector('#dataModal .close');
         if (closeBtn) closeBtn.onclick = () => this.closeModal();
 
         window.onclick = (event) => {
@@ -331,8 +349,22 @@ class PersonalFinanceApp {
     }
 
     async deleteEntry(type, id) {
-        const confirmed = await Utilities.showConfirm('Are you sure you want to delete this entry?');
-        if (!confirmed) return;
+        const holdingTypes = ['mutualFunds', 'stocks', 'crypto'];
+        if (holdingTypes.includes(type)) {
+            const hasOrders = await this._checkHoldingHasOrders(type, id);
+            if (hasOrders) {
+                const confirmed = await Utilities.showConfirm(
+                    'This holding has order history. Deleting it will permanently remove all associated orders and cannot be undone. Continue?'
+                );
+                if (!confirmed) return;
+            } else {
+                const confirmed = await Utilities.showConfirm('Are you sure you want to delete this entry?');
+                if (!confirmed) return;
+            }
+        } else {
+            const confirmed = await Utilities.showConfirm('Are you sure you want to delete this entry?');
+            if (!confirmed) return;
+        }
 
         try {
             const resourceMap = {
@@ -358,6 +390,22 @@ class PersonalFinanceApp {
         }
     }
 
+    async _checkHoldingHasOrders(type, holdingId) {
+        try {
+            const orderApiMap = {
+                mutualFunds: { api: api.mfOrders,    holdingIdField: 'mf_id' },
+                stocks:      { api: api.stockOrders,  holdingIdField: 'stock_id' },
+                crypto:      { api: api.cryptoOrders, holdingIdField: 'crypto_id' },
+            };
+            const cfg = orderApiMap[type];
+            if (!cfg) return false;
+            const resp = await cfg.api.listByHolding(holdingId);
+            return (resp?.data?.length || 0) > 0;
+        } catch {
+            return false;
+        }
+    }
+
     async deleteTransaction(id) {
         await this.deleteEntry('transactions', id);
     }
@@ -370,19 +418,21 @@ class PersonalFinanceApp {
             return;
         }
 
+        if (this._orderSaveHandler) {
+            await this._orderSaveHandler();
+            return;
+        }
+
         await this.formHandler.saveCurrentForm();
         await this.refreshCurrentTab();
     }
 
     closeModal() {
+        this._orderSaveHandler = null;
         const modal = document.getElementById('dataModal');
         modal.style.display = 'none';
-        const wasSettings = this.isSettingsModal;
         this.isSettingsModal = false;
         if (this.formHandler) this.formHandler.closeModal();
-        if (wasSettings) {
-            this.switchTab('dashboard');
-        }
     }
 
     // ─── Settings ────────────────────────────────────────────
@@ -400,33 +450,119 @@ class PersonalFinanceApp {
             const currentUsername = user?.user_metadata?.username || extractUsernameFromEmail(user?.email) || '';
 
             const formHTML = `
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="setting-username" value="${currentUsername}" class="form-input" placeholder="Your display name" />
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="profile">👤 Profile</button>
+                    <button class="settings-tab" data-tab="goals">🎯 Retirement & Goals</button>
+                    <button class="settings-tab" data-tab="data">💾 Data</button>
                 </div>
-                <div class="form-group">
-                    <label>Currency:</label>
-                    <input type="text" id="setting-currency" value="${settings.currency}" class="form-input" />
-                </div>
-                <div class="form-group">
-                    <label>Financial Goal:</label>
-                    <input type="number" id="setting-goal" value="${settings.goal}" class="form-input" step="1000" min="0" />
-                </div>
-                <div class="form-group">
-                    <label>EPF Balance:</label>
-                    <input type="number" id="setting-epf" value="${settings.epf}" class="form-input" step="0.01" min="0" />
-                </div>
-                <div class="form-group">
-                    <label>PPF Balance:</label>
-                    <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" />
-                </div>
-                <div style="border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px;">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">Data Management</label>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
-                        <button type="button" class="btn btn-secondary" id="settings-import-btn">📥 Import Data</button>
+
+                <div class="settings-tab-content active" id="tab-profile">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <input type="text" id="setting-username" value="${settings.username || currentUsername}" class="form-input" placeholder="Your display name" />
+                    </div>
+                    <div class="form-group">
+                        <label>Gender:</label>
+                        <select id="setting-gender" class="form-input">
+                            <option value="">Select...</option>
+                            <option value="male" ${settings.gender === 'male' ? 'selected' : ''}>Male</option>
+                            <option value="female" ${settings.gender === 'female' ? 'selected' : ''}>Female</option>
+                            <option value="non-binary" ${settings.gender === 'non-binary' ? 'selected' : ''}>Non-binary</option>
+                            <option value="prefer-not-to-say" ${settings.gender === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Profession:</label>
+                        <input type="text" id="setting-profession" value="${settings.profession || ''}" class="form-input" placeholder="e.g., Software Engineer" />
+                    </div>
+                    <div class="form-group">
+                        <label>Age:</label>
+                        <input type="number" id="setting-age" value="${settings.age || ''}" class="form-input" min="0" max="120" placeholder="Your age" />
+                    </div>
+                    <div class="form-group">
+                        <label>Location:</label>
+                        <input type="text" id="setting-location" value="${settings.location || ''}" class="form-input" placeholder="City, Country" />
+                    </div>
+                    <div class="form-group">
+                        <label>Marital Status:</label>
+                        <select id="setting-marital-status" class="form-input">
+                            <option value="">Select...</option>
+                            <option value="single" ${settings.marital_status === 'single' ? 'selected' : ''}>Single</option>
+                            <option value="married" ${settings.marital_status === 'married' ? 'selected' : ''}>Married</option>
+                            <option value="divorced" ${settings.marital_status === 'divorced' ? 'selected' : ''}>Divorced</option>
+                            <option value="widowed" ${settings.marital_status === 'widowed' ? 'selected' : ''}>Widowed</option>
+                            <option value="prefer-not-to-say" ${settings.marital_status === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dependents:</label>
+                        <input type="number" id="setting-dependents" value="${settings.dependents ?? 0}" class="form-input" min="0" placeholder="Number of dependents" />
+                    </div>
+                    <div class="form-group">
+                        <label>Risk Tolerance:</label>
+                        <select id="setting-risk-tolerance" class="form-input">
+                            <option value="">Select...</option>
+                            <option value="conservative" ${settings.risk_tolerance === 'conservative' ? 'selected' : ''}>Conservative (Low risk)</option>
+                            <option value="moderate" ${settings.risk_tolerance === 'moderate' ? 'selected' : ''}>Moderate (Balanced)</option>
+                            <option value="aggressive" ${settings.risk_tolerance === 'aggressive' ? 'selected' : ''}>Aggressive (High risk)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Base Currency (stored amounts):</label>
+                        <select id="setting-currency" class="form-input">
+                            ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${settings.currency === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Display Currency (visual conversion):</label>
+                        <select id="setting-display-currency" class="form-input">
+                            ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${(settings.display_currency || settings.currency) === c ? 'selected' : ''}>${c}</option>`).join('')}
+                        </select>
                     </div>
                 </div>
+
+                <div class="settings-tab-content" id="tab-goals">
+                    <div class="form-group">
+                        <label>Financial Goal:</label>
+                        <input type="number" id="setting-goal" value="${settings.goal}" class="form-input" step="1000" min="0" placeholder="Your target net worth" />
+                    </div>
+                    <div class="form-group">
+                        <label>EPF Balance:</label>
+                        <input type="number" id="setting-epf" value="${settings.epf}" class="form-input" step="0.01" min="0" placeholder="Employee Provident Fund" />
+                    </div>
+                    <div class="form-group">
+                        <label>PPF Balance:</label>
+                        <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" placeholder="Public Provident Fund" />
+                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="tab-data">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+                        <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
+                        <button type="button" class="btn btn-secondary" id="settings-import-btn">📥 Import Data</button>
+                        <button type="button" class="btn btn-ghost" id="settings-template-btn" style="font-size: 0.9rem;">📋 Download Template</button>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+                        New user? Download the template to see the Excel structure with sample data.
+                    </p>
+                    <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Import Notes</h4>
+                        <ul style="font-size: 0.85rem; color: var(--text-muted); margin: 0; padding-left: 20px;">
+                            <li>Importing adds data — it does not delete your existing records</li>
+                            <li>Orders with missing holding_id will be skipped</li>
+                            <li>Leave Investments id blank for new entries</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <style>
+                    .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+                    .settings-tab { background: var(--bg-elevated); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); }
+                    .settings-tab:hover { background: var(--accent); color: white; }
+                    .settings-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+                    .settings-tab-content { display: none; }
+                    .settings-tab-content.active { display: block; }
+                </style>
             `;
 
             const modal = document.getElementById('dataModal');
@@ -434,10 +570,23 @@ class PersonalFinanceApp {
             document.getElementById('modalBody').innerHTML = formHTML;
             modal.style.display = 'block';
 
+            const tabs = document.querySelectorAll('.settings-tab');
+            const contents = document.querySelectorAll('.settings-tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+                });
+            });
+
             const exportBtn = document.getElementById('settings-export-btn');
             if (exportBtn) exportBtn.addEventListener('click', () => this.exportAllData());
             const importBtn = document.getElementById('settings-import-btn');
             if (importBtn) importBtn.addEventListener('click', () => this.importAllData());
+            const templateBtn = document.getElementById('settings-template-btn');
+            if (templateBtn) templateBtn.addEventListener('click', () => Utilities.createTemplate());
         } catch (error) {
             Utilities.showNotification('Failed to load settings', 'error');
         }
@@ -449,21 +598,38 @@ class PersonalFinanceApp {
             const settingsArr = resp?.data || [];
             const existing = settingsArr[0];
 
-            const goal = parseFloat(document.getElementById('setting-goal').value);
-            const epf = parseFloat(document.getElementById('setting-epf').value);
-            const ppf = parseFloat(document.getElementById('setting-ppf').value);
+            const goal = parseFloat(document.getElementById('setting-goal').value) || 0;
+            const epf = parseFloat(document.getElementById('setting-epf').value) || 0;
+            const ppf = parseFloat(document.getElementById('setting-ppf').value) || 0;
             const username = document.getElementById('setting-username')?.value?.trim() || '';
+            const gender = document.getElementById('setting-gender')?.value || null;
+            const profession = document.getElementById('setting-profession')?.value?.trim() || null;
+            const age = parseInt(document.getElementById('setting-age')?.value) || null;
+            const location = document.getElementById('setting-location')?.value?.trim() || null;
+            const maritalStatus = document.getElementById('setting-marital-status')?.value || null;
+            const dependents = parseInt(document.getElementById('setting-dependents')?.value) || 0;
+            const riskTolerance = document.getElementById('setting-risk-tolerance')?.value || null;
 
             if (goal < 0 || epf < 0 || ppf < 0) {
                 Utilities.showNotification('Values cannot be negative', 'error');
                 return;
             }
 
+            const displayCurrency = document.getElementById('setting-display-currency')?.value || document.getElementById('setting-currency').value;
             const data = {
                 currency: document.getElementById('setting-currency').value,
+                display_currency: displayCurrency,
                 goal,
                 epf,
                 ppf,
+                username,
+                gender,
+                profession,
+                age,
+                location,
+                marital_status: maritalStatus,
+                dependents,
+                risk_tolerance: riskTolerance,
             };
 
             const saves = [existing?.id
@@ -475,7 +641,7 @@ class PersonalFinanceApp {
 
             Utilities.showNotification('Settings saved successfully');
             this.closeModal();
-            await this.refreshCurrentTab();
+            await this.initFXRates();
         } catch (error) {
             console.error('Save settings error:', error);
             Utilities.showNotification('Failed to save settings', 'error');
@@ -486,7 +652,11 @@ class PersonalFinanceApp {
 
     async exportAllData() {
         try {
-            const [savingsR, fdsR, mfsR, stocksR, cryptoR, liabR, ccR, txR, budgR, settR] = await Promise.all([
+            const [
+                savingsR, fdsR, mfsR, stocksR, cryptoR,
+                liabR, ccR, txR, budgR, settR,
+                mfOrdersR, stockOrdersR, cryptoOrdersR,
+            ] = await Promise.all([
                 api.savings.list(this.portfolioId),
                 api.fixedDeposits.list(this.portfolioId),
                 api.mutualFunds.list(this.portfolioId),
@@ -497,6 +667,9 @@ class PersonalFinanceApp {
                 api.transactions.list(this.portfolioId),
                 api.budgets.list(this.portfolioId),
                 api.settings.list(this.portfolioId),
+                api.mfOrders.list(this.portfolioId),
+                api.stockOrders.list(this.portfolioId),
+                api.cryptoOrders.list(this.portfolioId),
             ]);
 
             const data = {
@@ -510,9 +683,12 @@ class PersonalFinanceApp {
                 transactions: txR?.data || [],
                 budgets: budgR?.data || [],
                 settings: settR?.data || [],
+                mfOrders: mfOrdersR?.data || [],
+                stockOrders: stockOrdersR?.data || [],
+                cryptoOrders: cryptoOrdersR?.data || [],
             };
 
-            Utilities.exportData(data);
+            Utilities.exportToExcel(data, 'finance-backup.xlsx');
             Utilities.showNotification('Data exported successfully');
         } catch (error) {
             console.error('Export error:', error);
@@ -557,6 +733,129 @@ class PersonalFinanceApp {
         this.switchTab('creditCards');
     }
 
+    showDrillDown(assetName) {
+        const data = window._dashAllocationData;
+        if (!data) return;
+
+        const assetApiMap = {
+            'Savings':        { api: api.savings,       labelField: 'bank_name',   valueField: 'balance' },
+            'Fixed Deposits': { api: api.fixedDeposits, labelField: 'bank_name',   valueField: 'maturity' },
+            'Mutual Funds':   { api: api.mutualFunds,   labelField: 'fund_name',   valueField: 'current', investedField: 'invested' },
+            'Stocks':         { api: api.stocks,        labelField: 'stock_name',  valueField: 'current', investedField: 'invested' },
+            'Crypto':         { api: api.crypto,        labelField: 'coin_name',   valueField: 'current', investedField: 'invested' },
+        };
+
+        const config = assetApiMap[assetName];
+        if (!config) return;
+
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillModalTitle');
+        const body = document.getElementById('drillModalBody');
+        if (!modal) return;
+
+        title.textContent = `${assetName} — Holdings`;
+        body.innerHTML = '<div class="skeleton-card" style="height:80px;"></div>';
+        modal.style.display = 'block';
+
+        config.api.list(this.portfolioId).then(resp => {
+            let items = resp?.data || [];
+            if (items.length === 0) {
+                body.innerHTML = '<p class="empty-state">No holdings found.</p>';
+                return;
+            }
+
+            if (assetName === 'Crypto') {
+                const coinMap = new Map();
+                items.forEach(item => {
+                    const key = (item[config.labelField] || '—').trim();
+                    const prev = coinMap.get(key) || { current: 0, invested: 0 };
+                    prev.current += parseFloat(item[config.valueField]) || 0;
+                    prev.invested += parseFloat(item[config.investedField]) || 0;
+                    coinMap.set(key, prev);
+                });
+                items = [...coinMap.entries()].map(([coin_name, v]) => ({ coin_name, current: v.current, invested: v.invested }));
+            }
+
+            items = [...items].sort((a, b) =>
+                (parseFloat(b[config.valueField]) || 0) - (parseFloat(a[config.valueField]) || 0)
+            );
+
+            const total = items.reduce((s, i) => s + (parseFloat(i[config.valueField]) || 0), 0);
+            body.innerHTML = `
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${items.map(item => {
+                        const val = parseFloat(item[config.valueField]) || 0;
+                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                        return `
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-elevated);border-radius:8px;gap:10px;">
+                                <span style="font-size:14px;flex:1;">${item[config.labelField] || '—'}</span>
+                                <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;">${Utilities.formatCurrency(val)}</span>
+                                <span style="font-size:12px;color:var(--text-muted);min-width:40px;text-align:right;">${pct}%</span>
+                                <div style="width:60px;height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
+                                    <div style="height:100%;background:var(--accent);width:${pct}%;"></div>
+                                </div>
+                            </div>`;
+                    }).join('')}
+                    <div style="display:flex;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);margin-top:4px;font-weight:700;">
+                        <span>Total</span>
+                        <span style="font-family:var(--font-mono);">${Utilities.formatCurrency(total)}</span>
+                    </div>
+                </div>`;
+        }).catch(() => {
+            body.innerHTML = '<p class="empty-state">Failed to load holdings.</p>';
+        });
+    }
+
+    showHealthBreakdown() {
+        const health = window._dashHealthData;
+        if (!health) return;
+
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillModalTitle');
+        const body = document.getElementById('drillModalBody');
+        if (!modal) return;
+
+        const items = [
+            { label: 'Diversification',     score: health.breakdown.diversification,  max: 25, hint: 'Asset classes with >5% allocation' },
+            { label: 'Credit Utilization',  score: health.breakdown.creditUtil,        max: 20, hint: `${health.utilPct?.toFixed(1) || 0}% overall utilization` },
+            { label: 'Emergency Fund',       score: health.breakdown.emergencyFund,     max: 20, hint: `${health.emergencyMonths?.toFixed(1) || 0} months of expenses covered` },
+            { label: 'Liability Ratio',      score: health.breakdown.liabilityRatio,    max: 20, hint: `${health.liabRatio?.toFixed(1) || 0}% of gross assets` },
+            { label: 'Goal Progress',        score: health.breakdown.goalProgress,      max: 15, hint: 'Progress toward financial goal' },
+        ];
+
+        const gradeColor = health.score >= 85 ? 'var(--green)' : health.score >= 70 ? 'var(--accent)' : health.score >= 50 ? 'var(--yellow)' : 'var(--red)';
+
+        title.textContent = `Portfolio Health — ${health.grade}`;
+        body.innerHTML = `
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2.5rem;font-weight:700;color:${gradeColor};">${health.score}<span style="font-size:1rem;color:var(--text-muted);"> / 100</span></div>
+                <div style="font-size:13px;color:var(--text-muted);">Higher is better · Max score per category shown in brackets</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                ${items.map(item => {
+                    const pct = (item.score / item.max) * 100;
+                    const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+                    return `
+                        <div style="padding:12px 14px;background:var(--bg-elevated);border-radius:10px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                                <span style="font-size:13px;font-weight:600;">${item.label}</span>
+                                <span style="font-size:13px;font-weight:700;color:${color};">${item.score} / ${item.max}</span>
+                            </div>
+                            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px;">
+                                <div style="height:100%;background:${color};width:${pct}%;transition:width .4s ease;"></div>
+                            </div>
+                            <div style="font-size:11px;color:var(--text-muted);">${item.hint}</div>
+                        </div>`;
+                }).join('')}
+            </div>`;
+        modal.style.display = 'block';
+    }
+
+    closeDrillModal() {
+        const modal = document.getElementById('drillModal');
+        if (modal) modal.style.display = 'none';
+    }
+
     async signOut() {
         try {
             await authSignOut();
@@ -568,12 +867,12 @@ class PersonalFinanceApp {
     async importAllData() {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json';
+        input.accept = '.xlsx';
 
         input.onchange = async (e) => {
             try {
                 const file = e.target.files[0];
-                const data = await Utilities.importData(file);
+                const data = await Utilities.importFromExcel(file);
 
                 const overwrite = await Utilities.showConfirm('Importing will add data to your portfolio. Continue?');
                 if (!overwrite) return;
@@ -588,22 +887,50 @@ class PersonalFinanceApp {
                     creditCards: api.creditCards,
                     transactions: api.transactions,
                     budgets: api.budgets,
+                    settings: api.settings,
                 };
+
+                const idMaps = { mutualFunds: {}, stocks: {}, crypto: {} };
 
                 for (const [key, resource] of Object.entries(importMap)) {
                     if (data[key] && Array.isArray(data[key])) {
                         for (const item of data[key]) {
-                            const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = item;
-                            await resource.create({ ...rest, portfolio_id: this.portfolioId });
+                            const { id: oldId, created_at: _ca, updated_at: _ua, ...rest } = item;
+                            const resp = await resource.create({ ...rest, portfolio_id: this.portfolioId });
+                            if (idMaps[key] && oldId && resp?.data?.id) {
+                                idMaps[key][oldId] = resp.data.id;
+                            }
                         }
                     }
+                }
+
+                const orderImports = [
+                    { key: 'mfOrders',     api: api.mfOrders,     holdingKey: 'mutualFunds', holdingIdField: 'mf_id' },
+                    { key: 'stockOrders',  api: api.stockOrders,  holdingKey: 'stocks',      holdingIdField: 'stock_id' },
+                    { key: 'cryptoOrders', api: api.cryptoOrders, holdingKey: 'crypto',      holdingIdField: 'crypto_id' },
+                ];
+
+                let skippedOrders = 0;
+                for (const cfg of orderImports) {
+                    if (data[cfg.key] && Array.isArray(data[cfg.key])) {
+                        for (const order of data[cfg.key]) {
+                            const { id: _oid, created_at: _ca, updated_at: _ua, ...rest } = order;
+                            const newHoldingId = idMaps[cfg.holdingKey][rest[cfg.holdingIdField]];
+                            if (!newHoldingId) { skippedOrders++; continue; }
+                            await cfg.api.create({ ...rest, [cfg.holdingIdField]: newHoldingId, portfolio_id: this.portfolioId });
+                        }
+                    }
+                }
+
+                if (skippedOrders > 0) {
+                    Utilities.showNotification(`Import complete. ${skippedOrders} order(s) skipped (no matching holding).`, 'warning');
                 }
 
                 Utilities.showNotification('Data imported successfully');
                 await this.refreshCurrentTab();
             } catch (error) {
                 console.error('Import error:', error);
-                Utilities.showNotification('Failed to import data: ' + error.message, 'error');
+                Utilities.showNotification('Failed to import Excel file: ' + error.message, 'error');
             }
         };
 

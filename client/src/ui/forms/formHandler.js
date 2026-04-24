@@ -14,6 +14,7 @@ const RESOURCE_MAP = {
     creditCards: { api: api.creditCards, fields: { cardName: 'card_name', cardType: 'card_type', creditLimit: 'credit_limit', currentBalance: 'current_balance', statementBalance: 'statement_balance', amountToPay: 'amount_to_pay', billingDate: 'billing_date', dueDate: 'due_date' } },
     transactions: { api: api.transactions, fields: {} },
     budgets: { api: api.budgets, fields: { limit: 'monthly_limit' } },
+    recurringTransactions: { api: api.recurringTransactions, fields: { dayOfMonth: 'day_of_month', nextDate: 'next_date' } },
 };
 
 export class FormHandler {
@@ -116,7 +117,8 @@ export class FormHandler {
             return;
         }
 
-        this.showModal(`Edit ${formConfig.singularTitle || formConfig.title.replace('Add ', '')}`, formConfig.fields, this.editingEntry);
+        const editFields = formConfig.editFields || formConfig.fields;
+        this.showModal(`Edit ${formConfig.singularTitle || formConfig.title.replace('Add ', '')}`, editFields, this.editingEntry);
     }
 
     showModal(title, fields, data = {}) {
@@ -319,6 +321,13 @@ export class FormHandler {
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'fundType', label: 'Type', type: 'select', options: ['Equity', 'Debt', 'Hybrid', 'Index'], required: true },
                     { name: 'sip', label: 'SIP Amount', type: 'number', step: '0.01', min: 0, required: false }
+                ],
+                editFields: [
+                    { name: 'fundName', label: 'Fund Name', type: 'text', required: true, suggestions: this.fundNameSuggestions },
+                    { name: 'schemeCode', label: 'Scheme Code', type: 'text', required: true },
+                    { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'fundType', label: 'Type', type: 'select', options: ['Equity', 'Debt', 'Hybrid', 'Index'], required: true },
+                    { name: 'sip', label: 'SIP Amount', type: 'number', step: '0.01', min: 0, required: false }
                 ]
             },
             stocks: {
@@ -331,6 +340,12 @@ export class FormHandler {
                     { name: 'invested', label: 'Invested Amount', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },
                     { name: 'sector', label: 'Sector', type: 'text', required: false }
+                ],
+                editFields: [
+                    { name: 'stockName', label: 'Stock Name', type: 'text', required: true },
+                    { name: 'ticker', label: 'Ticker', type: 'text', required: true },
+                    { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'sector', label: 'Sector', type: 'text', required: false }
                 ]
             },
             crypto: {
@@ -341,6 +356,11 @@ export class FormHandler {
                     { name: 'platform', label: 'Platform', type: 'text', required: true },
                     { name: 'quantity', label: 'Quantity', type: 'number', step: '0.00000001', min: 0, required: true },
                     { name: 'invested', label: 'Invested Amount', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true }
+                ],
+                editFields: [
+                    { name: 'coinName', label: 'Coin Name', type: 'text', required: true },
+                    { name: 'platform', label: 'Platform / Exchange', type: 'text', required: true },
                     { name: 'current', label: 'Current Value', type: 'number', step: '0.01', min: 0, required: true }
                 ]
             },
@@ -389,6 +409,20 @@ export class FormHandler {
                 fields: [
                     { name: 'category', label: 'Category', type: 'select', options: ['Salary', 'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Healthcare', 'Investment', 'Other'], required: true },
                     { name: 'limit', label: 'Monthly Limit', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'notes', label: 'Notes', type: 'text', required: false }
+                ]
+            },
+            recurringTransactions: {
+                title: 'Add Recurring Template',
+                singularTitle: 'Recurring Template',
+                fields: [
+                    { name: 'name', label: 'Name', type: 'text', required: true },
+                    { name: 'type', label: 'Type', type: 'select', options: ['income', 'expense'], required: true },
+                    { name: 'amount', label: 'Amount', type: 'number', step: '0.01', min: 0, required: true },
+                    { name: 'frequency', label: 'Frequency', type: 'select', options: ['daily', 'weekly', 'monthly', 'yearly'], required: true },
+                    { name: 'category', label: 'Category', type: 'select', options: ['Salary', 'Food', 'Transport', 'Entertainment', 'Shopping', 'Bills', 'Healthcare', 'Investment', 'Other'], required: false },
+                    { name: 'dayOfMonth', label: 'Day of Month', type: 'number', step: '1', min: 1, max: 31, required: false, hint: 'For monthly frequency (1–31)' },
+                    { name: 'nextDate', label: 'Next Date', type: 'date', required: false },
                     { name: 'notes', label: 'Notes', type: 'text', required: false }
                 ]
             }

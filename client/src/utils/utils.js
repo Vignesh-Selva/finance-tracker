@@ -25,10 +25,20 @@ const Utilities = {
             const existing = document.querySelectorAll('.notification');
             existing.forEach(n => n.remove());
 
+            const bgMap = {
+                success: '#10b981',
+                error:   '#dc2626',
+                warning: '#d97706',
+                info:    '#3b82f6',
+            };
+            const textMap = {
+                warning: '#1a1a1a',
+            };
+
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
-            notification.setAttribute('role', 'status');
-            notification.setAttribute('aria-live', 'polite');
+            notification.setAttribute('role', type === 'error' ? 'alert' : 'status');
+            notification.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
             notification.textContent = message;
 
             notification.style.cssText = `
@@ -37,8 +47,8 @@ const Utilities = {
                 right: 20px;
                 padding: 15px 20px;
                 border-radius: 8px;
-                background: ${type === 'success' ? '#10b981' : '#ef4444'};
-                color: white;
+                background: ${bgMap[type] || bgMap.success};
+                color: ${textMap[type] || 'white'};
                 z-index: 10000;
                 animation: slideIn 0.3s ease;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
