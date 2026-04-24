@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, open-source, your own Supabase.">
+  <meta name="theme-color" content="#d97757">
+  <title>Networth Tracker — Your entire financial life. One dashboard.</title>
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Networth Tracker — Your entire financial life. One dashboard.">
+  <meta property="og:description" content="One unified, private dashboard replacing 5 different apps — live NAV, XIRR, net worth history, and fund research, running on your own Supabase.">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Networth Tracker — Your entire financial life. One dashboard.">
+  <meta name="twitter:description" content="Track savings, FDs, mutual funds, stocks, ETFs, and crypto with live prices. Your data, your Supabase.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles/main.css">
+  <link rel="stylesheet" href="./styles/landing.css">
+</head>
+<body class="lp-page">
+
+<!-- ── Navigation ── -->
+<nav class="lp-nav" id="lp-nav" aria-label="Main navigation">
+  <div class="lp-nav-inner">
+    <a href="#hero" class="lp-nav-logo" aria-label="Networth Tracker home">
+      <span class="lp-nav-logo-icon" aria-hidden="true">💰</span>
+      <span>Networth Tracker</span>
+    </a>
+    <div class="lp-nav-links" role="menubar">
+      <a href="#features" class="lp-nav-link" role="menuitem">Features</a>
+      <a href="#preview" class="lp-nav-link" role="menuitem">How It Works</a>
+    </div>
+    <div class="lp-nav-actions">
+      <a href="#cta" class="lp-btn-signin" id="lp-signin-nav">Sign In</a>
+      <a href="#cta" class="lp-btn-cta" id="lp-getstarted-nav">Get Started — It's Free</a>
+    </div>
+    <button class="lp-hamburger" id="lp-hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="lp-mobile-menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="lp-mobile-menu" id="lp-mobile-menu" role="menu">
+  <a href="#features" class="lp-nav-link" role="menuitem">Features</a>
+  <a href="#preview" class="lp-nav-link" role="menuitem">How It Works</a>
+  <a href="#cta" class="lp-nav-link" role="menuitem">Sign In</a>
+  <a href="#cta" class="lp-btn-cta" style="margin-top:8px;justify-content:center;" role="menuitem">Get Started Free</a>
+</div>
+
+<main>
+
+<!-- ── Hero ── -->
+<section id="hero" class="lp-hero" aria-labelledby="lp-hero-h1">
+  <div class="lp-container">
+    <div class="lp-hero-inner">
+      <div class="lp-hero-text">
+        <h1 id="lp-hero-h1">Your entire<br><em>financial life.</em><br>One dashboard.</h1>
+        <p class="lp-hero-subheadline">Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices — and finally know your true net worth, without checking five different apps.</p>
+        <div class="lp-hero-ctas">
+          <a href="#cta" class="lp-btn-cta">🚀 Get Started Free</a>
+          <a href="#preview" class="lp-btn-secondary-cta">See How It Works ↓</a>
+        </div>
+      </div>
+      <div class="lp-hero-visual" aria-label="Dashboard preview animation" aria-hidden="true">
+        <div class="lp-hero-mockup">
+          <div class="lp-mock-nw-wrap">
+            <span class="lp-mock-nw-label">Net Worth</span>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <div class="lp-mock-nw-value">₹<span class="lp-nw-counter" id="hero-counter">42,81,350</span></div>
+              <span class="lp-mock-change-badge">↑ +2.4%</span>
+            </div>
+          </div>
+          <div class="lp-mock-alloc-bar" style="margin-top:16px;" role="img" aria-label="Asset allocation bar">
+            <div class="lp-mock-alloc-seg" style="flex-basis:28%;background:#d97757;" title="Savings 28%"></div>
+            <div class="lp-mock-alloc-seg" style="flex-basis:20%;background:#3b82f6;" title="Fixed Deposits 20%"></div>
+            <div class="lp-mock-alloc-seg" style="flex-basis:31%;background:#059669;" title="Mutual Funds 31%"></div>
+            <div class="lp-mock-alloc-seg" style="flex-basis:3%;background:#8b5cf6;" title="Stocks 3%"></div>
+            <div class="lp-mock-alloc-seg" style="flex-basis:4%;background:#f59e0b;" title="Crypto 4%"></div>
+            <div class="lp-mock-alloc-seg" style="flex-basis:14%;background:#6b7280;" title="EPF/PPF 14%"></div>
+          </div>
+          <div class="lp-mock-cards-row" style="margin-top:16px;">
+            <div class="lp-mock-mini-card">
+              <div class="lp-mock-mini-label">Mutual Funds</div>
+              <div class="lp-mock-mini-value">₹1,09,766</div>
+              <div class="lp-mock-mini-change pos">▲ +12.4%</div>
+            </div>
+            <div class="lp-mock-mini-card">
+              <div class="lp-mock-mini-label">Crypto</div>
+              <div class="lp-mock-mini-value">₹15,600</div>
+              <div class="lp-mock-mini-change neg">▼ -3.1%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Problem Strip ── -->
+<section class="lp-problems" aria-labelledby="problems-heading">
+  <div class="lp-container">
+    <h2 id="problems-heading" class="lp-section-heading" style="margin-bottom:36px;">Does this sound familiar?</h2>
+    <div class="lp-problems-grid">
+      <article class="lp-problem-card lp-fade-up lp-stagger-1">
+        <span class="lp-problem-icon" aria-hidden="true">📱</span>
+        <h3 class="lp-problem-title">5 apps, zero clarity</h3>
+        <p class="lp-problem-desc">You check HDFC NetBanking, Zerodha, Coin, CoinDCX, and your FD app separately — and still don't have the full picture.</p>
+      </article>
+      <article class="lp-problem-card lp-fade-up lp-stagger-2">
+        <span class="lp-problem-icon" aria-hidden="true">❓</span>
+        <h3 class="lp-problem-title">No single net worth number</h3>
+        <p class="lp-problem-desc">You don't actually know your true financial position at any moment. Every calculation is manual and instantly outdated.</p>
+      </article>
+      <article class="lp-problem-card lp-fade-up lp-stagger-3">
+        <span class="lp-problem-icon" aria-hidden="true">📊</span>
+        <h3 class="lp-problem-title">Stale spreadsheets, live markets</h3>
+        <p class="lp-problem-desc">Manually updated spreadsheets lag behind real NAV, stock prices, and crypto moves. Decisions based on last week's data.</p>
+      </article>
+      <article class="lp-problem-card lp-fade-up lp-stagger-4">
+        <span class="lp-problem-icon" aria-hidden="true">📉</span>
+        <h3 class="lp-problem-title">No history, no progress</h3>
+        <p class="lp-problem-desc">You can't see whether your net worth grew or shrank this month, this quarter, or this year. No baseline, no trend.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── Dashboard Preview ── -->
+<section id="preview" class="lp-section lp-preview" aria-labelledby="preview-heading">
+  <div class="lp-container">
+    <div class="lp-fade-up">
+      <p class="lp-section-label">Live Preview</p>
+      <h2 id="preview-heading" class="lp-section-heading">This is what clarity looks like.</h2>
+      <p class="lp-section-subtext">One view. Every rupee accounted for. Net worth, allocation, history — all live.</p>
+    </div>
+    <div class="lp-fade-up lp-stagger-2">
+      <div class="lp-browser-wrap">
+        <div class="lp-browser-chrome" aria-hidden="true">
+          <div class="lp-browser-dots">
+            <div class="lp-browser-dot"></div><div class="lp-browser-dot"></div><div class="lp-browser-dot"></div>
+          </div>
+          <div class="lp-browser-url">networth-tracker.app / dashboard</div>
+        </div>
+        <div class="lp-dash-inner">
+          <div class="lp-dash-sidebar" aria-hidden="true">
+            <div class="lp-dash-nav-dot active"></div>
+            <div class="lp-dash-nav-dot"></div>
+            <div class="lp-dash-nav-dot"></div>
+            <div class="lp-dash-nav-dot"></div>
+            <div class="lp-dash-nav-dot"></div>
+            <div class="lp-dash-nav-dot"></div>
+          </div>
+          <div class="lp-dash-content">
+            <div class="lp-dash-stat-row">
+              <div class="lp-dash-stat-card">
+                <div class="lp-dash-stat-lbl">Net Worth</div>
+                <div class="lp-dash-stat-val">₹42.8L</div>
+                <div class="lp-dash-stat-chg" style="color:var(--green)">↑ +2.4%</div>
+              </div>
+              <div class="lp-dash-stat-card">
+                <div class="lp-dash-stat-lbl">Investments</div>
+                <div class="lp-dash-stat-val">₹1.34L</div>
+                <div class="lp-dash-stat-chg" style="color:var(--green)">↑ +9.1%</div>
+              </div>
+              <div class="lp-dash-stat-card">
+                <div class="lp-dash-stat-lbl">EPF + PPF</div>
+                <div class="lp-dash-stat-val">₹8.36L</div>
+                <div class="lp-dash-stat-chg" style="color:var(--text-muted)">→ +7.1%</div>
+              </div>
+              <div class="lp-dash-stat-card">
+                <div class="lp-dash-stat-lbl">Liabilities</div>
+                <div class="lp-dash-stat-val">₹0</div>
+                <div class="lp-dash-stat-chg" style="color:var(--green)">✓ Debt-free</div>
+              </div>
+            </div>
+            <div class="lp-dash-alloc-bar" role="img" aria-label="Asset allocation">
+              <div class="lp-dash-alloc-seg" style="flex-basis:28%;background:#d97757;">28%</div>
+              <div class="lp-dash-alloc-seg" style="flex-basis:20%;background:#3b82f6;">20%</div>
+              <div class="lp-dash-alloc-seg" style="flex-basis:31%;background:#059669;">31%</div>
+              <div class="lp-dash-alloc-seg" style="flex-basis:3%;background:#8b5cf6;"></div>
+              <div class="lp-dash-alloc-seg" style="flex-basis:4%;background:#f59e0b;"></div>
+              <div class="lp-dash-alloc-seg" style="flex-basis:14%;background:#6b7280;">14%</div>
+            </div>
+            <div class="lp-dash-alloc-legend" aria-hidden="true">
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#d97757;"></div>Savings 28%</div>
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#3b82f6;"></div>FD 20%</div>
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#059669;"></div>MF 31%</div>
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#8b5cf6;"></div>Stocks 3%</div>
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#f59e0b;"></div>Crypto 4%</div>
+              <div class="lp-dash-legend-item"><div class="lp-dash-legend-dot" style="background:#6b7280;"></div>EPF 14%</div>
+            </div>
+            <div class="lp-dash-chart-area">
+              <div class="lp-dash-chart-lbl">Net Worth History</div>
+              <svg class="lp-dash-chart-svg" viewBox="0 0 300 80" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="dashGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#059669" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#059669" stop-opacity="0.02"/>
+                  </linearGradient>
+                </defs>
+                <path d="M 0,75 L 27,68 L 55,61 L 82,65 L 109,52 L 136,47 L 164,49 L 191,36 L 218,29 L 246,21 L 273,12 L 300,5 L 300,80 L 0,80 Z" fill="url(#dashGrad)"/>
+                <path id="lp-mini-line" d="M 0,75 L 27,68 L 55,61 L 82,65 L 109,52 L 136,47 L 164,49 L 191,36 L 218,29 L 246,21 L 273,12 L 300,5" fill="none" stroke="#059669" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="lp-dash-pnl-row">
+              <div class="lp-dash-pnl-card">
+                <div class="lp-dash-pnl-title">Mutual Funds P&L</div>
+                <div class="lp-dash-pnl-val">₹1,09,766</div>
+                <div class="lp-dash-pnl-chg" style="color:var(--green)">▲ +12.4% XIRR</div>
+              </div>
+              <div class="lp-dash-pnl-card">
+                <div class="lp-dash-pnl-title">Crypto P&L</div>
+                <div class="lp-dash-pnl-val">₹15,600</div>
+                <div class="lp-dash-pnl-chg" style="color:var(--red)">▼ -3.1%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="lp-preview-caption">↑ Live preview of your dashboard after sign-up. All figures are illustrative.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features" class="lp-section lp-features" aria-labelledby="features-heading">
+  <div class="lp-container">
+    <div class="lp-fade-up">
+      <p class="lp-section-label">What You Get</p>
+      <h2 id="features-heading" class="lp-section-heading">Every rupee, every asset, one place.</h2>
+      <p class="lp-section-subtext">Built specifically for Indian retail investors — the data sources, vocabulary, and workflows you actually use.</p>
+    </div>
+    <div class="lp-features-grid">
+      <article class="lp-feature-card lp-fade-up lp-stagger-1">
+        <span class="lp-feature-icon" aria-hidden="true">⚡</span>
+        <h3 class="lp-feature-name">Live Price Refresh</h3>
+        <p class="lp-feature-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, crypto from CoinGecko. One click refreshes everything — no manual entry, no stale data.</p>
+      </article>
+      <article class="lp-feature-card lp-fade-up lp-stagger-2">
+        <span class="lp-feature-icon" aria-hidden="true">📈</span>
+        <h3 class="lp-feature-name">Net Worth History</h3>
+        <p class="lp-feature-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory. See exactly when you crossed milestones, and how your consistent investing compounds over months.</p>
+      </article>
+      <article class="lp-feature-card lp-fade-up lp-stagger-3">
+        <span class="lp-feature-icon" aria-hidden="true">🔍</span>
+        <h3 class="lp-feature-name">Fund Research Engine</h3>
+        <p class="lp-feature-desc">Track any AMFI-listed mutual fund. View 1Y, 3Y, 5Y CAGR returns and alpha vs. benchmark. Get alerts when expense ratio or AUM shifts significantly — before it hurts your returns.</p>
+      </article>
+      <article class="lp-feature-card lp-fade-up lp-stagger-4">
+        <span class="lp-feature-icon" aria-hidden="true">💳</span>
+        <h3 class="lp-feature-name">Credit Card Intelligence</h3>
+        <p class="lp-feature-desc">Track utilisation across all your cards, see next due dates at a glance, and get warned before utilisation exceeds 30% — protecting your credit score without spreadsheets.</p>
+      </article>
+      <article class="lp-feature-card lp-fade-up lp-stagger-5">
+        <span class="lp-feature-icon" aria-hidden="true">🧭</span>
+        <h3 class="lp-feature-name">Budget vs. Actuals</h3>
+        <p class="lp-feature-desc">Set monthly category budgets and compare against real spending from your transaction history. See exactly where your money goes — not where you think it goes.</p>
+      </article>
+      <article class="lp-feature-card lp-fade-up lp-stagger-6">
+        <span class="lp-feature-icon" aria-hidden="true">📦</span>
+        <h3 class="lp-feature-name">Import / Export</h3>
+        <p class="lp-feature-desc">Your data as portable JSON, any time, with one click. No proprietary format, no lock-in. You own your financial history completely.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── Asset Classes ── -->
+<section class="lp-section lp-assets" aria-labelledby="assets-heading">
+  <div class="lp-container">
+    <div class="lp-fade-up" style="text-align:center;">
+      <p class="lp-section-label">Coverage</p>
+      <h2 id="assets-heading" class="lp-section-heading">Every asset class. One place.</h2>
+      <p class="lp-section-subtext" style="margin-left:auto;margin-right:auto;">Hover each asset class to see what's tracked.</p>
+    </div>
+    <div class="lp-assets-row lp-fade-up lp-stagger-2" role="list">
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-savings" data-popover="pop-savings">
+          <span class="lp-asset-badge-icon" aria-hidden="true">🏦</span>
+          <span class="lp-asset-badge-name">Savings</span>
+          <span class="lp-asset-badge-desc">Balance · Interest rate · Institution</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-savings" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">HDFC Savings</span><span class="lp-popover-value">₹9,83,000</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Interest</span><span class="lp-popover-value">3.5% p.a.</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">YTD Growth</span><span class="lp-popover-value pos">+₹22,400</span></div>
+        </div>
+      </div>
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-fd" data-popover="pop-fd">
+          <span class="lp-asset-badge-icon" aria-hidden="true">🐷</span>
+          <span class="lp-asset-badge-name">Fixed Deposits</span>
+          <span class="lp-asset-badge-desc">Maturity date · Rate · Auto-renew</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-fd" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">SBI FD</span><span class="lp-popover-value">₹7,00,000</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Rate</span><span class="lp-popover-value">7.1% p.a.</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Matures</span><span class="lp-popover-value">Mar 2026</span></div>
+        </div>
+      </div>
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-mf" data-popover="pop-mf">
+          <span class="lp-asset-badge-icon" aria-hidden="true">📜</span>
+          <span class="lp-asset-badge-name">Mutual Funds</span>
+          <span class="lp-asset-badge-desc">NAV auto-updated · XIRR-ready · Fund research</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-mf" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Parag Parikh FCF</span><span class="lp-popover-value">₹92.54 NAV</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Units</span><span class="lp-popover-value">1,186.3</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">P&L</span><span class="lp-popover-value pos">+₹14,820</span></div>
+        </div>
+      </div>
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-stocks" data-popover="pop-stocks">
+          <span class="lp-asset-badge-icon" aria-hidden="true">📈</span>
+          <span class="lp-asset-badge-name">Stocks & ETFs</span>
+          <span class="lp-asset-badge-desc">Live price · P&L · Brokerage</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-stocks" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">NIFTYBEES</span><span class="lp-popover-value">₹9,468</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Price</span><span class="lp-popover-value">₹243.4</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">P&L</span><span class="lp-popover-value pos">+₹1,240</span></div>
+        </div>
+      </div>
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-crypto" data-popover="pop-crypto">
+          <span class="lp-asset-badge-icon" aria-hidden="true">🪙</span>
+          <span class="lp-asset-badge-name">Crypto</span>
+          <span class="lp-asset-badge-desc">CoinGecko prices · Exchange tracking</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-crypto" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">BTC · Binance</span><span class="lp-popover-value">₹7,841</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Price</span><span class="lp-popover-value">₹72,50,000</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">P&L</span><span class="lp-popover-value pos">+23.4%</span></div>
+        </div>
+      </div>
+      <div class="lp-asset-item" role="listitem">
+        <button class="lp-asset-badge" aria-describedby="pop-liab" data-popover="pop-liab">
+          <span class="lp-asset-badge-icon" aria-hidden="true">📋</span>
+          <span class="lp-asset-badge-name">Liabilities</span>
+          <span class="lp-asset-badge-desc">Loans · EMI tracking · Interest cost</span>
+        </button>
+        <div class="lp-asset-popover" id="pop-liab" role="tooltip">
+          <div class="lp-popover-header">Sample Entry</div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Home Loan</span><span class="lp-popover-value">₹0</span></div>
+          <div class="lp-popover-row"><span class="lp-popover-label">Status</span><span class="lp-popover-value pos">✓ Debt-free</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Fund Research ── -->
+<section class="lp-fund-section" aria-labelledby="fund-heading">
+  <div class="lp-container">
+    <div class="lp-fund-inner">
+      <div class="lp-fund-copy lp-fade-up">
+        <p class="lp-section-label">Fund Research Engine</p>
+        <h2 id="fund-heading" class="lp-section-heading">Your mutual fund analyst. Always on.</h2>
+        <p class="lp-section-subtext">We track expense ratio changes, AUM shifts, fund manager changes, and return drift — and surface the signal the moment something significant happens.</p>
+        <div class="lp-fund-alerts">
+          <span class="lp-alert-chip red">🔴 Expense ratio up</span>
+          <span class="lp-alert-chip yellow">🟡 AUM dropped</span>
+          <span class="lp-alert-chip green">🟢 3Y CAGR beat index</span>
+          <span class="lp-alert-chip blue">🔵 NAV updated</span>
+        </div>
+      </div>
+      <div class="lp-fund-card lp-fade-up lp-stagger-2">
+        <div class="lp-fund-card-header">
+          <div class="lp-fund-card-name">Parag Parikh Flexi Cap Fund</div>
+          <div class="lp-fund-chips">
+            <span class="lp-fund-chip category">Equity · Flexi Cap</span>
+            <span class="lp-fund-chip nav">NAV ₹92.54</span>
+            <span class="lp-fund-chip alpha">α +10.8%</span>
+          </div>
+        </div>
+        <div class="lp-fund-returns">
+          <div class="lp-fund-return-cell">
+            <div class="lp-fund-return-period">1Y Return</div>
+            <div class="lp-fund-return-val">+18.3%</div>
+          </div>
+          <div class="lp-fund-return-cell">
+            <div class="lp-fund-return-period">3Y CAGR</div>
+            <div class="lp-fund-return-val">+21.7%</div>
+          </div>
+          <div class="lp-fund-return-cell">
+            <div class="lp-fund-return-period">5Y CAGR</div>
+            <div class="lp-fund-return-val">+24.1%</div>
+          </div>
+        </div>
+        <div class="lp-fund-alert-sample">
+          <span>🔴</span>
+          <span>Expense ratio increased by 0.15% — from 0.55% to 0.70%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Net Worth History ── -->
+<section class="lp-section lp-history" aria-labelledby="history-heading">
+  <div class="lp-container">
+    <div class="lp-history-inner">
+      <div class="lp-fade-up">
+        <p class="lp-section-label">Wealth Trajectory</p>
+        <h2 id="history-heading" class="lp-section-heading">See your wealth compound in real time.</h2>
+        <p class="lp-section-subtext" style="max-width:none;margin-bottom:16px;">Daily snapshots are taken automatically. The chart shows the true compounding effect of consistent investing — and you can see exactly when your wealth grew or contracted.</p>
+        <div class="lp-history-change-callout">
+          <div class="lp-history-change-label">30-Day Change</div>
+          <div class="lp-history-change-val">+₹1,70,000</div>
+          <div class="lp-history-change-sub">↑ +4.1% vs last month</div>
+        </div>
+      </div>
+      <div class="lp-fade-up lp-stagger-2">
+        <div class="lp-chart-container">
+          <div class="lp-chart-header">
+            <span class="lp-chart-title">Net Worth — 12 Months</span>
+            <span class="lp-chart-range">₹28L → ₹42.8L</span>
+          </div>
+          <svg id="lp-history-svg" class="lp-history-svg" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid meet" aria-label="Net worth growth chart showing increase from ₹28L to ₹42.8L over 12 months" role="img">
+            <defs>
+              <linearGradient id="historyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#059669" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#059669" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <path d="M 0,190 L 73,172 L 145,153 L 218,163 L 291,132 L 364,117 L 436,123 L 509,90 L 582,70 L 655,51 L 727,30 L 800,10 L 800,200 L 0,200 Z" fill="url(#historyGrad)"/>
+            <path id="lp-chart-line" d="M 0,190 L 73,172 L 145,153 L 218,163 L 291,132 L 364,117 L 436,123 L 509,90 L 582,70 L 655,51 L 727,30 L 800,10" fill="none" stroke="#059669" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+          <div class="lp-chart-labels" aria-hidden="true">
+            <span class="lp-chart-month">May</span><span class="lp-chart-month">Jun</span>
+            <span class="lp-chart-month">Jul</span><span class="lp-chart-month">Aug</span>
+            <span class="lp-chart-month">Sep</span><span class="lp-chart-month">Oct</span>
+            <span class="lp-chart-month">Nov</span><span class="lp-chart-month">Dec</span>
+            <span class="lp-chart-month">Jan</span><span class="lp-chart-month">Feb</span>
+            <span class="lp-chart-month">Mar</span><span class="lp-chart-month">Apr</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Privacy ── -->
+<section class="lp-section lp-privacy" aria-labelledby="privacy-heading">
+  <div class="lp-container">
+    <div class="lp-privacy-box lp-fade-up">
+      <div>
+        <h2 id="privacy-heading" class="lp-privacy-heading">Transparent about<br>where your data lives.</h2>
+        <p class="lp-privacy-body">Sign up on this instance and your data is stored in the project's Supabase database — isolated from other users by Row-Level Security, but on a shared project. Want full data sovereignty? Clone the repo, point it at your own Supabase project, and deploy your own instance. The code is open-source, so you can verify exactly what runs.</p>
+        <div class="lp-trust-chips">
+          <span class="lp-trust-chip"><span class="lp-trust-icon" aria-hidden="true">🔓</span> Open Source</span>
+          <span class="lp-trust-chip"><span class="lp-trust-icon" aria-hidden="true">🚫</span> No Tracking</span>
+          <span class="lp-trust-chip"><span class="lp-trust-icon" aria-hidden="true">�</span> Self-Host Option</span>
+        </div>
+        <a href="https://github.com/Vignesh-Selva/finance-tracker" target="_blank" rel="noopener noreferrer" class="lp-github-link">
+          <span aria-hidden="true">⭐</span> View on GitHub
+        </a>
+      </div>
+      <div class="lp-privacy-visual" aria-hidden="true">
+        <div class="lp-privacy-row">
+          <span class="lp-privacy-row-icon">🏗️</span>
+          <div>
+            <div class="lp-privacy-row-title">This instance: shared project</div>
+            <div class="lp-privacy-row-desc">Sign-ups here land in the project's Supabase database. Row-Level Security ensures no other user can read your records — but it's not your database.</div>
+          </div>
+        </div>
+        <div class="lp-privacy-row">
+          <span class="lp-privacy-row-icon">🔐</span>
+          <div>
+            <div class="lp-privacy-row-title">Self-host for full isolation</div>
+            <div class="lp-privacy-row-desc">Fork the repo, create a free Supabase project, add your own credentials to <code>.env</code>, and deploy. Your database, zero shared infrastructure.</div>
+          </div>
+        </div>
+        <div class="lp-privacy-row">
+          <span class="lp-privacy-row-icon">📤</span>
+          <div>
+            <div class="lp-privacy-row-title">Export anytime, instantly</div>
+            <div class="lp-privacy-row-desc">One-click JSON export of your entire financial history. No waiting, no requests, no vendor dependency — you own the database.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats Strip ── -->
+<section class="lp-stats" aria-label="Project statistics">
+  <div class="lp-container">
+    <div class="lp-stats-grid">
+      <div class="lp-fade-up lp-stagger-1" style="text-align:center;">
+        <div class="lp-stat-num" data-count="45" data-suffix="">45</div>
+        <div class="lp-stat-label">Tests passing</div>
+      </div>
+      <div class="lp-fade-up lp-stagger-2" style="text-align:center;">
+        <div class="lp-stat-num" data-count="6" data-suffix="">6</div>
+        <div class="lp-stat-label">Asset classes tracked</div>
+      </div>
+      <div class="lp-fade-up lp-stagger-3" style="text-align:center;">
+        <div class="lp-stat-num" data-count="3" data-suffix="">3</div>
+        <div class="lp-stat-label">Live price sources</div>
+      </div>
+      <div class="lp-fade-up lp-stagger-4" style="text-align:center;">
+        <div class="lp-stat-num" data-count="100" data-suffix="%" data-prefix="">100%</div>
+        <div class="lp-stat-label">Open source</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Final CTA ── -->
+<section id="cta" class="lp-section lp-cta" aria-labelledby="cta-heading">
+  <div class="lp-container">
+    <h2 id="cta-heading" class="lp-cta-heading">Know your true net worth.<br>Starting today.</h2>
+    <p class="lp-cta-sub">Open source, self-hosted. Fork the repo, add your own Supabase project, and you're live in minutes.</p>
+
+    <div class="lp-auth-form-wrap">
+      <div class="lp-form-error" id="lp-form-error" role="alert"></div>
+      <div class="lp-form-success" id="lp-form-success" role="status"></div>
+      <form id="lp-auth-form" novalidate autocomplete="on">
+        <div class="lp-form-group" id="lp-name-group" style="display:none;">
+          <label class="lp-form-label" for="lp-name">Your name</label>
+          <input type="text" id="lp-name" class="lp-form-input" placeholder="Rahul Sharma" autocomplete="name">
+        </div>
+        <div class="lp-form-group">
+          <label class="lp-form-label" for="lp-email">Email address</label>
+          <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="lp-form-group">
+          <label class="lp-form-label" for="lp-password">Password</label>
+          <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+        </div>
+        <button type="submit" class="lp-form-submit" id="lp-form-submit">Sign Up Free →</button>
+        <div class="lp-form-toggle">
+          <span id="lp-form-toggle-text">Already have an account? </span>
+          <button type="button" id="lp-form-toggle-btn">Sign In</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="lp-reassurance">
+      <span>✓ Free forever</span>
+      <span>✓ No credit card</span>
+      <span>✓ Open source on GitHub</span>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer class="lp-footer" role="contentinfo">
+  <div class="lp-container">
+    <div class="lp-footer-inner">
+      <div>
+        <a href="#hero" class="lp-footer-logo">
+          <span aria-hidden="true">💰</span>
+          <span>Networth Tracker</span>
+        </a>
+        <p class="lp-footer-tagline">Every rupee, tracked. Every decision, informed.</p>
+      </div>
+      <div class="lp-footer-links">
+        <a href="#features" class="lp-footer-link">Features</a>
+        <a href="#privacy" class="lp-footer-link">Privacy</a>
+        <a href="https://github.com/Vignesh-Selva/finance-tracker" target="_blank" rel="noopener noreferrer" class="lp-footer-link">GitHub</a>
+      </div>
+      <p class="lp-footer-copy">© 2025 Networth Tracker. Open source.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Auth module — Supabase sign-up/sign-in -->
+<script type="module">
+import { createClient } from '@supabase/supabase-js';
+const _url = import.meta.env.VITE_SUPABASE_URL || '';
+const _key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const _configured = Boolean(_url && _key);
+const _sb = _configured
+  ? createClient(_url, _key)
+  : createClient('https://placeholder.supabase.co', 'placeholder');
+
+if (_configured) {
+  _sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) window.location.replace('./');
+  }).catch(() => {});
+
+  _sb.auth.onAuthStateChange((_ev, session) => {
+    if (session) window.location.replace('./');
+  });
+}
+
+let _isSignUp = true;
+
+const _form = document.getElementById('lp-auth-form');
+const _emailEl = document.getElementById('lp-email');
+const _pwEl = document.getElementById('lp-password');
+const _nameEl = document.getElementById('lp-name');
+const _nameGroup = document.getElementById('lp-name-group');
+const _submitBtn = document.getElementById('lp-form-submit');
+const _errorEl = document.getElementById('lp-form-error');
+const _successEl = document.getElementById('lp-form-success');
+const _toggleBtn = document.getElementById('lp-form-toggle-btn');
+const _toggleText = document.getElementById('lp-form-toggle-text');
+const _navSignin = document.getElementById('lp-signin-nav');
+
+function _showError(msg) {
+  _errorEl.textContent = msg;
+  _errorEl.style.display = 'block';
+  _successEl.style.display = 'none';
+}
+
+function _showSuccess(msg) {
+  _successEl.textContent = msg;
+  _successEl.style.display = 'block';
+  _errorEl.style.display = 'none';
+}
+
+function _clearMessages() {
+  _errorEl.style.display = 'none';
+  _successEl.style.display = 'none';
+}
+
+function _setSignUpMode(signUp) {
+  _isSignUp = signUp;
+  _clearMessages();
+  if (_isSignUp) {
+    _submitBtn.textContent = 'Sign Up Free →';
+    _toggleText.textContent = 'Already have an account? ';
+    _toggleBtn.textContent = 'Sign In';
+    _nameGroup.style.display = 'block';
+    _nameEl.required = true;
+    _pwEl.setAttribute('autocomplete', 'new-password');
+  } else {
+    _submitBtn.textContent = 'Sign In →';
+    _toggleText.textContent = "Don't have an account? ";
+    _toggleBtn.textContent = 'Sign Up Free';
+    _nameGroup.style.display = 'none';
+    _nameEl.required = false;
+    _pwEl.setAttribute('autocomplete', 'current-password');
+  }
+}
+
+_navSignin.addEventListener('click', (e) => {
+  e.preventDefault();
+  _setSignUpMode(false);
+  document.getElementById('cta').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => _emailEl.focus(), 600);
+});
+
+_toggleBtn.addEventListener('click', () => _setSignUpMode(!_isSignUp));
+
+_form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  _clearMessages();
+
+  const email = _emailEl.value.trim();
+  const password = _pwEl.value;
+  const name = _nameEl.value.trim();
+
+  if (!email) { _showError('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _showError('Please enter a valid email address.'); return; }
+  if (!password || password.length < 6) { _showError('Password must be at least 6 characters.'); return; }
+  if (_isSignUp && !name) { _showError('Please enter your name.'); return; }
+
+  if (!_configured) {
+    _showError('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    return;
+  }
+
+  _submitBtn.disabled = true;
+  _submitBtn.textContent = _isSignUp ? 'Creating account…' : 'Signing in…';
+
+  try {
+    if (_isSignUp) {
+      const { data, error } = await _sb.auth.signUp({
+        email, password, options: { data: { username: name } }
+      });
+      if (error) throw error;
+      if (data.session) {
+        window.location.replace('./');
+      } else {
+        _showSuccess('Account created! Check your email to confirm, then sign in.');
+        _setSignUpMode(false);
+      }
+    } else {
+      const { error } = await _sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (err) {
+    _showError(err.message || 'Authentication failed. Please try again.');
+  } finally {
+    _submitBtn.disabled = false;
+    _submitBtn.textContent = _isSignUp ? 'Sign Up Free →' : 'Sign In →';
+  }
+});
+</script>
+
+<!-- UI interactions — vanilla JS, no external deps -->
+<script>
+(function () {
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Sticky nav ── */
+  const nav = document.getElementById('lp-nav');
+  const heroEl = document.getElementById('hero');
+  function updateNav() {
+    const threshold = heroEl ? heroEl.offsetHeight * 0.6 : 300;
+    nav.classList.toggle('lp-nav--sticky', window.scrollY > threshold);
+  }
+  window.addEventListener('scroll', updateNav, { passive: true });
+
+  /* ── Smooth scroll anchors ── */
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', function (e) {
+      const target = document.querySelector(this.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
+      if (menuEl.classList.contains('open')) toggleMenu(false);
+    });
+  });
+
+  /* ── Mobile hamburger ── */
+  const hamburger = document.getElementById('lp-hamburger');
+  const menuEl = document.getElementById('lp-mobile-menu');
+  function toggleMenu(state) {
+    const open = typeof state === 'boolean' ? state : !menuEl.classList.contains('open');
+    hamburger.classList.toggle('open', open);
+    menuEl.classList.toggle('open', open);
+    hamburger.setAttribute('aria-expanded', open);
+  }
+  hamburger.addEventListener('click', () => toggleMenu());
+
+  /* ── Scroll animations ── */
+  if (!prefersReduced && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('lp-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.lp-fade-up').forEach(el => io.observe(el));
+  } else {
+    document.querySelectorAll('.lp-fade-up').forEach(el => el.classList.add('lp-visible'));
+  }
+
+  /* ── Count-up animation ── */
+  function countUp(el, target, duration, prefix, suffix) {
+    const start = performance.now();
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = prefix + Math.round(eased * target).toLocaleString('en-IN') + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  if (!prefersReduced && 'IntersectionObserver' in window) {
+    const statsIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = parseInt(el.dataset.count, 10);
+          const suffix = el.dataset.suffix || '';
+          const prefix = el.dataset.prefix || '';
+          countUp(el, target, 1200, prefix, suffix);
+          statsIo.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.lp-stat-num[data-count]').forEach(el => statsIo.observe(el));
+  }
+
+  /* ── Hero net worth counter (runs on page load) ── */
+  const heroCounter = document.getElementById('hero-counter');
+  if (heroCounter && !prefersReduced) {
+    const finalVal = 4281350;
+    const duration = 1400;
+    const start = performance.now();
+    function heroStep(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * finalVal);
+      const lakh = Math.floor(current / 100000);
+      const remainder = current % 100000;
+      heroCounter.textContent = lakh.toLocaleString('en-IN') + ',' + String(remainder).padStart(5, '0').replace(/(\d{2})(\d{3})/, '$1,$2');
+      if (progress < 1) requestAnimationFrame(heroStep);
+    }
+    setTimeout(() => requestAnimationFrame(heroStep), 700);
+  }
+
+  /* ── SVG chart draw animation ── */
+  function animateLine(lineEl) {
+    const length = lineEl.getTotalLength ? lineEl.getTotalLength() : 1200;
+    lineEl.style.strokeDasharray = length;
+    lineEl.style.strokeDashoffset = length;
+    lineEl.style.transition = 'stroke-dashoffset 1.6s cubic-bezier(0.4, 0, 0.2, 1)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        lineEl.style.strokeDashoffset = '0';
+      });
+    });
+  }
+
+  if (!prefersReduced && 'IntersectionObserver' in window) {
+    const chartIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const line = entry.target.querySelector('#lp-chart-line');
+          if (line) animateLine(line);
+          chartIo.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    const histSvg = document.getElementById('lp-history-svg');
+    if (histSvg) chartIo.observe(histSvg.closest('.lp-chart-container'));
+  }
+
+  /* ── Asset badge popovers ── */
+  const activePopovers = new Set();
+
+  function closeAllPopovers(except) {
+    document.querySelectorAll('.lp-asset-popover.visible').forEach(p => {
+      if (p !== except) p.classList.remove('visible');
+    });
+  }
+
+  document.querySelectorAll('.lp-asset-badge').forEach(badge => {
+    const popoverId = badge.dataset.popover;
+    const popover = popoverId ? document.getElementById(popoverId) : null;
+    if (!popover) return;
+
+    function showPop() {
+      closeAllPopovers(popover);
+      popover.classList.add('visible');
+      const rect = popover.getBoundingClientRect();
+      if (rect.left < 8) popover.style.transform = 'translateX(0) scale(1)';
+      if (rect.right > window.innerWidth - 8) popover.style.transform = `translateX(calc(-100% + 40px)) scale(1)`;
+    }
+
+    function hidePop() { popover.classList.remove('visible'); popover.style.transform = ''; }
+
+    badge.addEventListener('mouseenter', showPop);
+    badge.addEventListener('mouseleave', hidePop);
+    badge.addEventListener('focus', showPop);
+    badge.addEventListener('blur', hidePop);
+
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (popover.classList.contains('visible')) {
+        hidePop();
+      } else {
+        showPop();
+      }
+    });
+  });
+
+  document.addEventListener('click', () => closeAllPopovers(null));
+}());
+</script>
+
+</body>
+</html>

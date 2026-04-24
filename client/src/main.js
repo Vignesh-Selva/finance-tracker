@@ -1,25 +1,21 @@
 import PersonalFinanceApp from './core/appShell.js';
 import { getSession, onAuthStateChange } from './services/authService.js';
-import { renderLoginScreen, removeLoginScreen } from './ui/auth/loginScreen.js';
 
 let app = null;
 
 async function initApp() {
-    if (app) return; // already initialised
+    if (app) return;
     app = new PersonalFinanceApp();
     await app.init();
     window.app = app;
-    removeLoginScreen();
-    // Show the main app UI
     document.querySelector('.app-container').style.display = '';
 }
 
-function showLogin() {
-    // Hide the main app UI while logged out
+function redirectToLanding() {
     document.querySelector('.app-container').style.display = 'none';
     app = null;
     window.app = null;
-    renderLoginScreen();
+    window.location.replace('./landing.html');
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -28,18 +24,17 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (session) {
             await initApp();
         } else {
-            showLogin();
+            redirectToLanding();
         }
-    } catch (err) {
-        console.error('Session check failed', err);
-        showLogin();
+    } catch (_err) {
+        redirectToLanding();
     }
 
     onAuthStateChange(async (session) => {
         if (session) {
             await initApp();
         } else {
-            showLogin();
+            redirectToLanding();
         }
     });
 });
