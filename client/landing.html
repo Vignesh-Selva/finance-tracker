@@ -325,9 +325,10 @@
       _googleBtn.disabled = true;
       _googleBtn.innerHTML = '<span>Signing in...</span>';
       try {
+        const baseUrl = window.location.href.split('landing.html')[0];
         const { error } = await _sb.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.origin + '/' }
+          options: { redirectTo: baseUrl }
         });
         if (error) throw error;
       } catch (err) {
