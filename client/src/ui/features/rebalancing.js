@@ -350,7 +350,7 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
             if (existing?.id) {
                 await api.settings.update(existing.id, data);
             } else {
-                await api.settings.create({ ...data, portfolio_id });
+                await api.settings.create({ ...data, portfolio_id: portfolioId });
             }
             renderPlanTab(content, portfolioId, { netWorth, settings: { ...settings, emergency_fund_months: months } });
         } catch (error) {
