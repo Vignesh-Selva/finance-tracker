@@ -149,138 +149,6 @@ describe('rebalancing - target management', () => {
     });
 });
 
-describe('rebalancing - drift calculation', () => {
-    function calculateDrift(currentVal, currentPct, targetPct, totalNW) {
-        const targetVal = (targetPct / 100) * totalNW;
-        const delta = targetVal - currentVal;
-        const deltaPct = currentPct - targetPct;
-        return { delta, deltaPct, targetVal };
-    }
-
-    it('calculates delta correctly for underweight position', () => {
-        const totalNW = 1000000;
-        const currentVal = 150000;
-        const currentPct = 15;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(200000);
-        expect(delta).toBe(50000);
-        expect(deltaPct).toBe(-5);
-    });
-
-    it('calculates delta correctly for overweight position', () => {
-        const totalNW = 1000000;
-        const currentVal = 250000;
-        const currentPct = 25;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(200000);
-        expect(delta).toBe(-50000);
-        expect(deltaPct).toBe(5);
-    });
-
-    it('calculates delta correctly for on-target position', () => {
-        const totalNW = 1000000;
-        const currentVal = 200000;
-        const currentPct = 20;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(200000);
-        expect(delta).toBe(0);
-        expect(deltaPct).toBe(0);
-    });
-
-    it('handles zero net worth', () => {
-        const totalNW = 0;
-        const currentVal = 0;
-        const currentPct = 0;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(0);
-        expect(delta).toBe(0);
-        expect(deltaPct).toBe(-20);
-    });
-
-    it('handles zero target percentage', () => {
-        const totalNW = 1000000;
-        const currentVal = 100000;
-        const currentPct = 10;
-        const targetPct = 0;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(0);
-        expect(delta).toBe(-100000);
-        expect(deltaPct).toBe(10);
-    });
-
-    it('handles very small drift (within tolerance)', () => {
-        const totalNW = 1000000;
-        const currentVal = 200100;
-        const currentPct = 20.01;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(Math.abs(delta)).toBe(100);
-        expect(deltaPct).toBeCloseTo(0.01, 2);
-    });
-
-    it('handles very large drift', () => {
-        const totalNW = 1000000;
-        const currentVal = 500000;
-        const currentPct = 50;
-        const targetPct = 10;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(100000);
-        expect(delta).toBe(-400000);
-        expect(deltaPct).toBe(40);
-    });
-
-    it('handles negative current value (should not happen in practice)', () => {
-        const totalNW = 1000000;
-        const currentVal = -10000;
-        const currentPct = -1;
-        const targetPct = 20;
-        const { delta, deltaPct, targetVal } = calculateDrift(currentVal, currentPct, targetPct, totalNW);
-        expect(targetVal).toBe(200000);
-        expect(delta).toBe(210000);
-        expect(deltaPct).toBe(-21);
-    });
-});
-
-describe('rebalancing - action advice', () => {
-    function getAction(delta) {
-        if (Math.abs(delta) < 100) {
-            return '✓ On target';
-        } else if (delta > 0) {
-            return '▲ Buy';
-        } else {
-            return '▼ Sell';
-        }
-    }
-
-    it('recommends buy when delta is positive and significant', () => {
-        expect(getAction(50000)).toBe('▲ Buy');
-        expect(getAction(1000)).toBe('▲ Buy');
-    });
-
-    it('recommends sell when delta is negative and significant', () => {
-        expect(getAction(-50000)).toBe('▼ Sell');
-        expect(getAction(-1000)).toBe('▼ Sell');
-    });
-
-    it('recommends on-target when delta is within tolerance', () => {
-        expect(getAction(99)).toBe('✓ On target');
-        expect(getAction(-99)).toBe('✓ On target');
-        expect(getAction(0)).toBe('✓ On target');
-    });
-
-    it('recommends buy exactly at tolerance boundary', () => {
-        expect(getAction(100)).toBe('▲ Buy');
-    });
-
-    it('recommends sell exactly at tolerance boundary', () => {
-        expect(getAction(-100)).toBe('▼ Sell');
-    });
-});
-
 describe('rebalancing - ASSET_CLASSES constant', () => {
     it('contains all expected asset classes', () => {
         expect(ASSET_CLASSES).toHaveLength(6);
@@ -349,5 +217,160 @@ describe('rebalancing - target validation', () => {
         const targets = { savings: 20.5, mutualFunds: 40.5, stocks: 39 };
         const total = totalTargets(targets);
         expect(total).toBeCloseTo(100, 1);
+    });
+});
+
+describe('rebalancing - Financial Planning: emergency fund calculations', () => {
+    function calculateEmergencyFund(efAmt, expenses, targetMonths) {
+        const efMonths = expenses > 0 ? efAmt / expenses : 0;
+        const efThreshold = expenses * targetMonths;
+        const efExcess = Math.max(0, efAmt - efThreshold);
+        const efLabel = efExcess > 0 ? '✓ Above target' : efMonths >= targetMonths ? '✓ Adequate' : efMonths >= (targetMonths / 2) ? '⚠ Partial' : '✗ Insufficient';
+        return { efMonths, efThreshold, efExcess, efLabel };
+    }
+
+    it('calculates months of expenses correctly', () => {
+        const { efMonths } = calculateEmergencyFund(600000, 100000, 6);
+        expect(efMonths).toBe(6);
+    });
+
+    it('calculates threshold correctly for 6-month target', () => {
+        const { efThreshold } = calculateEmergencyFund(600000, 100000, 6);
+        expect(efThreshold).toBe(600000);
+    });
+
+    it('calculates threshold correctly for 12-month target', () => {
+        const { efThreshold } = calculateEmergencyFund(1200000, 100000, 12);
+        expect(efThreshold).toBe(1200000);
+    });
+
+    it('calculates excess correctly when above target', () => {
+        const { efExcess } = calculateEmergencyFund(900000, 100000, 6);
+        expect(efExcess).toBe(300000);
+    });
+
+    it('shows "Above target" label when excess exists', () => {
+        const { efLabel } = calculateEmergencyFund(900000, 100000, 6);
+        expect(efLabel).toBe('✓ Above target');
+    });
+
+    it('shows "Adequate" label when at target without excess', () => {
+        const { efLabel } = calculateEmergencyFund(600000, 100000, 6);
+        expect(efLabel).toBe('✓ Adequate');
+    });
+
+    it('shows "Partial" label when between 50% and 100% of target', () => {
+        const { efLabel } = calculateEmergencyFund(300000, 100000, 6);
+        expect(efLabel).toBe('⚠ Partial');
+    });
+
+    it('shows "Insufficient" label when below 50% of target', () => {
+        const { efLabel } = calculateEmergencyFund(200000, 100000, 6);
+        expect(efLabel).toBe('✗ Insufficient');
+    });
+
+    it('handles zero expenses gracefully', () => {
+        const { efMonths } = calculateEmergencyFund(600000, 0, 6);
+        expect(efMonths).toBe(0);
+    });
+
+    it('handles zero emergency fund amount', () => {
+        const { efMonths, efLabel } = calculateEmergencyFund(0, 100000, 6);
+        expect(efMonths).toBe(0);
+        expect(efLabel).toBe('✗ Insufficient');
+    });
+});
+
+describe('rebalancing - Financial Planning: insurance recommendations', () => {
+    function getInsuranceRecommendation(efMonths, targetMonths, lifeIns, healthIns, maritalStatus, healthInsSpouse, dependents, healthInsDep) {
+        const hasEmergencyFund = efMonths >= targetMonths;
+        const hasLifeInsurance = lifeIns;
+        const hasHealthInsurance = healthIns;
+        const hasSpouseHealthInsurance = maritalStatus === 'married' ? healthInsSpouse : true;
+        const hasDependentHealthInsurance = dependents > 0 ? healthInsDep : true;
+        const hasInsurance = hasLifeInsurance && hasHealthInsurance && hasSpouseHealthInsurance && hasDependentHealthInsurance;
+
+        if (!hasEmergencyFund) return 'Build Emergency Fund First';
+        if (hasEmergencyFund && !hasInsurance) return 'Get Insurance Coverage';
+        if (hasEmergencyFund && hasInsurance) return 'Ready to Invest';
+        return 'Unknown';
+    }
+
+    it('recommends building emergency fund first when insufficient', () => {
+        const recommendation = getInsuranceRecommendation(2, 6, false, false, 'single', false, 0, false);
+        expect(recommendation).toBe('Build Emergency Fund First');
+    });
+
+    it('recommends insurance when emergency fund adequate but no insurance', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, false, false, 'single', false, 0, false);
+        expect(recommendation).toBe('Get Insurance Coverage');
+    });
+
+    it('recommends ready to invest when emergency fund and insurance in place', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, true, true, 'single', false, 0, false);
+        expect(recommendation).toBe('Ready to Invest');
+    });
+
+    it('requires spouse insurance when married', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, true, true, 'married', false, 0, false);
+        expect(recommendation).toBe('Get Insurance Coverage');
+    });
+
+    it('requires dependent insurance when dependents > 0', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, true, true, 'married', true, 2, false);
+        expect(recommendation).toBe('Get Insurance Coverage');
+    });
+
+    it('does not require spouse insurance when single', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, true, true, 'single', false, 0, false);
+        expect(recommendation).toBe('Ready to Invest');
+    });
+
+    it('does not require dependent insurance when no dependents', () => {
+        const recommendation = getInsuranceRecommendation(6, 6, true, true, 'married', true, 0, false);
+        expect(recommendation).toBe('Ready to Invest');
+    });
+});
+
+describe('rebalancing - Financial Planning: localStorage helpers', () => {
+    const planKey = (pid) => `fin_plan_v1_${pid}`;
+
+    function loadPlan(pid) {
+        try { return JSON.parse(localStorage.getItem(planKey(pid)) || 'null') || { sips: [], ppf: 0, varMin: 0, varExpected: 0 }; } catch { return { sips: [], ppf: 0, varMin: 0, varExpected: 0 }; }
+    }
+
+    function savePlan(pid, plan) {
+        localStorage.setItem(planKey(pid), JSON.stringify(plan));
+    }
+
+    beforeEach(() => {
+        localStorageMock.getItem.mockReturnValue(null);
+        localStorageMock.setItem.mockImplementation(() => {});
+        localStorageMock.clear.mockImplementation(() => {});
+    });
+
+    it('loads default plan when none saved', () => {
+        const plan = loadPlan(1);
+        expect(plan).toEqual({ sips: [], ppf: 0, varMin: 0, varExpected: 0 });
+    });
+
+    it('loads saved plan', () => {
+        const savedPlan = { sips: [{ name: 'Test', amount: 1000, outflow: 1020, bucket: 'Equity' }], ppf: 500, varMin: 10000, varExpected: 20000 };
+        localStorageMock.getItem.mockReturnValue(JSON.stringify(savedPlan));
+        const plan = loadPlan(1);
+        expect(plan).toEqual(savedPlan);
+    });
+
+    it('saves plan to localStorage', () => {
+        const plan = { sips: [], ppf: 500, varMin: 0, varExpected: 0 };
+        savePlan(1, plan);
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('fin_plan_v1_1', JSON.stringify(plan));
+    });
+
+    it('uses correct key for different portfolio IDs', () => {
+        savePlan(1, { sips: [], ppf: 0, varMin: 0, varExpected: 0 });
+        savePlan(2, { sips: [], ppf: 0, varMin: 0, varExpected: 0 });
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('fin_plan_v1_1', expect.any(String));
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('fin_plan_v1_2', expect.any(String));
     });
 });

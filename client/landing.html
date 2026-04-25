@@ -246,9 +246,9 @@
         <p class="lp-feature-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory. See exactly when you crossed milestones, and how your consistent investing compounds over months.</p>
       </article>
       <article class="lp-feature-card lp-fade-up lp-stagger-3">
-        <span class="lp-feature-icon" aria-hidden="true">🔍</span>
-        <h3 class="lp-feature-name">Fund Research Engine</h3>
-        <p class="lp-feature-desc">Track any AMFI-listed mutual fund. View 1Y, 3Y, 5Y CAGR returns and alpha vs. benchmark. Get alerts when expense ratio or AUM shifts significantly — before it hurts your returns.</p>
+        <span class="lp-feature-icon" aria-hidden="true">🧭</span>
+        <h3 class="lp-feature-name">Financial Planning</h3>
+        <p class="lp-feature-desc">Track your cash flow, set investment goals, and get personalized advice on emergency funds and insurance. Watch list for opportunities, and custom investment rules — all in one place.</p>
       </article>
       <article class="lp-feature-card lp-fade-up lp-stagger-4">
         <span class="lp-feature-icon" aria-hidden="true">💳</span>
@@ -256,14 +256,9 @@
         <p class="lp-feature-desc">Track utilisation across all your cards, see next due dates at a glance, and get warned before utilisation exceeds 30% — protecting your credit score without spreadsheets.</p>
       </article>
       <article class="lp-feature-card lp-fade-up lp-stagger-5">
-        <span class="lp-feature-icon" aria-hidden="true">🧭</span>
-        <h3 class="lp-feature-name">Budget vs. Actuals</h3>
-        <p class="lp-feature-desc">Set monthly category budgets and compare against real spending from your transaction history. See exactly where your money goes — not where you think it goes.</p>
-      </article>
-      <article class="lp-feature-card lp-fade-up lp-stagger-6">
         <span class="lp-feature-icon" aria-hidden="true">📦</span>
         <h3 class="lp-feature-name">Import / Export</h3>
-        <p class="lp-feature-desc">Your data as portable JSON, any time, with one click. No proprietary format, no lock-in. You own your financial history completely.</p>
+        <p class="lp-feature-desc">Your data as portable Excel file, any time, with one click. No proprietary format, no lock-in. You own your financial history completely.</p>
       </article>
     </div>
   </div>
@@ -526,6 +521,21 @@
     <div class="lp-auth-form-wrap">
       <div class="lp-form-error" id="lp-form-error" role="alert"></div>
       <div class="lp-form-success" id="lp-form-success" role="status"></div>
+      
+      <button type="button" class="lp-google-btn" id="lp-google-btn">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853"/>
+          <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335"/>
+        </svg>
+        <span>Sign in with Google</span>
+      </button>
+
+      <div class="lp-divider">
+        <span>or</span>
+      </div>
+
       <form id="lp-auth-form" novalidate autocomplete="on">
         <div class="lp-form-group" id="lp-name-group" style="display:none;">
           <label class="lp-form-label" for="lp-name">Your name</label>
@@ -611,6 +621,7 @@ const _successEl = document.getElementById('lp-form-success');
 const _toggleBtn = document.getElementById('lp-form-toggle-btn');
 const _toggleText = document.getElementById('lp-form-toggle-text');
 const _navSignin = document.getElementById('lp-signin-nav');
+const _googleBtn = document.getElementById('lp-google-btn');
 
 function _showError(msg) {
   _errorEl.textContent = msg;
@@ -657,6 +668,38 @@ _navSignin.addEventListener('click', (e) => {
 });
 
 _toggleBtn.addEventListener('click', () => _setSignUpMode(!_isSignUp));
+
+// Google Sign-In
+_googleBtn.addEventListener('click', async () => {
+  _clearMessages();
+  if (!_configured) {
+    _showError('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    return;
+  }
+  _googleBtn.disabled = true;
+  _googleBtn.textContent = 'Signing in with Google…';
+  try {
+    const { error } = await _sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/',
+      }
+    });
+    if (error) throw error;
+  } catch (err) {
+    _showError(err.message || 'Google Sign-In failed. Please try again.');
+    _googleBtn.disabled = false;
+    _googleBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853"/>
+        <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335"/>
+      </svg>
+      <span>Sign in with Google</span>
+    `;
+  }
+});
 
 _form.addEventListener('submit', async (e) => {
   e.preventDefault();

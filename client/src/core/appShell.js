@@ -452,7 +452,8 @@ class PersonalFinanceApp {
             const formHTML = `
                 <div class="settings-tabs">
                     <button class="settings-tab active" data-tab="profile">👤 Profile</button>
-                    <button class="settings-tab" data-tab="goals">🎯 Retirement & Goals</button>
+                    <button class="settings-tab" data-tab="financial">💼 Financial</button>
+                    <button class="settings-tab" data-tab="goals">🎯 Goals</button>
                     <button class="settings-tab" data-tab="data">💾 Data</button>
                 </div>
 
@@ -518,6 +519,74 @@ class PersonalFinanceApp {
                         <select id="setting-display-currency" class="form-input">
                             ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${(settings.display_currency || settings.currency) === c ? 'selected' : ''}>${c}</option>`).join('')}
                         </select>
+                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="tab-financial">
+                    <div class="form-group">
+                        <label>Monthly Take-home Salary (₹):</label>
+                        <input type="number" id="setting-salary" value="${settings.salary || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 150000" />
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Monthly Expenses (₹):</label>
+                        <input type="number" id="setting-expenses" value="${settings.expenses || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 60000" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tax Regime:</label>
+                        <select id="setting-tax-regime" class="form-input">
+                            <option value="">Select...</option>
+                            <option value="New Regime" ${settings.tax_regime === 'New Regime' ? 'selected' : ''}>New Regime</option>
+                            <option value="Old Regime" ${settings.tax_regime === 'Old Regime' ? 'selected' : ''}>Old Regime</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Retirement Horizon (years):</label>
+                        <input type="number" id="setting-retirement-years" value="${settings.retirement_years || ''}" class="form-input" min="0" max="50" placeholder="e.g. 15" />
+                    </div>
+                    <div class="form-group">
+                        <label>Emergency Fund Amount (₹):</label>
+                        <small class="form-hint">Critical safety net — aim for your target months of expenses. Keep this in a liquid account (savings, liquid funds, or FD).</small>
+                        <input type="number" id="setting-emergency-fund" value="${settings.emergency_fund || ''}" class="form-input" min="0" step="10000" placeholder="e.g. 500000" />
+                    </div>
+                    <div class="form-group">
+                        <label>Emergency Fund Target (months of expenses):</label>
+                        <select id="setting-emergency-fund-months" class="form-input">
+                            <option value="6" ${(settings.emergency_fund_months ?? 6) === 6 ? 'selected' : ''}>6 months</option>
+                            <option value="12" ${(settings.emergency_fund_months ?? 6) === 12 ? 'selected' : ''}>12 months</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Insurance Coverage:</label>
+                        <small class="form-hint">Protect yourself and your dependents from financial shocks.</small>
+                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-life-insurance" ${settings.life_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Life Insurance (term plan)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance" ${settings.health_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (self)</span>
+                            </label>
+                            ${settings.marital_status === 'married' ? `
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance-spouse" ${settings.health_insurance_for_spouse ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (spouse)</span>
+                            </label>` : ''}
+                            ${settings.dependents > 0 ? `
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance-dependents" ${settings.health_insurance_for_dependents ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (dependents)</span>
+                            </label>` : ''}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Crypto Cap (% of portfolio):</label>
+                        <small class="form-hint">Advisor warns if crypto exceeds this threshold</small>
+                        <input type="number" id="setting-btc-cap" value="${settings.btc_cap ?? 10}" class="form-input" min="0" max="100" step="1" placeholder="10" />
+                    </div>
+                    <div class="form-group">
+                        <label>Personal Context / Notes:</label>
+                        <textarea id="setting-context-note" class="form-input" rows="3" placeholder="Any context about your financial situation...">${settings.context_note || ''}</textarea>
                     </div>
                 </div>
 
@@ -609,6 +678,18 @@ class PersonalFinanceApp {
             const maritalStatus = document.getElementById('setting-marital-status')?.value || null;
             const dependents = parseInt(document.getElementById('setting-dependents')?.value) || 0;
             const riskTolerance = document.getElementById('setting-risk-tolerance')?.value || null;
+            const salary = parseFloat(document.getElementById('setting-salary')?.value) || null;
+            const expenses = parseFloat(document.getElementById('setting-expenses')?.value) || null;
+            const taxRegime = document.getElementById('setting-tax-regime')?.value || null;
+            const retirementYears = parseInt(document.getElementById('setting-retirement-years')?.value) || null;
+            const emergencyFund = parseFloat(document.getElementById('setting-emergency-fund')?.value) || null;
+            const emergencyFundMonths = parseInt(document.getElementById('setting-emergency-fund-months')?.value) || 6;
+            const lifeInsurance = document.getElementById('setting-life-insurance')?.checked || false;
+            const healthInsurance = document.getElementById('setting-health-insurance')?.checked || false;
+            const healthInsuranceSpouse = document.getElementById('setting-health-insurance-spouse')?.checked || false;
+            const healthInsuranceDependents = document.getElementById('setting-health-insurance-dependents')?.checked || false;
+            const btcCap = parseFloat(document.getElementById('setting-btc-cap')?.value) ?? 10;
+            const contextNote = document.getElementById('setting-context-note')?.value?.trim() || null;
 
             if (goal < 0 || epf < 0 || ppf < 0) {
                 Utilities.showNotification('Values cannot be negative', 'error');
@@ -630,6 +711,18 @@ class PersonalFinanceApp {
                 marital_status: maritalStatus,
                 dependents,
                 risk_tolerance: riskTolerance,
+                salary,
+                expenses,
+                tax_regime: taxRegime,
+                retirement_years: retirementYears,
+                emergency_fund: emergencyFund,
+                emergency_fund_months: emergencyFundMonths,
+                life_insurance: lifeInsurance,
+                health_insurance: healthInsurance,
+                health_insurance_for_spouse: healthInsuranceSpouse,
+                health_insurance_for_dependents: healthInsuranceDependents,
+                btc_cap: btcCap,
+                context_note: contextNote,
             };
 
             const saves = [existing?.id

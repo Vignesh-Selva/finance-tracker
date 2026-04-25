@@ -44,15 +44,15 @@ export async function renderMutualFunds(portfolioId) {
 
     if (_activeTab === 'portfolio') {
         await renderPortfolioTab(container, portfolioId);
-    } else if (_activeTab === 'sip') {
-        await renderSIPTab(container, portfolioId);
-    } else if (_activeTab === 'tax') {
-        await renderTaxTab(container, portfolioId);
+    // } else if (_activeTab === 'sip') {
+    //     await renderSIPTab(container, portfolioId);
+    // } else if (_activeTab === 'tax') {
+    //     await renderTaxTab(container, portfolioId);
     } else if (_activeTab === 'orderHistory') {
         const content = container.querySelector('#mft-tab-content');
         await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
-    } else {
-        await renderTrackerTab(container);
+    // } else {
+    //     await renderTrackerTab(container);
     }
 }
 
@@ -70,15 +70,15 @@ function buildPageShell() {
                 <button class="mft-tab ${_activeTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">
                     📋 Order History
                 </button>
-                <button class="mft-tab ${_activeTab === 'sip' ? 'active' : ''}" data-tab="sip">
+                <!-- <button class="mft-tab ${_activeTab === 'sip' ? 'active' : ''}" data-tab="sip">
                     📅 SIP Tracker
-                </button>
-                <button class="mft-tab ${_activeTab === 'tracker' ? 'active' : ''}" data-tab="tracker">
+                </button> -->
+                <!-- <button class="mft-tab ${_activeTab === 'tracker' ? 'active' : ''}" data-tab="tracker">
                     🔍 Fund Research
-                </button>
-                <button class="mft-tab ${_activeTab === 'tax' ? 'active' : ''}" data-tab="tax">
+                </button> -->
+                <!-- <button class="mft-tab ${_activeTab === 'tax' ? 'active' : ''}" data-tab="tax">
                     🧾 Tax Harvest
-                </button>
+                </button> -->
             </div>
             <div id="mft-tab-content"></div>
         </div>`;
@@ -94,14 +94,14 @@ function attachTabEvents(container, portfolioId) {
             content.innerHTML = '';
             if (_activeTab === 'portfolio') {
                 await renderPortfolioTab(container, portfolioId);
-            } else if (_activeTab === 'sip') {
-                await renderSIPTab(container, portfolioId);
-            } else if (_activeTab === 'tax') {
-                await renderTaxTab(container, portfolioId);
+            // } else if (_activeTab === 'sip') {
+            //     await renderSIPTab(container, portfolioId);
+            // } else if (_activeTab === 'tax') {
+            //     await renderTaxTab(container, portfolioId);
             } else if (_activeTab === 'orderHistory') {
                 await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
-            } else {
-                await renderTrackerTab(container);
+            // } else {
+            //     await renderTrackerTab(container);
             }
         });
     });

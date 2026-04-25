@@ -43,12 +43,10 @@ export async function renderDashboard(portfolioId) {
     </div>`;
 
     try {
-        const [resp, ccResp, healthResp] = await Promise.all([
+        const [resp, ccResp] = await Promise.all([
             api.dashboard.get(portfolioId),
             api.creditCards.list(portfolioId).catch(() => ({ data: [] })),
-            api.dashboard.healthScore(portfolioId).catch(() => null),
         ]);
-        const health = healthResp?.data || null;
         const { netWorth, allocation, investmentPL, goal, settings } = resp.data;
         const creditCards = ccResp?.data || [];
         const totalCCDue = creditCards.reduce((s, c) => s + (parseFloat(c.amount_to_pay) || 0), 0);
@@ -153,25 +151,6 @@ export async function renderDashboard(portfolioId) {
         const username = authUser?.user_metadata?.username || extractUsernameFromEmail(authUser?.email) || '';
         const { greeting, emoji, tip } = getDashboardGreeting(username);
 
-        const healthScoreHTML = health ? (() => {
-            const s = health.score;
-            const gradeColor = s >= 85 ? 'var(--green)' : s >= 70 ? 'var(--accent)' : s >= 50 ? 'var(--yellow)' : 'var(--red)';
-            const scoreCircle = 2 * Math.PI * 15.9155;
-            const dash = (s / 100) * scoreCircle;
-            return `<div class="stat-card health-score-card" onclick="window.app.showHealthBreakdown()" style="cursor:pointer;" title="Click to see breakdown">
-                <h3>Health Score</h3>
-                <div style="display:flex;align-items:center;gap:14px;">
-                    <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
-                        <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg);">
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-subtle)" stroke-width="3"/>
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="${gradeColor}" stroke-width="3" stroke-dasharray="${dash.toFixed(2)}, ${scoreCircle.toFixed(2)}" stroke-linecap="round"/>
-                        </svg>
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:700;font-size:13px;">${s}</div>
-                    </div>
-                    <div><p style="font-weight:700;font-size:1.1rem;color:${gradeColor};">${health.grade}</p><p style="font-size:11px;color:var(--text-muted);margin-top:2px;">out of 100</p></div>
-                </div>
-            </div>`;
-        })() : '';
 
         const html = `
             <div class="section-header">
@@ -187,24 +166,29 @@ export async function renderDashboard(portfolioId) {
                 <div class="stat-card desktop-summary-card">
                     <h3>Net Worth</h3>
                     <p class="stat-value">${Utilities.formatCurrency(netWorth.total)}</p>
-                    <p class="stat-change ${changePercentClass}">${changePercent}% this month</p>
+                    <p class="stat-change ${changePercentClass}" style="font-size:1rem;font-weight:700;margin-top:6px;">${changePercentRaw >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(changePercent))}% this month</p>
                     <div class="net-worth-sparkline" style="height:40px;margin-top:8px;">
                         <canvas id="netWorthSparkline"></canvas>
                     </div>
                 </div>
                 <div class="stat-card desktop-summary-card">
-                    <h3>Investments</h3>
-                    <p class="stat-value">${Utilities.formatCurrency(netWorth.mutual_funds + netWorth.stocks + netWorth.crypto)}</p>
+                    <h3>Total Assets</h3>
+                    <p class="stat-value">${Utilities.formatCurrency(netWorth.total + netWorth.liabilities)}</p>
+                    <div style="font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:4px;">
+                        <div style="display:flex;justify-content:space-between;"><span>Savings + FD</span><span class="mono">${Utilities.formatCurrency(netWorth.savings + netWorth.fixed_deposits)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>MF + Stocks</span><span class="mono">${Utilities.formatCurrency(netWorth.mutual_funds + netWorth.stocks)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Crypto</span><span class="mono">${Utilities.formatCurrency(netWorth.crypto)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>EPF + PPF</span><span class="mono">${Utilities.formatCurrency(netWorth.epf + netWorth.ppf)}</span></div>
+                    </div>
                 </div>
                 <div class="stat-card desktop-summary-card">
-                    <h3>EPF & PPF</h3>
-                    <p class="stat-value">${Utilities.formatCurrency(netWorth.epf + netWorth.ppf)}</p>
+                    <h3>Total Liabilities</h3>
+                    <p class="stat-value ${netWorth.liabilities + totalCCOutstanding > 0 ? 'negative' : ''}">${Utilities.formatCurrency(netWorth.liabilities + totalCCOutstanding)}</p>
+                    <div style="font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:4px;">
+                        <div style="display:flex;justify-content:space-between;"><span>Active Loans</span><span class="mono">${Utilities.formatCurrency(netWorth.liabilities)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Credit Card Debt</span><span class="mono">${Utilities.formatCurrency(totalCCOutstanding)}</span></div>
+                    </div>
                 </div>
-                <div class="stat-card desktop-summary-card">
-                    <h3>Liabilities</h3>
-                    <p class="stat-value">${Utilities.formatCurrency(netWorth.liabilities)}</p>
-                </div>
-                ${healthScoreHTML}
                 ${creditCards.length > 0 ? `
                 <div class="stat-card cc-stat-card" onclick="window.app.switchTab('creditCards')" style="cursor:pointer;">
                     <h3>Credit Cards</h3>
@@ -222,23 +206,6 @@ export async function renderDashboard(portfolioId) {
                     <p style="color:var(--text-muted);margin-bottom:12px;">No credit cards added</p>
                     <button class="btn btn-primary" onclick="window.app.switchTab('creditCards')">+ Add Card</button>
                 </div>`}
-                <div class="stat-card goal-progress-card">
-                    <h3>Goal Progress</h3>
-                    <div style="display:flex;align-items:center;gap:16px;">
-                        <div class="circular-progress" style="position:relative;width:70px;height:70px;">
-                            <svg viewBox="0 0 36 36" style="width:100%;height:100%;transform:rotate(-90deg);">
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border-subtle)" stroke-width="3"/>
-                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="${hasGoal ? progress : 0}, 100" stroke-linecap="round"/>
-                            </svg>
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:600;font-size:14px;">${hasGoal ? `${progress}%` : '0%'}</div>
-                        </div>
-                        <div style="flex:1;">
-                            <p style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">Target</p>
-                            <p style="font-weight:600;font-size:16px;">${hasGoal ? Utilities.formatCurrency(goal.target) : 'Not set'}</p>
-                        </div>
-                    </div>
-                    ${!hasGoal ? `<button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="window.app.switchTab('settings')">Set Goal</button>` : ''}
-                </div>
                 <div class="mobile-summary-card" style="display:none;">
                     <div class="mobile-summary-header">Summary</div>
                     <div class="mobile-summary-row mobile-summary-standout">
@@ -246,16 +213,22 @@ export async function renderDashboard(portfolioId) {
                         <span class="mobile-summary-value mobile-summary-value-standout">${Utilities.formatCurrency(netWorth.total)}</span>
                     </div>
                     <div class="mobile-summary-row">
-                        <span class="mobile-summary-label">Investments</span>
-                        <span class="mobile-summary-value">${Utilities.formatCurrency(netWorth.mutual_funds + netWorth.stocks + netWorth.crypto)}</span>
+                        <span class="mobile-summary-label">Total Assets</span>
+                        <span class="mobile-summary-value">${Utilities.formatCurrency(netWorth.total + netWorth.liabilities)}</span>
+                    </div>
+                    <div style="padding:0 16px 8px 16px;font-size:12px;color:var(--text-muted);line-height:1.6;">
+                        <div style="display:flex;justify-content:space-between;"><span>Savings + FD</span><span class="mono">${Utilities.formatCurrency(netWorth.savings + netWorth.fixed_deposits)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>MF + Stocks</span><span class="mono">${Utilities.formatCurrency(netWorth.mutual_funds + netWorth.stocks)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Crypto</span><span class="mono">${Utilities.formatCurrency(netWorth.crypto)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>EPF + PPF</span><span class="mono">${Utilities.formatCurrency(netWorth.epf + netWorth.ppf)}</span></div>
                     </div>
                     <div class="mobile-summary-row">
-                        <span class="mobile-summary-label">EPF & PPF</span>
-                        <span class="mobile-summary-value">${Utilities.formatCurrency(netWorth.epf + netWorth.ppf)}</span>
+                        <span class="mobile-summary-label">Total Liabilities</span>
+                        <span class="mobile-summary-value">${Utilities.formatCurrency(netWorth.liabilities + totalCCOutstanding)}</span>
                     </div>
-                    <div class="mobile-summary-row">
-                        <span class="mobile-summary-label">Liabilities</span>
-                        <span class="mobile-summary-value">${Utilities.formatCurrency(netWorth.liabilities)}</span>
+                    <div style="padding:0 16px 12px 16px;font-size:12px;color:var(--text-muted);line-height:1.6;">
+                        <div style="display:flex;justify-content:space-between;"><span>Active Loans</span><span class="mono">${Utilities.formatCurrency(netWorth.liabilities)}</span></div>
+                        <div style="display:flex;justify-content:space-between;"><span>Credit Card Debt</span><span class="mono">${Utilities.formatCurrency(totalCCOutstanding)}</span></div>
                     </div>
                 </div>
             </div>
@@ -319,26 +292,6 @@ export async function renderDashboard(portfolioId) {
                 </div>
             </div>
 
-            <div class="breakdown fi-projection-section" style="margin-top:20px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-                    <h3>FI Projection</h3>
-                    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
-                        <label style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-                            Monthly invest
-                            <input type="number" id="fi-monthly" value="0" min="0" step="1000" class="form-input" style="width:110px;padding:6px 10px;font-size:13px;">
-                        </label>
-                        <label style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-                            Annual return
-                            <input type="number" id="fi-return" value="12" min="1" max="30" step="0.5" class="form-input" style="width:70px;padding:6px 10px;font-size:13px;">
-                            <span style="font-size:12px;">%</span>
-                        </label>
-                    </div>
-                </div>
-                <div id="fi-summary" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;"></div>
-                <div style="position:relative;height:260px;">
-                    <canvas id="fiProjectionChart"></canvas>
-                </div>
-            </div>
 
             <div class="last-refreshed">Last Refreshed ${lastRefreshedText}</div>
         `;
@@ -347,12 +300,7 @@ export async function renderDashboard(portfolioId) {
 
         await renderNetWorthChart(portfolioId);
         await renderNetWorthSparkline(snapshots);
-        renderFIProjection(netWorth.total, goal.target);
 
-        document.getElementById('fi-monthly')?.addEventListener('input', () => renderFIProjection(netWorth.total, goal.target));
-        document.getElementById('fi-return')?.addEventListener('input', () => renderFIProjection(netWorth.total, goal.target));
-
-        window._dashHealthData = health;
         window._dashAllocationData = { allocation, portfolioId };
     } catch (error) {
         console.error('Dashboard render error:', error);

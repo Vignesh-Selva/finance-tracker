@@ -71,7 +71,7 @@ npm run dev       # Vite dev server on http://localhost:5173
 ### Testing & Linting
 
 ```bash
-npm test          # Run Vitest (275 tests)
+npm test          # Run Vitest (284 tests)
 npm run lint      # ESLint
 ```
 
