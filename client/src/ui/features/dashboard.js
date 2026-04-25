@@ -43,12 +43,14 @@ export async function renderDashboard(portfolioId) {
     </div>`;
 
     try {
-        const [resp, ccResp] = await Promise.all([
+        const [resp, ccResp, snapshotsRes] = await Promise.all([
             api.dashboard.get(portfolioId),
             api.creditCards.list(portfolioId).catch(() => ({ data: [] })),
+            api.dashboard.timeline(portfolioId, { limit: 40 }).catch(() => ({ data: [] })),
         ]);
         const { netWorth, allocation, investmentPL, goal, settings } = resp.data;
         const creditCards = ccResp?.data || [];
+        const snapshots = snapshotsRes?.data || [];
         const totalCCDue = creditCards.reduce((s, c) => s + (parseFloat(c.amount_to_pay) || 0), 0);
         const totalCCLimit = creditCards.reduce((s, c) => s + (parseFloat(c.credit_limit) || 0), 0);
         const totalCCOutstanding = creditCards.reduce((s, c) => {
@@ -70,10 +72,6 @@ export async function renderDashboard(portfolioId) {
             return { date: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), days: diffDays };
         })();
         const ccUrgencyClass = nextCCLabel ? (nextCCLabel.days <= 3 ? 'value-negative' : nextCCLabel.days <= 7 ? 'value-neutral' : 'value-positive') : '';
-
-        // Fetch snapshots to compute 30-day net worth change (includes salary, savings, investments, liabilities)
-        const snapshotsRes = await api.dashboard.timeline(portfolioId, { limit: 120 });
-        const snapshots = snapshotsRes.data || [];
 
         const computeChangePercent = () => {
             if (!snapshots.length) return investmentPL?.total?.plPercent ?? 0;
@@ -99,16 +97,13 @@ export async function renderDashboard(portfolioId) {
 
         const hasInvestments = (netWorth.mutual_funds + netWorth.stocks + netWorth.crypto) > 0;
 
-        // Auto-snapshot on first load of the day
+        // Auto-snapshot on first load of the day (non-blocking)
         const today = new Date().toISOString().split('T')[0];
         const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1].snapshot_date.split('T')[0] : null;
         if (lastSnapshot !== today) {
-            try {
-                await api.dashboard.takeSnapshot(portfolioId);
-                console.log('Auto-snapshot taken for', today);
-            } catch (e) {
-                console.warn('Auto-snapshot failed:', e);
-            }
+            api.dashboard.takeSnapshot(portfolioId)
+                .then(() => console.log('Auto-snapshot taken for', today))
+                .catch((e) => console.warn('Auto-snapshot failed:', e));
         }
 
         const allocationLegendMap = {
@@ -157,9 +152,6 @@ export async function renderDashboard(portfolioId) {
                 <div>
                     <h2 style="margin-bottom:4px;">${greeting} ${emoji}</h2>
                     <p style="font-size:13px;color:var(--text-muted);margin:0;">${tip}</p>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
-                    <button class="btn btn-primary" onclick="window.app.refreshAllLive()">🔄 Refresh Live</button>
                 </div>
             </div>
             <div class="stat-grid">

@@ -168,7 +168,6 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                 </div>
                 <div style="display:flex;gap:10px;">
                     <button class="btn btn-primary" onclick="window.app.showAddForm('crypto')">+ Add Crypto</button>
-                    <button class="btn btn-ghost" onclick="window.app.refreshCryptoLive()">🔄 Refresh Prices</button>
                 </div>
             </div>
             <div class="stat-grid">

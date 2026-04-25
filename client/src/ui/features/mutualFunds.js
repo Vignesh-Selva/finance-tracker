@@ -213,7 +213,6 @@ async function renderPortfolioTab(container, portfolioId) {
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button class="btn btn-primary" onclick="window.app.showAddForm('mutualFunds')">+ Add Fund</button>
-                    <button class="btn btn-ghost" onclick="window.app.refreshMutualFundsLive()">🔄 Refresh NAV</button>
                 </div>
             </div>
             <div class="stat-grid">

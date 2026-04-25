@@ -15,7 +15,7 @@ import { renderBudgets } from '../ui/features/budgets.js';
 import { renderRebalancing } from '../ui/features/rebalancing.js';
 import api from '../services/api.js';
 import { signOut as authSignOut, updateUser, getCurrentUser, extractUsernameFromEmail } from '../services/authService.js';
-import { refreshAllPrices, refreshMutualFundPrices, refreshStockPricesOnly, refreshCryptoPricesOnly } from '../services/priceFetcher.js';
+import { refreshAllPrices } from '../services/priceFetcher.js';
 
 class PersonalFinanceApp {
     constructor() {
@@ -25,6 +25,7 @@ class PersonalFinanceApp {
         this.sidebarCollapsed = false;
         this.userSidebarPref = null;
         this.isSettingsModal = false;
+        this.priceRefreshTimeouts = [];
 
         this.renderers = {
             dashboard: renderDashboard,
@@ -54,6 +55,7 @@ class PersonalFinanceApp {
             this.setupEventListeners();
             await this.initFXRates();
             await this.switchTab('dashboard');
+            this.startPriceRefreshScheduler();
         } catch (error) {
             console.error('App initialization error:', error);
             Utilities.showNotification('Failed to initialize app. Is the server running?', 'error');
@@ -224,78 +226,20 @@ class PersonalFinanceApp {
         await this.renderCurrentTab();
     }
 
-    // ─── Live Price Refresh ──────────────────────────────────
-
-    async refreshStocksLive() {
-        if (this._refreshing) return;
-        this._refreshing = true;
-        try {
-            Utilities.showNotification('Refreshing stock & ETF prices...', 'info');
-            const { results, errors } = await refreshStockPricesOnly(this.portfolioId);
-            if (errors.length > 0) {
-                Utilities.showNotification(`Updated ${results.length} stocks. ${errors.length} error(s).`, 'warning');
-            } else {
-                Utilities.showNotification(`All ${results.length} stocks updated!`, 'success');
-            }
-            await this.refreshCurrentTab();
-        } catch (error) {
-            Utilities.showNotification('Failed to refresh stock prices: ' + error.message, 'error');
-        } finally {
-            this._refreshing = false;
-        }
-    }
-
-    async refreshMutualFundsLive() {
-        if (this._refreshing) return;
-        this._refreshing = true;
-        try {
-            Utilities.showNotification('Refreshing mutual fund NAVs...', 'info');
-            const { results, errors } = await refreshMutualFundPrices(this.portfolioId);
-            if (errors.length > 0) {
-                Utilities.showNotification(`Updated ${results.length} funds. ${errors.length} error(s).`, 'warning');
-            } else {
-                Utilities.showNotification(`All ${results.length} funds updated!`, 'success');
-            }
-            await this.refreshCurrentTab();
-        } catch (error) {
-            Utilities.showNotification('Failed to refresh NAVs: ' + error.message, 'error');
-        } finally {
-            this._refreshing = false;
-        }
-    }
-
-    async refreshCryptoLive() {
-        if (this._refreshing) return;
-        this._refreshing = true;
-        try {
-            Utilities.showNotification('Refreshing crypto prices...', 'info');
-            const { results, errors } = await refreshCryptoPricesOnly(this.portfolioId);
-            if (errors.length > 0) {
-                Utilities.showNotification(`Updated ${results.length} coins. ${errors.length} error(s).`, 'warning');
-            } else {
-                Utilities.showNotification(`All ${results.length} coins updated!`, 'success');
-            }
-            await this.refreshCurrentTab();
-        } catch (error) {
-            Utilities.showNotification('Failed to refresh crypto prices: ' + error.message, 'error');
-        } finally {
-            this._refreshing = false;
-        }
-    }
+    // ─── Auto Price Refresh (Scheduled at 11 AM and 9 PM) ─────────
 
     async refreshAllLive() {
         if (this._refreshing) return;
         this._refreshing = true;
         try {
-            Utilities.showNotification('Refreshing live prices...', 'info');
+            console.log('Auto-refreshing prices...');
             const { results, errors } = await refreshAllPrices(this.portfolioId);
 
             const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
             if (errors.length > 0) {
                 console.warn('Price refresh errors:', errors);
-                Utilities.showNotification(`Updated ${updated} holdings. ${errors.length} error(s).`, 'warning');
             } else {
-                Utilities.showNotification(`All ${updated} holdings updated!`, 'success');
+                console.log(`Auto-refreshed ${updated} holdings successfully`);
             }
 
             // Auto-snapshot after price refresh
@@ -307,11 +251,48 @@ class PersonalFinanceApp {
 
             await this.refreshCurrentTab();
         } catch (error) {
-            console.error('Live refresh error:', error);
-            Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
+            console.error('Auto-refresh error:', error);
         } finally {
             this._refreshing = false;
         }
+    }
+
+    // ─── Auto-Refresh Scheduler (11 AM and 9 PM daily) ─────────
+
+    startPriceRefreshScheduler() {
+        this.clearPriceRefreshScheduler();
+
+        const scheduleRefresh = (hour, minute) => {
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hour, minute, 0, 0);
+
+            // If target time has passed today, schedule for tomorrow
+            if (now >= target) {
+                target.setDate(target.getDate() + 1);
+            }
+
+            const msUntilTarget = target.getTime() - now.getTime();
+            console.log(`Next auto-refresh scheduled for ${hour}:00 at: ${target.toLocaleString()}`);
+
+            const timeoutId = setTimeout(async () => {
+                console.log(`Running auto-refresh at ${hour}:00...`);
+                await this.refreshAllLive();
+                // Reschedule for next day at same time
+                scheduleRefresh(hour, minute);
+            }, msUntilTarget);
+
+            this.priceRefreshTimeouts.push(timeoutId);
+        };
+
+        // Schedule refreshes at 11 AM and 9 PM
+        scheduleRefresh(11, 0);  // 11 AM
+        scheduleRefresh(21, 0); // 9 PM
+    }
+
+    clearPriceRefreshScheduler() {
+        this.priceRefreshTimeouts.forEach(id => clearTimeout(id));
+        this.priceRefreshTimeouts = [];
     }
 
     async takeSnapshot() {
