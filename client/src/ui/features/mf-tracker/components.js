@@ -105,7 +105,7 @@ export function renderFundCard(fund, options = {}) {
     chips.push(renderMetricChip('Alpha', alphaFmt.text, alphaFmt.tone));
   }
 
-  if (fund.expenseRatio !== null) {
+  if (fund.expenseRatio !== null && fund.expenseRatio !== undefined) {
     chips.push(renderMetricChip('Expense Ratio', `${fund.expenseRatio.toFixed(2)}%`, 'neutral'));
   }
 
@@ -121,7 +121,7 @@ export function renderFundCard(fund, options = {}) {
   if (fund.navDate) detailItems.push({ label: 'NAV Date', value: fund.navDate });
   if (fund.fundManager) detailItems.push({ label: 'Fund Manager', value: escapeHtml(fund.fundManager) });
   if (fund.benchmarkName) detailItems.push({ label: 'Benchmark', value: escapeHtml(fund.benchmarkName) });
-  if (fund.benchmarkReturn1Y !== null) detailItems.push({ label: 'Benchmark 1Y', value: `${fund.benchmarkReturn1Y >= 0 ? '+' : ''}${fund.benchmarkReturn1Y.toFixed(2)}%` });
+  if (fund.benchmarkReturn1Y !== null && fund.benchmarkReturn1Y !== undefined) detailItems.push({ label: 'Benchmark 1Y', value: `${fund.benchmarkReturn1Y >= 0 ? '+' : ''}${fund.benchmarkReturn1Y.toFixed(2)}%` });
   if (fund.type) detailItems.push({ label: 'Scheme Type', value: escapeHtml(fund.type) });
   if (fund.schemeCode) detailItems.push({ label: 'Scheme Code', value: fund.schemeCode });
 
@@ -205,7 +205,7 @@ export function renderPortfolioSummary(summary) {
   // Build TER display with optional change indicator
   let terValue = '—';
   let terTone = 'neutral';
-  if (summary.avgExpenseRatio !== null) {
+  if (summary.avgExpenseRatio !== null && summary.avgExpenseRatio !== undefined) {
     terValue = summary.avgExpenseRatio.toFixed(2) + '%';
     if (summary.terDelta !== null && Math.abs(summary.terDelta) >= 0.001) {
       const arrow = summary.terDelta > 0 ? '▲' : '▼';
@@ -219,7 +219,7 @@ export function renderPortfolioSummary(summary) {
     { label: 'Funds Tracked', value: summary.fundCount || 0, tone: 'accent' },
     { label: 'Total Exposure', value: summary.totalExposure ? FormatUtils.formatCurrency(summary.totalExposure) : '—', tone: 'neutral' },
     { label: 'Wtd. Expense Ratio', value: terValue, tone: terTone, raw: true },
-    { label: 'Avg 1Y Return', value: summary.avgReturn1Y !== null ? `${summary.avgReturn1Y >= 0 ? '+' : ''}${summary.avgReturn1Y.toFixed(2)}%` : '—', tone: summary.avgReturn1Y !== null ? (summary.avgReturn1Y >= 0 ? 'positive' : 'negative') : 'neutral' },
+    { label: 'Avg 1Y Return', value: (summary.avgReturn1Y !== null && summary.avgReturn1Y !== undefined) ? `${summary.avgReturn1Y >= 0 ? '+' : ''}${summary.avgReturn1Y.toFixed(2)}%` : '—', tone: (summary.avgReturn1Y !== null && summary.avgReturn1Y !== undefined) ? (summary.avgReturn1Y >= 0 ? 'positive' : 'negative') : 'neutral' },
   ];
 
   if (summary.totalGainLoss !== null) {

@@ -48,6 +48,13 @@ export const FinanceUtils = {
             if (isNaN(dateIn.getTime())) return null;
             const dateNow = new Date();
             if (dateNow <= dateIn) return null;
+            
+            // Check if holding period is too short (less than 7 days)
+            const daysHeld = (dateNow - dateIn) / (24 * 3600 * 1000);
+            if (daysHeld < 7) {
+                return { value: '0.00', hint: 'Holding period too short for meaningful XIRR' };
+            }
+            
             const rate = this.xirr([-inv, cur], [dateIn, dateNow]);
             return rate !== null ? { value: (rate * 100).toFixed(2), hint: null } : null;
         } catch {

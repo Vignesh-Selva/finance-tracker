@@ -242,7 +242,7 @@ export function computePortfolioSummary(funds) {
   const fundCount = validFunds.length;
 
   // Weighted expense ratio by current value; falls back to simple average
-  const fundsWithER = validFunds.filter(f => f.expenseRatio !== null);
+  const fundsWithER = validFunds.filter(f => f.expenseRatio !== null && f.expenseRatio !== undefined);
   let avgExpenseRatio = null;
   if (fundsWithER.length > 0) {
     const weighted = fundsWithER.filter(f => f.holdings?.currentValue > 0);
@@ -251,7 +251,9 @@ export function computePortfolioSummary(funds) {
       const wtdSum = weighted.reduce((s, f) => s + (f.expenseRatio * f.holdings.currentValue), 0);
       avgExpenseRatio = totalVal > 0 ? parseFloat((wtdSum / totalVal).toFixed(3)) : null;
     } else {
-      avgExpenseRatio = parseFloat((fundsWithER.reduce((s, f) => s + f.expenseRatio, 0) / fundsWithER.length).toFixed(3));
+      const sum = fundsWithER.reduce((s, f) => s + f.expenseRatio, 0);
+      const avg = sum / fundsWithER.length;
+      avgExpenseRatio = isNaN(avg) || !isFinite(avg) ? null : parseFloat(avg.toFixed(3));
     }
   }
 
