@@ -125,8 +125,8 @@ export async function renderDashboard(portfolioId) {
             : '';
 
         const progress = goal.progress;
-        const progressClamped = Math.min(progress, 100);
-        const hasGoal = goal.target > 0;
+        const _progressClamped = Math.min(progress, 100);
+        const _hasGoal = goal.target > 0;
 
         const formatLastRefresh = (isoString) => {
             if (!isoString) return 'Not available';

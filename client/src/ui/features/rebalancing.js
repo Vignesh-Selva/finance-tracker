@@ -3,7 +3,7 @@ import api from '../../services/api.js';
 
 // ─── Constants ────────────────────────────────────────────
 const TARGET_KEY = 'rebalancing_targets_v1';
-const LOCKED_IN_KEYS = new Set(['epfPpf']);
+const _LOCKED_IN_KEYS = new Set(['epfPpf']);
 const BUCKETS = ['Equity', 'Debt', 'Cash', 'Gold', 'Crypto', 'Other'];
 
 const ASSET_CLASSES = [
@@ -19,11 +19,11 @@ const ASSET_CLASSES = [
 let _activeTab = 'plan';
 
 // ─── LocalStorage helpers ─────────────────────────────────
-function loadTargets() {
+function _loadTargets() {
     try { return JSON.parse(localStorage.getItem(TARGET_KEY) || '{}'); } catch { return {}; }
 }
-function saveTargets(t) { localStorage.setItem(TARGET_KEY, JSON.stringify(t)); }
-function totalTargets(t) { return ASSET_CLASSES.reduce((s, a) => s + (parseFloat(t[a.key]) || 0), 0); }
+function _saveTargets(t) { localStorage.setItem(TARGET_KEY, JSON.stringify(t)); }
+function _totalTargets(t) { return ASSET_CLASSES.reduce((s, a) => s + (parseFloat(t[a.key]) || 0), 0); }
 
 function planKey(pid) { return `fin_plan_v1_${pid}`; }
 function watchKey(pid) { return `fin_watch_v1_${pid}`; }
@@ -57,7 +57,7 @@ export async function renderRebalancing(portfolioId) {
         container.innerHTML = buildShell();
         attachTabEvents(container, portfolioId, { netWorth, allocation, settings });
         await renderActiveTab(container, portfolioId, { netWorth, allocation, settings });
-    } catch (error) {
+    } catch {
         container.innerHTML = '<div class="error-state"><p>Failed to load rebalancing data.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
 }
@@ -104,7 +104,7 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
     const salary = parseFloat(settings?.salary) || 0;
     const expenses = parseFloat(settings?.expenses) || 0;
     const efAmt = parseFloat(settings?.emergency_fund) || 0;
-    const efLocation = settings?.emergency_fund_location || '';
+    const _efLocation = settings?.emergency_fund_location || '';
     const taxRegime = settings?.tax_regime || '';
     const retYears = parseFloat(settings?.retirement_years) || 0;
     const lifeIns = settings?.life_insurance || false;
@@ -353,7 +353,7 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
                 await api.settings.create({ ...data, portfolio_id: portfolioId });
             }
             renderPlanTab(content, portfolioId, { netWorth, settings: { ...settings, emergency_fund_months: months } });
-        } catch (error) {
+        } catch {
             Utilities.showNotification('Failed to update target', 'error');
         }
     };

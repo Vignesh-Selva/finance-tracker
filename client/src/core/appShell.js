@@ -648,7 +648,7 @@ class PersonalFinanceApp {
             if (templateBtn) templateBtn.addEventListener('click', () => Utilities.createTemplate());
             const deleteAllBtn = document.getElementById('settings-delete-all-btn');
             if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAllData());
-        } catch (error) {
+        } catch {
             Utilities.showNotification('Failed to load settings', 'error');
         }
     }
@@ -944,12 +944,12 @@ class PersonalFinanceApp {
     async signOut() {
         try {
             await authSignOut();
-        } catch (error) {
+        } catch {
             Utilities.showNotification('Sign out failed', 'error');
         }
     }
 
-    _sanitizeOrderData(orderData, cfg) {
+    _sanitizeOrderData(orderData, _cfg) {
         const sanitized = { ...orderData };
         // Ensure charges is non-negative (database constraint)
         if (sanitized.charges !== undefined) {
@@ -1030,7 +1030,7 @@ class PersonalFinanceApp {
                         for (const order of data[cfg.key]) {
                             const { id: _oid, created_at: _ca, updated_at: _ua, ...rest } = order;
                             const existingHoldingId = rest[cfg.holdingIdField];
-                            let newHoldingId = idMaps[cfg.holdingKey][existingHoldingId];
+                            const newHoldingId = idMaps[cfg.holdingKey][existingHoldingId];
 
                             // If order has a holding_id that was remapped from Excel, use the new ID
                             if (newHoldingId) {
@@ -1070,7 +1070,7 @@ class PersonalFinanceApp {
                                         const holding = await api[cfg.holdingKey].get(existingHoldingId);
                                         if (holding?.data && holding.data.portfolio_id === this.portfolioId) {
                                             // Transform field names for MF orders: units/nav instead of quantity/price
-                                            let orderData = this._sanitizeOrderData(rest, cfg);
+                                            const orderData = this._sanitizeOrderData(rest, cfg);
                                             if (cfg.holdingKey === 'mutualFunds') {
                                                 orderData.units = orderData.units || orderData.quantity;
                                                 orderData.nav = orderData.nav || orderData.price;

@@ -198,7 +198,7 @@ function _buildFilters(state, cfg, holdings, portfolioId, assetType, totalRecord
         let pageNumbers = '';
         const maxVisiblePages = 5;
         let startPage = Math.max(1, state.currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
         if (endPage - startPage < maxVisiblePages - 1) {
             startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -696,7 +696,7 @@ function _showOrderForm(order, portfolioId, assetType, holdings, allOrders, cfg,
     _wireOrderForm(isEdit, order, portfolioId, assetType, holdings, allOrders, cfg, el, state);
 }
 
-function _wireOrderForm(isEdit, order, portfolioId, assetType, holdings, allOrders, cfg, el, state) {
+function _wireOrderForm(isEdit, order, portfolioId, assetType, holdings, allOrders, cfg, el, _state) {
     const g = id => document.getElementById(id);
 
     function _computeStampDuty() {

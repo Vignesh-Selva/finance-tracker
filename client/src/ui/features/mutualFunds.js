@@ -290,10 +290,13 @@ function holdingAgeMonths(createdAt) {
     const start = new Date(createdAt);
     if (isNaN(start.getTime())) return null;
     const now = new Date();
-    return (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+    const ageInMonths = (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth();
+    return ageInMonths;
 }
 
-async function renderTaxTab(container, portfolioId) {
+// ... (rest of the code remains the same)
+
+async function _renderTrackerTab(container, portfolioId) {
     const content = container.querySelector('#mft-tab-content');
     content.innerHTML = '<div class="skeleton-card"></div>';
 
@@ -307,7 +310,7 @@ async function renderTaxTab(container, portfolioId) {
         const allItems = [...mfItems, ...stItems];
 
         let totalLTCG = 0;
-        let totalSTCL = 0;
+        let _totalSTCL = 0;
         let harvestableSTCL = 0;
 
         const rows = allItems.map(item => {
@@ -331,12 +334,12 @@ async function renderTaxTab(container, portfolioId) {
                 tag = '<span class="badge badge-red">STCL</span>';
                 action = 'Harvest loss to offset gains';
                 rowClass = 'value-negative';
-                totalSTCL += Math.abs(pl);
+                _totalSTCL += Math.abs(pl);
                 harvestableSTCL += Math.abs(pl);
             } else if (pl < 0 && isLTCG) {
                 tag = '<span class="badge badge-red">LTCL</span>';
                 action = 'Harvest long-term loss';
-                totalSTCL += Math.abs(pl);
+                _totalSTCL += Math.abs(pl);
             } else if (pl > 0 && isLTCG) {
                 totalLTCG += pl;
                 if (pl > LTCG_EXEMPTION * 0.9) {
@@ -397,7 +400,7 @@ async function renderTaxTab(container, portfolioId) {
                     <tbody>${rows || '<tr><td colspan="6" class="empty-state">No holdings found.</td></tr>'}</tbody>
                 </table>
             </div>`;
-    } catch (error) {
+    } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load tax data.</p></div>';
     }
 }
@@ -420,7 +423,7 @@ function nextSIPDate(dayOfMonth) {
     const day = parseInt(dayOfMonth);
     if (!day || day < 1 || day > 31) return null;
     const today = new Date();
-    let candidate = new Date(today.getFullYear(), today.getMonth(), day);
+    const candidate = new Date(today.getFullYear(), today.getMonth(), day);
     if (candidate <= today) candidate.setMonth(candidate.getMonth() + 1);
     return candidate;
 }
@@ -435,7 +438,7 @@ function estimateYTDSIP(sipAmount, startDate) {
     return sipAmount * months;
 }
 
-async function renderSIPTab(container, portfolioId) {
+async function _renderSIPTab(container, portfolioId) {
     const content = container.querySelector('#mft-tab-content');
     content.innerHTML = '<div class="skeleton-card"></div>';
 
@@ -500,15 +503,15 @@ async function renderSIPTab(container, portfolioId) {
 
         window._setSIPDay = (id, day) => {
             setSIPDay(id, parseInt(day) || '');
-            renderSIPTab(container, portfolioId);
+            _renderSIPTab(container, portfolioId);
         };
-    } catch (error) {
+    } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load SIP data.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
 }
 
 // ─── Tab 2: Fund Research (mfapi.in tracker) ──────────────
-async function renderTrackerTab(container) {
+async function _renderFundResearchTab(container) {
     const content = container.querySelector('#mft-tab-content');
     content.innerHTML = buildTrackerShell();
     attachTrackerShellEvents(content);
@@ -557,9 +560,9 @@ async function renderTrackerTab(container) {
 
         // Compute portfolio TER delta vs last saved snapshot, then save new value
         const summary = computePortfolioSummary(_fundDataCache.filter(f => !f.error));
-        if (summary.avgExpenseRatio != null) {
+        if (summary.avgExpenseRatio !== null) {
             const prevTer = loadPortfolioTerSnapshot();
-            _terDelta = prevTer != null
+            _terDelta = prevTer !== null
                 ? parseFloat((summary.avgExpenseRatio - prevTer).toFixed(3))
                 : null;
             savePortfolioTerSnapshot(summary.avgExpenseRatio);

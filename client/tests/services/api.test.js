@@ -392,7 +392,7 @@ describe('deleteAllData', () => {
 
     try {
       await deleteAllData('portfolio-id');
-      fail('Should have thrown an error');
+      throw new Error('Should have thrown an error');
     } catch (error) {
       expect(error.message).toBe('Failed to delete some data');
       expect(error.details).toHaveLength(2);

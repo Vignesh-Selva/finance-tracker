@@ -57,7 +57,7 @@ function getUtilizationClass(pct) {
     return 'cc-util-good';
 }
 
-function renderCardVisual(card) {
+function _renderCardVisual(card) {
     const gradient = CARD_GRADIENTS[card.card_type] || CARD_GRADIENTS['Visa'];
     const networkIcon = NETWORK_ICONS[card.card_type] || card.card_type;
     const stmt = parseFloat(card.statement_balance) || 0;
@@ -285,12 +285,12 @@ export async function renderCreditCards(portfolioId) {
                 await api.creditCards.update(id, { amount_to_pay: 0 });
                 Utilities.showNotification('Marked as paid', 'success');
                 renderCreditCards(portfolioId);
-            } catch (e) {
+            } catch {
                 Utilities.showNotification('Failed to mark as paid', 'error');
             }
         };
 
-    } catch (error) {
+    } catch {
         container.innerHTML = '<div class="error-state"><p>Failed to load credit cards.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
 }

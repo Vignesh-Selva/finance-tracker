@@ -224,7 +224,7 @@ export function loadPortfolioTerSnapshot() {
 
 export function savePortfolioTerSnapshot(ter) {
   try {
-    if (ter != null) localStorage.setItem(PORTFOLIO_TER_KEY, String(ter));
+    if (ter !== null) localStorage.setItem(PORTFOLIO_TER_KEY, String(ter));
   } catch (e) {
     console.warn('Failed to save portfolio TER snapshot:', e);
   }
@@ -242,7 +242,7 @@ export function computePortfolioSummary(funds) {
   const fundCount = validFunds.length;
 
   // Weighted expense ratio by current value; falls back to simple average
-  const fundsWithER = validFunds.filter(f => f.expenseRatio != null);
+  const fundsWithER = validFunds.filter(f => f.expenseRatio !== null);
   let avgExpenseRatio = null;
   if (fundsWithER.length > 0) {
     const weighted = fundsWithER.filter(f => f.holdings?.currentValue > 0);
@@ -256,7 +256,7 @@ export function computePortfolioSummary(funds) {
   }
 
   // Average 1Y return
-  const fundsWithReturn = validFunds.filter(f => f.return1Y != null);
+  const fundsWithReturn = validFunds.filter(f => f.return1Y !== null);
   const avgReturn1Y = fundsWithReturn.length > 0
     ? fundsWithReturn.reduce((s, f) => s + f.return1Y, 0) / fundsWithReturn.length
     : null;

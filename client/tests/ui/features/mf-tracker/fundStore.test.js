@@ -56,7 +56,7 @@ describe('fundStore', () => {
     describe('Bug 6: Promise.allSettled result handling', () => {
       it('correctly handles Promise.allSettled fulfilled results', async () => {
         // Mock fetchFullFundData to return success
-        const mockFetchFullFundData = vi.fn().mockResolvedValue({
+        vi.fn().mockResolvedValue({
           schemeCode: '119551',
           name: 'Test Fund',
           nav: 100,
@@ -100,7 +100,7 @@ describe('fundStore', () => {
       trackFund('119551');
       
       const loadedCodes = [];
-      await fetchAllTrackedFunds((code, data) => {
+      await fetchAllTrackedFunds((code, _data) => {
         loadedCodes.push(code);
       });
 

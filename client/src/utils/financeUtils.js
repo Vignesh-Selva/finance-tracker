@@ -11,7 +11,7 @@ export const FinanceUtils = {
                 pl: isNaN(pl) || !isFinite(pl) ? 0 : pl,
                 plPercent: isNaN(plPercent) || !isFinite(plPercent) ? 0 : plPercent
             };
-        } catch (error) {
+        } catch {
             return { pl: 0, plPercent: 0 };
         }
     },

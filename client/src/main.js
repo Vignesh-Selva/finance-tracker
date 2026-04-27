@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         } else {
             redirectToLanding();
         }
-    } catch (_err) {
+    } catch {
         redirectToLanding();
     }
 

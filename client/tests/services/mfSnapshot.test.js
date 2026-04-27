@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { processRefresh, diffSnapshot, saveSnapshot, loadSnapshot, dismissAlert, getDismissedAlerts, clearDismissedAlerts } from '../../src/services/mfSnapshot.js';
+import { processRefresh, diffSnapshot, saveSnapshot, dismissAlert, getDismissedAlerts, clearDismissedAlerts } from '../../src/services/mfSnapshot.js';
 
 // Mock localStorage
 const mockLocalStorage = new Map();

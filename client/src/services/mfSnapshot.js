@@ -76,7 +76,7 @@ export function diffSnapshot(prev, curr) {
   const changes = {};
 
   // Expense ratio change
-  if (prev.expenseRatio != null && curr.expenseRatio != null) {
+  if (prev.expenseRatio !== null && curr.expenseRatio !== null) {
     const delta = curr.expenseRatio - prev.expenseRatio;
     if (Math.abs(delta) >= 0.01) {
       changes.expenseRatio = {
@@ -92,7 +92,7 @@ export function diffSnapshot(prev, curr) {
   }
 
   // AUM change
-  if (prev.aum != null && curr.aum != null && prev.aum > 0) {
+  if (prev.aum !== null && curr.aum !== null && prev.aum > 0) {
     const aumDelta = ((curr.aum - prev.aum) / prev.aum) * 100;
     if (Math.abs(aumDelta) >= 5) {
       changes.aum = {
@@ -108,7 +108,7 @@ export function diffSnapshot(prev, curr) {
   }
 
   // 1Y Return change (significant shift)
-  if (prev.return1Y != null && curr.return1Y != null) {
+  if (prev.return1Y !== null && curr.return1Y !== null) {
     const retDelta = curr.return1Y - prev.return1Y;
     if (Math.abs(retDelta) >= 2) {
       changes.return1Y = {
@@ -136,7 +136,7 @@ export function diffSnapshot(prev, curr) {
   }
 
   // Alpha change (significant)
-  if (prev.alpha != null && curr.alpha != null) {
+  if (prev.alpha !== null && curr.alpha !== null) {
     const alphaDelta = curr.alpha - prev.alpha;
     if (Math.abs(alphaDelta) >= 2) {
       changes.alpha = {

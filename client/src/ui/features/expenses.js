@@ -116,7 +116,7 @@ async function renderTransactionsTab(portfolioId) {
                     <tbody>${tableRows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No transactions added yet.</p>'}`;
-    } catch (error) {
+    } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load expenses.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
 }
@@ -166,7 +166,7 @@ async function renderRecurringTab(portfolioId) {
                     <tbody>${rows}</tbody>
                 </table>
             </div>` : '<p class="empty-state">No recurring templates. Click "+ Recurring" to add one.</p>'}`;
-    } catch (error) {
+    } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load recurring templates.</p></div>';
     }
 }
