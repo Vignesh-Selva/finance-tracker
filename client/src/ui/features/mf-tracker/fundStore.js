@@ -10,7 +10,7 @@ import { getAmfiFundInfo, computeAlpha } from '../../../services/amfi.js';
 import { processRefresh, getDismissedAlerts, deleteSnapshot } from '../../../services/mfSnapshot.js';
 
 const TRACKED_FUNDS_KEY = 'mf_tracked_funds';
-const PORTFOLIO_TER_KEY  = 'mf_portfolio_ter';
+const PORTFOLIO_TER_KEY = 'mf_portfolio_ter';
 
 // ─── Tracked fund list persistence ────────────────────────
 
@@ -248,7 +248,7 @@ export function computePortfolioSummary(funds) {
     const weighted = fundsWithER.filter(f => f.holdings?.currentValue > 0);
     if (weighted.length > 0) {
       const totalVal = weighted.reduce((s, f) => s + f.holdings.currentValue, 0);
-      const wtdSum   = weighted.reduce((s, f) => s + (f.expenseRatio * f.holdings.currentValue), 0);
+      const wtdSum = weighted.reduce((s, f) => s + (f.expenseRatio * f.holdings.currentValue), 0);
       avgExpenseRatio = totalVal > 0 ? parseFloat((wtdSum / totalVal).toFixed(3)) : null;
     } else {
       avgExpenseRatio = parseFloat((fundsWithER.reduce((s, f) => s + f.expenseRatio, 0) / fundsWithER.length).toFixed(3));

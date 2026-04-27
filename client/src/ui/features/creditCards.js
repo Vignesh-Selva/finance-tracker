@@ -167,14 +167,14 @@ function renderCardItem(card, expanded) {
                 <span class="cc-detail-value">${card.due_date ? `<span class="cc-due-badge">${nextDueDateLabel(card.due_date)}</span>` : '—'}</span>
             </div>
             ${(() => {
-                const cycle = card.billing_date ? computeBillingCycle(card.billing_date) : null;
-                if (!cycle) return '';
-                const spendRate = cycle.daysElapsed > 0 ? (total / cycle.daysElapsed) : 0;
-                const projectedSpend = spendRate * cycle.daysTotal;
-                const paceWarning = limit > 0 && projectedSpend > limit * 0.8
-                    ? `<div class="cc-warning-banner" style="margin-top:8px;">⚠️ At current pace, projected spend ${Utilities.formatCurrency(projectedSpend)} may approach limit</div>` : '';
-                const fmt = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-                return `
+            const cycle = card.billing_date ? computeBillingCycle(card.billing_date) : null;
+            if (!cycle) return '';
+            const spendRate = cycle.daysElapsed > 0 ? (total / cycle.daysElapsed) : 0;
+            const projectedSpend = spendRate * cycle.daysTotal;
+            const paceWarning = limit > 0 && projectedSpend > limit * 0.8
+                ? `<div class="cc-warning-banner" style="margin-top:8px;">⚠️ At current pace, projected spend ${Utilities.formatCurrency(projectedSpend)} may approach limit</div>` : '';
+            const fmt = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            return `
                     <div class="cc-detail-row">
                         <span class="cc-detail-label">Current cycle</span>
                         <span class="cc-detail-value">${fmt(cycle.cycleStart)} – ${fmt(cycle.cycleEnd)}</span>
@@ -187,12 +187,12 @@ function renderCardItem(card, expanded) {
                         <span class="cc-detail-label">Cycle progress</span>
                         <span class="cc-detail-value" style="flex:1;">
                             <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;min-width:80px;">
-                                <div style="height:100%;background:var(--accent);width:${Math.min(100,(cycle.daysElapsed/cycle.daysTotal)*100).toFixed(0)}%;"></div>
+                                <div style="height:100%;background:var(--accent);width:${Math.min(100, (cycle.daysElapsed / cycle.daysTotal) * 100).toFixed(0)}%;"></div>
                             </div>
                         </span>
                     </div>
                     ${paceWarning}`;
-            })()}
+        })()}
             <div class="cc-btn-row">
                 <button class="cc-action-btn" onclick="event.stopPropagation(); window.app.editEntry('creditCards','${card.id}')">Edit</button>
                 <button class="cc-action-btn" onclick="event.stopPropagation(); window._ccMarkPaid('${card.id}')">Mark paid</button>

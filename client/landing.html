@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, secure, your own Supabase.">
+  <meta name="description"
+    content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, secure, your own Supabase.">
   <meta name="theme-color" content="#f5f4ef" id="theme-color-meta">
   <title>Networth Tracker — Your entire financial life. One dashboard.</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/landing.css">
 
   <script>
-    (function() {
+    (function () {
       function applyTheme(e) {
         const isDark = e ? e.matches : window.matchMedia('(prefers-color-scheme: dark)').matches;
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -55,7 +59,8 @@
       <div class="lp-fade-up">
         <div class="lp-hero-chip">✨ Networth Tracker v2 is here</div>
         <h1>Your entire financial life.<br><span>One dashboard.</span></h1>
-        <p class="lp-hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your true net worth without checking five different apps.</p>
+        <p class="lp-hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your
+          true net worth without checking five different apps.</p>
         <div class="lp-hero-ctas">
           <a href="#cta" class="lp-btn-cta">Start Tracking Now</a>
           <a href="#features" class="lp-btn-secondary">Explore Features ↓</a>
@@ -87,7 +92,7 @@
                 <div class="lp-mock-stat-chg" style="color: var(--text-muted)">→ Stable growth</div>
               </div>
             </div>
-            
+
             <svg viewBox="0 0 800 120" style="width: 100%; height: auto; overflow: visible;">
               <defs>
                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
@@ -95,8 +100,12 @@
                   <stop offset="100%" stop-color="currentColor" stop-opacity="0.0" />
                 </linearGradient>
               </defs>
-              <path d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0 L 800,120 L 0,120 Z" fill="url(#chartGrad)" style="color: var(--accent);"/>
-              <path class="lp-animated-line" d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path
+                d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0 L 800,120 L 0,120 Z"
+                fill="url(#chartGrad)" style="color: var(--accent);" />
+              <path class="lp-animated-line"
+                d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0" fill="none"
+                stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </div>
         </div>
@@ -113,7 +122,7 @@
         <div class="lp-marquee-item"><span>🪙</span> Cryptocurrency</div>
         <div class="lp-marquee-item"><span>💼</span> EPF & PPF</div>
         <div class="lp-marquee-item"><span>💳</span> Credit Cards</div>
-        
+
         <!-- Duplicate for infinite scroll -->
         <div class="lp-marquee-item"><span>🏦</span> Savings Accounts</div>
         <div class="lp-marquee-item"><span>🐷</span> Fixed Deposits</div>
@@ -129,34 +138,39 @@
     <section id="features" class="lp-section lp-container">
       <div class="lp-section-label lp-fade-up">Everything you need</div>
       <h2 class="lp-section-title lp-fade-up lp-delay-1">Powerful tools for serious wealth building.</h2>
-      <p class="lp-section-desc lp-fade-up lp-delay-2">Say goodbye to scattered spreadsheets. We combine live data feeds, powerful analytics, and total privacy into one beautifully designed platform.</p>
+      <p class="lp-section-desc lp-fade-up lp-delay-2">Say goodbye to scattered spreadsheets. We combine live data
+        feeds, powerful analytics, and total privacy into one beautifully designed platform.</p>
 
       <div class="lp-bento-grid">
         <div class="lp-bento-item large lp-fade-up">
           <div class="lp-bento-icon">⚡</div>
           <h3 class="lp-bento-title">Live Price Refresh</h3>
-          <p class="lp-bento-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, and crypto from CoinGecko. One click refreshes your entire portfolio — no manual entry, no stale data.</p>
+          <p class="lp-bento-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, and crypto from
+            CoinGecko. One click refreshes your entire portfolio — no manual entry, no stale data.</p>
           <div class="lp-bento-bg">📈</div>
         </div>
-        
+
         <div class="lp-bento-item lp-fade-up lp-delay-1">
           <div class="lp-bento-icon">📊</div>
           <h3 class="lp-bento-title">Net Worth History</h3>
-          <p class="lp-bento-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory. Watch your consistency compound.</p>
+          <p class="lp-bento-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory. Watch
+            your consistency compound.</p>
           <div class="lp-bento-bg">⏳</div>
         </div>
 
         <div class="lp-bento-item lp-fade-up">
           <div class="lp-bento-icon">💳</div>
           <h3 class="lp-bento-title">Credit Card Intelligence</h3>
-          <p class="lp-bento-desc">Track utilization across all cards. Get warned before you hit 30% to protect your CIBIL score.</p>
+          <p class="lp-bento-desc">Track utilization across all cards. Get warned before you hit 30% to protect your
+            CIBIL score.</p>
           <div class="lp-bento-bg">💳</div>
         </div>
 
         <div class="lp-bento-item large lp-fade-up lp-delay-1">
           <div class="lp-bento-icon">🧭</div>
           <h3 class="lp-bento-title">Smart Financial Advisor</h3>
-          <p class="lp-bento-desc">Built-in tools to track cash flow, set investment goals, analyze portfolio drift, and calculate your exact emergency fund needs based on your salary and expenses.</p>
+          <p class="lp-bento-desc">Built-in tools to track cash flow, set investment goals, analyze portfolio drift, and
+            calculate your exact emergency fund needs based on your salary and expenses.</p>
           <div class="lp-bento-bg">🤖</div>
         </div>
       </div>
@@ -166,18 +180,21 @@
     <section id="security" class="lp-section lp-container">
       <div class="lp-section-label lp-fade-up">Uncompromising Privacy</div>
       <h2 class="lp-section-title lp-fade-up lp-delay-1">Your data is yours. Period.</h2>
-      <p class="lp-section-desc lp-fade-up lp-delay-2">We don't sell your data. We don't read your data. Everything is isolated in your own private Supabase instance with Row-Level Security.</p>
+      <p class="lp-section-desc lp-fade-up lp-delay-2">We don't sell your data. We don't read your data. Everything is
+        isolated in your own private Supabase instance with Row-Level Security.</p>
 
       <div class="lp-bento-grid" style="grid-template-columns: 1fr 1fr; margin-top: 48px;">
         <div class="lp-bento-item lp-fade-up">
           <div class="lp-bento-icon">🔒</div>
           <h3 class="lp-bento-title">Row-Level Security</h3>
-          <p class="lp-bento-desc">Your financial records are strictly isolated. Cryptographic rules at the database level guarantee that only your authenticated session can access your data.</p>
+          <p class="lp-bento-desc">Your financial records are strictly isolated. Cryptographic rules at the database
+            level guarantee that only your authenticated session can access your data.</p>
         </div>
         <div class="lp-bento-item lp-fade-up lp-delay-1">
           <div class="lp-bento-icon">📤</div>
           <h3 class="lp-bento-title">One-Click Excel Export</h3>
-          <p class="lp-bento-desc">No vendor lock-in. Download your entire financial history across all 8 sheets — including transactions and order histories — into a clean .xlsx file anytime.</p>
+          <p class="lp-bento-desc">No vendor lock-in. Download your entire financial history across all 8 sheets —
+            including transactions and order histories — into a clean .xlsx file anytime.</p>
         </div>
       </div>
     </section>
@@ -193,10 +210,18 @@
 
         <button type="button" class="lp-google-btn" id="lp-google-btn">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853" />
-            <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05" />
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335" />
+            <path
+              d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+              fill="#4285F4" />
+            <path
+              d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z"
+              fill="#34A853" />
+            <path
+              d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z"
+              fill="#FBBC05" />
+            <path
+              d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z"
+              fill="#EA4335" />
           </svg>
           <span>Continue with Google</span>
         </button>
@@ -210,11 +235,13 @@
           </div>
           <div class="lp-form-group">
             <label class="lp-form-label" for="lp-email">Email Address</label>
-            <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required autocomplete="email">
+            <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required
+              autocomplete="email">
           </div>
           <div class="lp-form-group">
             <label class="lp-form-label" for="lp-password">Password</label>
-            <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+            <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required
+              autocomplete="new-password" minlength="6">
           </div>
           <button type="submit" class="lp-btn-submit" id="lp-form-submit">Sign Up Free</button>
         </form>
@@ -418,4 +445,5 @@
     });
   </script>
 </body>
+
 </html>

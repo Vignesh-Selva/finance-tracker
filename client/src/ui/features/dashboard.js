@@ -13,10 +13,10 @@ function getDashboardGreeting(username) {
     const day = new Date().getDay();
 
     let greetingBase, emoji;
-    if (hour >= 5 && hour < 12)       { greetingBase = 'Good Morning';   emoji = '🌅'; }
+    if (hour >= 5 && hour < 12) { greetingBase = 'Good Morning'; emoji = '🌅'; }
     else if (hour >= 12 && hour < 17) { greetingBase = 'Good Afternoon'; emoji = '☀️'; }
-    else if (hour >= 17 && hour < 21) { greetingBase = 'Good Evening';   emoji = '🌆'; }
-    else                              { greetingBase = 'Good Night';     emoji = '🌙'; }
+    else if (hour >= 17 && hour < 21) { greetingBase = 'Good Evening'; emoji = '🌆'; }
+    else { greetingBase = 'Good Night'; emoji = '🌙'; }
 
     const greeting = username ? `${greetingBase}, ${username}` : greetingBase;
 

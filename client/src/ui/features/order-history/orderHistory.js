@@ -57,6 +57,9 @@ function _getState(assetType) {
             filterType: 'all',
             filterDateFrom: '',
             filterDateTo: '',
+            selectedOrders: new Set(),
+            currentPage: 1,
+            pageSize: 12,
         };
     }
     return _states[assetType];
@@ -106,13 +109,15 @@ export async function renderOrderHistoryTab(el, portfolioId, assetType) {
 function _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, showBanner) {
     const filtered = _applyFilters(allOrders, state, cfg);
     const sorted = _sortOrders(filtered, state, cfg);
+    const totalPages = Math.ceil(sorted.length / state.pageSize);
+    const paginated = _paginate(sorted, state);
 
     el.innerHTML = `
         ${showBanner ? _buildBanner() : ''}
         ${_buildSummary(allOrders, state, cfg)}
-        ${_buildFilters(state, cfg, holdings, portfolioId, assetType)}
+        ${_buildFilters(state, cfg, holdings, portfolioId, assetType, sorted.length, totalPages)}
         ${sorted.length > 0
-            ? _buildTable(sorted, holdings, cfg, state)
+            ? _buildTable(paginated, holdings, cfg, state)
             : _buildEmpty(cfg)}
     `;
 
@@ -175,13 +180,45 @@ function _buildSummary(allOrders, state, cfg) {
 
 // ── Filters ───────────────────────────────────────────────
 
-function _buildFilters(state, cfg, holdings, portfolioId, assetType) {
+function _buildFilters(state, cfg, holdings, portfolioId, assetType, totalRecords, totalPages) {
     const holdingOpts = holdings.map(h =>
         `<option value="${h.id}" ${state.filterHolding === h.id ? 'selected' : ''}>${h[cfg.holdingNameField]}</option>`
     ).join('');
 
     const hasActive = state.filterHolding !== 'all' || state.filterType !== 'all'
         || state.filterDateFrom || state.filterDateTo;
+    const hasSelected = state.selectedOrders.size > 0;
+
+    // Build pagination controls
+    let paginationHtml = '';
+    if (totalPages > 1) {
+        const startRecord = (state.currentPage - 1) * state.pageSize + 1;
+        const endRecord = Math.min(state.currentPage * state.pageSize, totalRecords);
+
+        let pageNumbers = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, state.currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers += `<button class="btn btn-sm ${i === state.currentPage ? 'btn-primary' : 'btn-ghost'}" data-page="${i}">${i}</button>`;
+        }
+
+        paginationHtml = `
+            <span style="font-size:13px;color:var(--text-muted);margin-right:8px;">
+                ${startRecord}-${endRecord} of ${totalRecords}
+            </span>
+            <div style="display:flex;gap:4px;align-items:center;">
+                <button class="btn btn-sm btn-ghost" id="oh-prev-page" ${state.currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                ${pageNumbers}
+                <button class="btn btn-sm btn-ghost" id="oh-next-page" ${state.currentPage === totalPages ? 'disabled' : ''}>Next</button>
+            </div>
+        `;
+    }
 
     return `
         <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
@@ -199,7 +236,9 @@ function _buildFilters(state, cfg, holdings, portfolioId, assetType) {
             <input type="date" class="form-input" id="oh-f-to" value="${state.filterDateTo}"
                 style="width:auto;" title="To date">
             ${hasActive ? `<button class="btn btn-ghost btn-sm" id="oh-clear-filters">✕ Clear</button>` : ''}
-            <div style="margin-left:auto;">
+            ${paginationHtml}
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                ${hasSelected ? `<button class="btn btn-danger btn-sm" id="oh-delete-selected">Delete Selected (${state.selectedOrders.size})</button>` : ''}
                 <button class="btn btn-primary" id="oh-add-order"
                     data-portfolio="${portfolioId}" data-asset="${assetType}">+ Add Order</button>
             </div>
@@ -221,8 +260,10 @@ function _buildTable(orders, holdings, cfg, state) {
     const hasCharges = orders.some(o => parseFloat(o.charges) > 0);
     const hasRemarks = orders.some(o => o.remarks?.trim());
     const hasPlatform = orders.some(o => o.platform?.trim());
+    const allSelected = orders.length > 0 && orders.every(o => state.selectedOrders.has(o.id));
 
     const rows = orders.map(o => {
+        const isSelected = state.selectedOrders.has(o.id);
         const holdingName = holdingMap.get(o[cfg.holdingIdField]) || '—';
         const qty = parseFloat(o[cfg.unitsField] ?? o.units ?? o.quantity) || 0;
         const price = parseFloat(o[cfg.priceField] ?? o.nav ?? o.price) || 0;
@@ -242,7 +283,10 @@ function _buildTable(orders, holdings, cfg, state) {
             : rawRemarks;
 
         return `
-            <tr>
+            <tr class="${isSelected ? 'row-selected' : ''}">
+                <td style="width:40px;text-align:center;">
+                    <input type="checkbox" class="oh-row-checkbox" data-order-id="${o.id}" ${isSelected ? 'checked' : ''}>
+                </td>
                 <td data-label="${cfg.holdingLabel}">${holdingName}</td>
                 <td data-label="Date">${date}</td>
                 <td data-label="Type">${typeBadge}</td>
@@ -263,6 +307,9 @@ function _buildTable(orders, holdings, cfg, state) {
         <div class="data-table-container" style="margin-top:16px;">
             <table class="data-table oh-table">
                 <thead><tr>
+                    <th style="width:40px;text-align:center;">
+                        <input type="checkbox" id="oh-select-all" ${allSelected ? 'checked' : ''}>
+                    </th>
                     <th>${cfg.holdingLabel}</th>
                     ${_thSort('Date', 'execution_date', state)}
                     <th>Type</th>
@@ -280,6 +327,9 @@ function _buildTable(orders, holdings, cfg, state) {
         <style>
             .oh-table th, .oh-table td { padding: 10px 10px; font-size: 13px; white-space: nowrap; }
             .oh-table th:first-child, .oh-table td:first-child { white-space: normal; max-width: 180px; }
+            .row-selected { background-color: rgba(59,130,246,0.08); }
+            .oh-row-checkbox { cursor: pointer; width:16px;height:16px; }
+            #oh-select-all { cursor: pointer; width:16px;height:16px; }
         </style>`;
 }
 
@@ -326,30 +376,44 @@ function _sortOrders(orders, state, cfg) {
     });
 }
 
+function _paginate(orders, state) {
+    const start = (state.currentPage - 1) * state.pageSize;
+    const end = start + state.pageSize;
+    return orders.slice(start, end);
+}
+
 // ── Event wiring ──────────────────────────────────────────
 
 function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg) {
     const holdingFilter = el.querySelector('#oh-f-holding');
     if (holdingFilter) holdingFilter.addEventListener('change', () => {
         state.filterHolding = holdingFilter.value;
+        state.selectedOrders.clear();
+        state.currentPage = 1;
         _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
     });
 
     const typeFilter = el.querySelector('#oh-f-type');
     if (typeFilter) typeFilter.addEventListener('change', () => {
         state.filterType = typeFilter.value;
+        state.selectedOrders.clear();
+        state.currentPage = 1;
         _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
     });
 
     const fromFilter = el.querySelector('#oh-f-from');
     if (fromFilter) fromFilter.addEventListener('change', () => {
         state.filterDateFrom = fromFilter.value;
+        state.selectedOrders.clear();
+        state.currentPage = 1;
         _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
     });
 
     const toFilter = el.querySelector('#oh-f-to');
     if (toFilter) toFilter.addEventListener('change', () => {
         state.filterDateTo = toFilter.value;
+        state.selectedOrders.clear();
+        state.currentPage = 1;
         _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
     });
 
@@ -359,6 +423,8 @@ function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg
         state.filterType = 'all';
         state.filterDateFrom = '';
         state.filterDateTo = '';
+        state.selectedOrders.clear();
+        state.currentPage = 1;
         _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
     });
 
@@ -373,6 +439,56 @@ function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg
         }
         _showOrderForm(null, portfolioId, assetType, holdings, allOrders, cfg, el, state);
     });
+
+    // Row checkboxes
+    el.querySelectorAll('.oh-row-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const orderId = cb.dataset.orderId;
+            if (cb.checked) {
+                state.selectedOrders.add(orderId);
+            } else {
+                state.selectedOrders.delete(orderId);
+            }
+            _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+        });
+    });
+
+    // Select all checkbox
+    const selectAllCb = el.querySelector('#oh-select-all');
+    if (selectAllCb) {
+        const filtered = _applyFilters(allOrders, state, cfg);
+        selectAllCb.addEventListener('change', () => {
+            if (selectAllCb.checked) {
+                filtered.forEach(o => state.selectedOrders.add(o.id));
+            } else {
+                state.selectedOrders.clear();
+            }
+            _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+        });
+    }
+
+    // Delete selected button
+    const deleteSelectedBtn = el.querySelector('#oh-delete-selected');
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', async () => {
+            const selectedIds = Array.from(state.selectedOrders);
+            if (selectedIds.length === 0) return;
+
+            const confirmMsg = `Delete ${selectedIds.length} selected order${selectedIds.length > 1 ? 's' : ''}? Portfolio positions will be recomputed.`;
+            if (!await Utilities.showConfirm(confirmMsg)) return;
+
+            try {
+                for (const orderId of selectedIds) {
+                    await cfg.orderApi().delete(orderId);
+                }
+                state.selectedOrders.clear();
+                Utilities.showNotification(`${selectedIds.length} order${selectedIds.length > 1 ? 's' : ''} deleted`, 'success');
+                await renderOrderHistoryTab(el, portfolioId, assetType);
+            } catch {
+                Utilities.showNotification('Failed to delete orders', 'error');
+            }
+        });
+    }
 
     el.querySelectorAll('[data-edit-order]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -402,6 +518,7 @@ function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg
 
             try {
                 await cfg.orderApi().delete(orderId);
+                state.selectedOrders.delete(orderId);
                 Utilities.showNotification('Order deleted', 'success');
                 await renderOrderHistoryTab(el, portfolioId, assetType);
             } catch {
@@ -427,6 +544,40 @@ function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg
     if (dismissBanner) dismissBanner.addEventListener('click', () => {
         localStorage.setItem(cfg.bannerKey, '1');
         el.querySelector('#oh-migration-banner')?.remove();
+    });
+
+    // Pagination controls
+    const prevPageBtn = el.querySelector('#oh-prev-page');
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+            }
+        });
+    }
+
+    const nextPageBtn = el.querySelector('#oh-next-page');
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => {
+            const filtered = _applyFilters(allOrders, state, cfg);
+            const sorted = _sortOrders(filtered, state, cfg);
+            const totalPages = Math.ceil(sorted.length / state.pageSize);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+            }
+        });
+    }
+
+    el.querySelectorAll('[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = parseInt(btn.dataset.page);
+            if (page && page !== state.currentPage) {
+                state.currentPage = page;
+                _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+            }
+        });
     });
 }
 

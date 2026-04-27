@@ -19,6 +19,11 @@ function redirectToLanding() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+    // Disable right-click
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
     try {
         const session = await getSession();
         if (session) {

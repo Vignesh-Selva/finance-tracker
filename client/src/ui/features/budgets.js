@@ -44,11 +44,11 @@ export async function renderBudgets(portfolioId) {
 
         const sorted = sort.col ? [...budgetRows].sort((a, b) => {
             const av = sort.col === 'monthly_limit' ? parseFloat(a.monthly_limit) || 0 :
-                       sort.col === '_spent'        ? a._spent :
-                       (a[sort.col] || '').toLowerCase();
+                sort.col === '_spent' ? a._spent :
+                    (a[sort.col] || '').toLowerCase();
             const bv = sort.col === 'monthly_limit' ? parseFloat(b.monthly_limit) || 0 :
-                       sort.col === '_spent'        ? b._spent :
-                       (b[sort.col] || '').toLowerCase();
+                sort.col === '_spent' ? b._spent :
+                    (b[sort.col] || '').toLowerCase();
             if (av < bv) return sort.dir === 'asc' ? -1 : 1;
             if (av > bv) return sort.dir === 'asc' ? 1 : -1;
             return 0;

@@ -44,15 +44,15 @@ export async function renderMutualFunds(portfolioId) {
 
     if (_activeTab === 'portfolio') {
         await renderPortfolioTab(container, portfolioId);
-    // } else if (_activeTab === 'sip') {
-    //     await renderSIPTab(container, portfolioId);
-    // } else if (_activeTab === 'tax') {
-    //     await renderTaxTab(container, portfolioId);
+        // } else if (_activeTab === 'sip') {
+        //     await renderSIPTab(container, portfolioId);
+        // } else if (_activeTab === 'tax') {
+        //     await renderTaxTab(container, portfolioId);
     } else if (_activeTab === 'orderHistory') {
         const content = container.querySelector('#mft-tab-content');
         await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
-    // } else {
-    //     await renderTrackerTab(container);
+        // } else {
+        //     await renderTrackerTab(container);
     }
 }
 
@@ -94,14 +94,14 @@ function attachTabEvents(container, portfolioId) {
             content.innerHTML = '';
             if (_activeTab === 'portfolio') {
                 await renderPortfolioTab(container, portfolioId);
-            // } else if (_activeTab === 'sip') {
-            //     await renderSIPTab(container, portfolioId);
-            // } else if (_activeTab === 'tax') {
-            //     await renderTaxTab(container, portfolioId);
+                // } else if (_activeTab === 'sip') {
+                //     await renderSIPTab(container, portfolioId);
+                // } else if (_activeTab === 'tax') {
+                //     await renderTaxTab(container, portfolioId);
             } else if (_activeTab === 'orderHistory') {
                 await renderOrderHistoryTab(content, portfolioId, 'mutualFunds');
-            // } else {
-            //     await renderTrackerTab(container);
+                // } else {
+                //     await renderTrackerTab(container);
             }
         });
     });
@@ -161,6 +161,12 @@ async function renderPortfolioTab(container, portfolioId) {
         const plPercent = totalInvested > 0 ? ((totalPL / totalInvested) * 100).toFixed(2) : '0.00';
         const closedCount = resolvedFunds.filter(f => f._derived && f._units === 0).length;
 
+        // Calculate portfolio-level XIRR
+        const portfolioXirr = FinanceUtils.xirrFromPortfolio(allOrders, totalCurrent);
+        const xirrValue = portfolioXirr
+            ? `<span class="${parseFloat(portfolioXirr.value) >= 0 ? 'value-positive' : 'value-negative'}" ${portfolioXirr.hint ? `title="${portfolioXirr.hint}"` : ''}>${portfolioXirr.value}%</span>`
+            : '<span style="color:var(--text-muted)">—</span>';
+
         let tableRows = '';
         funds.forEach(item => {
             const invested = item._invested;
@@ -169,7 +175,7 @@ async function renderPortfolioTab(container, portfolioId) {
             const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
             const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
             const xirrCell = xirr !== null
-                ? `<span class="${parseFloat(xirr.value) >= 0 ? 'value-positive' : 'value-negative'}" ${xirr.hint ? `title="${xirr.hint}"` : ''}>${xirr.value}%${xirr.hint ? '*' : ''}</span>`
+                ? `<span class="${parseFloat(xirr.value) >= 0 ? 'value-positive' : 'value-negative'}" ${xirr.hint ? `title="${xirr.hint}"` : ''}>${xirr.value}%</span>`
                 : '<span style="color:var(--text-muted)">—</span>';
 
             const isClosed = item._derived && item._units === 0;
@@ -227,6 +233,10 @@ async function renderPortfolioTab(container, portfolioId) {
                 <div class="stat-card">
                     <h3>P / L</h3>
                     <p class="stat-value mono ${totalPL >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(totalPL)} (${plPercent}%)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 title="Portfolio-level Extended IRR — uses all buy/sell orders across all funds">Portfolio XIRR</h3>
+                    <p class="stat-value mono">${xirrValue}</p>
                 </div>
             </div>
             ${funds.length > 0 ? `
@@ -781,11 +791,11 @@ function rerenderFundList(content) { renderFundList(content, _fundDataCache); }
 function sortFunds(funds) {
     return [...funds].sort((a, b) => {
         switch (_sortBy) {
-            case 'return1Y':     return (b.return1Y ?? -999) - (a.return1Y ?? -999);
-            case 'alpha':        return (b.alpha ?? -999) - (a.alpha ?? -999);
+            case 'return1Y': return (b.return1Y ?? -999) - (a.return1Y ?? -999);
+            case 'alpha': return (b.alpha ?? -999) - (a.alpha ?? -999);
             case 'expenseRatio': return (a.expenseRatio ?? 999) - (b.expenseRatio ?? 999);
-            case 'aum':          return (b.aum ?? 0) - (a.aum ?? 0);
-            default:             return (a.name || '').localeCompare(b.name || '');
+            case 'aum': return (b.aum ?? 0) - (a.aum ?? 0);
+            default: return (a.name || '').localeCompare(b.name || '');
         }
     });
 }

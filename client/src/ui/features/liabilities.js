@@ -50,11 +50,11 @@ export async function renderLiabilities(portfolioId) {
         const sort = window.app?.getSortState('liabilities') || { col: null, dir: 'asc' };
         const all = resp?.data || [];
 
-        const active   = sortData(all.filter(i => (i.status || 'active') === 'active'),   sort.col, sort.dir);
-        const archived = sortData(all.filter(i => i.status === 'closed'),                sort.col, sort.dir);
+        const active = sortData(all.filter(i => (i.status || 'active') === 'active'), sort.col, sort.dir);
+        const archived = sortData(all.filter(i => i.status === 'closed'), sort.col, sort.dir);
 
         const totalOutstanding = active.reduce((s, i) => s + (parseFloat(i.outstanding) || 0), 0);
-        const totalEmi         = active.reduce((s, i) => s + (parseFloat(i.emi) || 0), 0);
+        const totalEmi = active.reduce((s, i) => s + (parseFloat(i.emi) || 0), 0);
 
         const thead = `<thead><tr>
             ${th('Type', 'type', sort)}

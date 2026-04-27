@@ -125,7 +125,7 @@ export function diffSnapshot(prev, curr) {
 
   // Fund manager change
   if (prev.fundManager && curr.fundManager &&
-      prev.fundManager.toLowerCase() !== curr.fundManager.toLowerCase()) {
+    prev.fundManager.toLowerCase() !== curr.fundManager.toLowerCase()) {
     changes.fundManager = {
       from: prev.fundManager,
       to: curr.fundManager,

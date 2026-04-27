@@ -27,9 +27,9 @@ const Utilities = {
 
             const bgMap = {
                 success: '#10b981',
-                error:   '#dc2626',
+                error: '#dc2626',
                 warning: '#d97706',
-                info:    '#3b82f6',
+                info: '#3b82f6',
             };
             const textMap = {
                 warning: '#1a1a1a',

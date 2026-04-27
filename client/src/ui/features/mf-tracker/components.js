@@ -204,14 +204,14 @@ export function renderFundCard(fund, options = {}) {
 export function renderPortfolioSummary(summary) {
   // Build TER display with optional change indicator
   let terValue = '—';
-  let terTone  = 'neutral';
+  let terTone = 'neutral';
   if (summary.avgExpenseRatio != null) {
     terValue = summary.avgExpenseRatio.toFixed(2) + '%';
     if (summary.terDelta != null && Math.abs(summary.terDelta) >= 0.001) {
       const arrow = summary.terDelta > 0 ? '▲' : '▼';
-      const sign  = summary.terDelta > 0 ? '+' : '';
-      terTone     = summary.terDelta > 0 ? 'negative' : 'positive'; // higher TER is bad
-      terValue   += ` <span class="mft-ter-delta ${terTone}">${arrow}${sign}${summary.terDelta.toFixed(2)}%</span>`;
+      const sign = summary.terDelta > 0 ? '+' : '';
+      terTone = summary.terDelta > 0 ? 'negative' : 'positive'; // higher TER is bad
+      terValue += ` <span class="mft-ter-delta ${terTone}">${arrow}${sign}${summary.terDelta.toFixed(2)}%</span>`;
     }
   }
 

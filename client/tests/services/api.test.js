@@ -43,7 +43,7 @@ vi.mock('../../src/services/supabaseClient.js', () => {
 });
 
 // Import after mocking
-const { default: api, ApiError } = await import('../../src/services/api.js');
+const { default: api, ApiError, deleteAllData } = await import('../../src/services/api.js');
 const { supabase } = await import('../../src/services/supabaseClient.js');
 
 describe('ApiError', () => {
@@ -307,5 +307,121 @@ describe('createResourceApi (via api.recurringTransactions)', () => {
 
     const result = await api.recurringTransactions.list('pid');
     expect(result.data).toHaveLength(2);
+  });
+});
+
+describe('deleteAllData', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('deletes data from all tables successfully', async () => {
+    const tables = [
+      'savings',
+      'fixed_deposits',
+      'mutual_funds',
+      'stocks',
+      'crypto',
+      'liabilities',
+      'credit_cards',
+      'transactions',
+      'budgets',
+      'recurring_transactions',
+      'settings',
+      'mf_orders',
+      'stock_orders',
+      'crypto_orders',
+      'net_worth_snapshots',
+    ];
+
+    // Mock successful delete for all tables
+    // The chain is: from(table).delete().eq('portfolio_id', pid)
+    const deleteChain = {
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    };
+    const fromChain = {
+      delete: vi.fn().mockReturnValue(deleteChain),
+    };
+    supabase.from.mockReturnValue(fromChain);
+
+    const result = await deleteAllData('portfolio-id');
+
+    expect(result).toEqual({ success: true });
+    expect(supabase.from).toHaveBeenCalledTimes(tables.length);
+
+    // Verify all tables were called
+    tables.forEach(table => {
+      expect(supabase.from).toHaveBeenCalledWith(table);
+    });
+  });
+
+  it('throws ApiError when some tables fail to delete', async () => {
+    // Mock some tables to fail
+    supabase.from.mockImplementation((table) => {
+      const deleteChain = {
+        eq: vi.fn().mockResolvedValue(
+          table === 'mutual_funds' || table === 'stocks'
+            ? { error: { message: 'Delete failed' } }
+            : { error: null }
+        ),
+      };
+      return {
+        delete: vi.fn().mockReturnValue(deleteChain),
+      };
+    });
+
+    await expect(deleteAllData('portfolio-id')).rejects.toThrow('Failed to delete some data');
+  });
+
+  it('collects all errors when multiple tables fail', async () => {
+    // Mock multiple tables to fail
+    supabase.from.mockImplementation((table) => {
+      const deleteChain = {
+        eq: vi.fn().mockResolvedValue(
+          table === 'savings'
+            ? { error: { message: 'Savings delete failed' } }
+            : table === 'transactions'
+            ? { error: { message: 'Transactions delete failed' } }
+            : { error: null }
+        ),
+      };
+      return {
+        delete: vi.fn().mockReturnValue(deleteChain),
+      };
+    });
+
+    try {
+      await deleteAllData('portfolio-id');
+      fail('Should have thrown an error');
+    } catch (error) {
+      expect(error.message).toBe('Failed to delete some data');
+      expect(error.details).toHaveLength(2);
+      expect(error.details[0]).toEqual({ table: 'savings', error: 'Savings delete failed' });
+      expect(error.details[1]).toEqual({ table: 'transactions', error: 'Transactions delete failed' });
+    }
+  });
+
+  it('calls delete with portfolio_id for each table', async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    const deleteMock = vi.fn().mockReturnValue({ eq: eqMock });
+    supabase.from.mockReturnValue({ delete: deleteMock });
+
+    await deleteAllData('test-portfolio-123');
+
+    // Verify delete was called for each table
+    expect(supabase.from).toHaveBeenCalledTimes(15);
+    expect(deleteMock).toHaveBeenCalledTimes(15);
+    expect(eqMock).toHaveBeenCalledTimes(15);
+    expect(eqMock).toHaveBeenCalledWith('portfolio_id', 'test-portfolio-123');
+  });
+
+  it('handles empty portfolio_id gracefully', async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    const deleteMock = vi.fn().mockReturnValue({ eq: eqMock });
+    supabase.from.mockReturnValue({ delete: deleteMock });
+
+    const result = await deleteAllData('');
+
+    expect(result).toEqual({ success: true });
   });
 });

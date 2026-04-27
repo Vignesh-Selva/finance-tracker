@@ -145,15 +145,18 @@ describe('DataUtils.exportToExcel', () => {
         expect(stRow.category).toBe('Energy');
     });
 
-    it('maps MF order fields (units→quantity, nav→price) in Orders sheet', () => {
+    it('maps MF order fields with name, units, nav columns in Orders sheet', () => {
         DataUtils.exportToExcel(SAMPLE_DATA, 'test.xlsx');
         const wb = XLSX.writeFile.mock.calls[0][0];
         const rows = XLSX.utils.sheet_to_json(wb.Sheets['Orders']);
         const mfOrd = rows.find(r => r.asset_type === 'MutualFund');
-        expect(mfOrd.quantity).toBe(50);
-        expect(mfOrd.price).toBe(100);
+        expect(mfOrd.name).toBe('Parag Parikh FCF');
+        expect(mfOrd.units).toBe(50);
+        expect(mfOrd.nav).toBe(100);
         expect(mfOrd.holding_id).toBe('mf1');
         expect(mfOrd.amount_overridden).toBe('FALSE');
+        expect(mfOrd.quantity).toBe('');
+        expect(mfOrd.price).toBe('');
     });
 
     it('exports amount_overridden=true as TRUE string', () => {
@@ -275,11 +278,11 @@ describe('DataUtils.importFromExcel', () => {
         expect(result.crypto[0].platform).toBe('Binance');
     });
 
-    it('parses Orders sheet and maps fields back to API format', async () => {
+    it('parses Orders sheet with new column structure and maps fields back to API format', async () => {
         const wb = buildWorkbook({ ...EMPTY_SHEETS, Orders: [
-            { asset_type: 'MutualFund', holding_id: 'mf1', execution_date: '2024-01-10', order_type: 'Buy', quantity: 50, price: 100, amount: 5000, charges: 0, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
-            { asset_type: 'Stock', holding_id: 'st1', execution_date: '2024-01-12', order_type: 'Buy', quantity: 5, price: 2500, amount: 12500, charges: 25, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
-            { asset_type: 'Crypto', holding_id: 'cr1', execution_date: '2024-01-08', order_type: 'Buy', quantity: 0.0005, price: 3000000, amount: 1500, charges: 10, platform: 'Binance', remarks: '', amount_overridden: 'TRUE' },
+            { asset_type: 'MutualFund', name: 'Parag Parikh FCF', holding_id: 'mf1', execution_date: '2024-01-10', order_type: 'Buy', units: 50, nav: 100, quantity: '', price: '', amount: 5000, charges: 0, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
+            { asset_type: 'Stock', name: 'Reliance', holding_id: 'st1', execution_date: '2024-01-12', order_type: 'Buy', units: '', nav: '', quantity: 5, price: 2500, amount: 12500, charges: 25, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
+            { asset_type: 'Crypto', name: 'Bitcoin', holding_id: 'cr1', execution_date: '2024-01-08', order_type: 'Buy', units: '', nav: '', quantity: 0.0005, price: 3000000, amount: 1500, charges: 10, platform: 'Binance', remarks: '', amount_overridden: 'TRUE' },
         ]});
         const file = makeFile(wb);
         stubFileReader(file._buf);
@@ -298,12 +301,67 @@ describe('DataUtils.importFromExcel', () => {
 
     it('converts amount_overridden TRUE/FALSE string to boolean', async () => {
         const wb = buildWorkbook({ ...EMPTY_SHEETS, Orders: [
-            { asset_type: 'MutualFund', holding_id: 'mf1', execution_date: '2024-01-01', order_type: 'Buy', quantity: 10, price: 100, amount: 1000, charges: 0, platform: '', remarks: '', amount_overridden: 'TRUE' },
+            { asset_type: 'MutualFund', name: 'Test Fund', holding_id: 'mf1', execution_date: '2024-01-01', order_type: 'Buy', units: 10, nav: 100, quantity: '', price: '', amount: 1000, charges: 0, platform: '', remarks: '', amount_overridden: 'TRUE' },
         ]});
         const file = makeFile(wb);
         stubFileReader(file._buf);
         const result = await DataUtils.importFromExcel(file);
         expect(result.mfOrders[0].amount_overridden).toBe(true);
+    });
+
+    it('matches orders to holdings by name when holding_id is blank', async () => {
+        const wb = buildWorkbook({ 
+            ...EMPTY_SHEETS, 
+            Investments: [
+                { asset_type: 'MutualFund', id: 'mf1', name: 'Parag Parikh FCF', symbol: '122639', quantity: 100, invested: 10000, current: 12000, current_price: 120, category: 'Equity', sip: '' },
+            ],
+            Orders: [
+                { asset_type: 'MutualFund', name: 'Parag Parikh FCF', holding_id: '', execution_date: '2024-01-10', order_type: 'Buy', units: 50, nav: 100, quantity: '', price: '', amount: 5000, charges: 0, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
+            ]
+        });
+        const file = makeFile(wb);
+        stubFileReader(file._buf);
+        const result = await DataUtils.importFromExcel(file);
+        expect(result.mfOrders).toHaveLength(1);
+        expect(result.mfOrders[0].mf_id).toBe('mf1');
+        expect(result.mfOrders[0].units).toBe(50);
+    });
+
+    it('leaves holding_id blank when name does not match any holding', async () => {
+        const wb = buildWorkbook({ 
+            ...EMPTY_SHEETS, 
+            Investments: [
+                { asset_type: 'MutualFund', id: 'mf1', name: 'Parag Parikh FCF', symbol: '122639', quantity: 100, invested: 10000, current: 12000, current_price: 120, category: 'Equity', sip: '' },
+            ],
+            Orders: [
+                { asset_type: 'MutualFund', name: 'Unknown Fund', holding_id: '', execution_date: '2024-01-10', order_type: 'Buy', units: 50, nav: 100, quantity: '', price: '', amount: 5000, charges: 0, platform: 'Zerodha', remarks: '', amount_overridden: 'FALSE' },
+            ]
+        });
+        const file = makeFile(wb);
+        stubFileReader(file._buf);
+        const result = await DataUtils.importFromExcel(file);
+        expect(result.mfOrders).toHaveLength(1);
+        expect(result.mfOrders[0].mf_id).toBe('');
+    });
+
+    it('parses MM/DD/YYYY date format and converts to YYYY-MM-DD', async () => {
+        const wb = buildWorkbook({ ...EMPTY_SHEETS, Cash: [
+            { table_type: 'FixedDeposit', bank_name: 'SBI', invested: 100000, maturity: 115000, interest_rate: 7.5, maturity_date: '04/12/2025' },
+        ]});
+        const file = makeFile(wb);
+        stubFileReader(file._buf);
+        const result = await DataUtils.importFromExcel(file);
+        expect(result.fixedDeposits[0].maturity_date).toBe('2025-04-12');
+    });
+
+    it('parses YYYY-MM-DD date format as-is', async () => {
+        const wb = buildWorkbook({ ...EMPTY_SHEETS, Cash: [
+            { table_type: 'FixedDeposit', bank_name: 'SBI', invested: 100000, maturity: 115000, interest_rate: 7.5, maturity_date: '2025-12-04' },
+        ]});
+        const file = makeFile(wb);
+        stubFileReader(file._buf);
+        const result = await DataUtils.importFromExcel(file);
+        expect(result.fixedDeposits[0].maturity_date).toBe('2025-12-04');
     });
 
     it('parses CashFlow sheet into transactions and budgets', async () => {

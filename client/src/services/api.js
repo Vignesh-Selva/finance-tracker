@@ -451,6 +451,45 @@ export { ApiError };
 
 export { fetchFXRates, convertCurrency, COMMON_CURRENCIES } from './fxRates.js';
 
+// ─── Delete All Data ───────────────────────────────────────
+
+export const deleteAllData = async (portfolioId) => {
+  const tables = [
+    'savings',
+    'fixed_deposits',
+    'mutual_funds',
+    'stocks',
+    'crypto',
+    'liabilities',
+    'credit_cards',
+    'transactions',
+    'budgets',
+    'recurring_transactions',
+    'settings',
+    'mf_orders',
+    'stock_orders',
+    'crypto_orders',
+    'net_worth_snapshots',
+  ];
+
+  const errors = [];
+  for (const table of tables) {
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('portfolio_id', portfolioId);
+    if (error) {
+      errors.push({ table, error: error.message });
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new ApiError('Failed to delete some data', 500, errors);
+  }
+
+  return { success: true };
+};
+
 export default {
   portfolios,
   savings,
@@ -469,4 +508,5 @@ export default {
   cryptoOrders,
   dashboard,
   health,
+  deleteAllData,
 };

@@ -7,12 +7,12 @@ const LOCKED_IN_KEYS = new Set(['epfPpf']);
 const BUCKETS = ['Equity', 'Debt', 'Cash', 'Gold', 'Crypto', 'Other'];
 
 const ASSET_CLASSES = [
-    { key: 'savings',       label: 'Savings',        color: '#d97757' },
-    { key: 'fixedDeposits', label: 'Fixed Deposits',  color: '#3b82f6' },
-    { key: 'mutualFunds',   label: 'Mutual Funds',    color: '#059669' },
-    { key: 'stocks',        label: 'Stocks',          color: '#8b5cf6' },
-    { key: 'crypto',        label: 'Crypto',          color: '#f59e0b' },
-    { key: 'epfPpf',        label: 'EPF / PPF',       color: '#6b7280' },
+    { key: 'savings', label: 'Savings', color: '#d97757' },
+    { key: 'fixedDeposits', label: 'Fixed Deposits', color: '#3b82f6' },
+    { key: 'mutualFunds', label: 'Mutual Funds', color: '#059669' },
+    { key: 'stocks', label: 'Stocks', color: '#8b5cf6' },
+    { key: 'crypto', label: 'Crypto', color: '#f59e0b' },
+    { key: 'epfPpf', label: 'EPF / PPF', color: '#6b7280' },
 ];
 
 // ─── Module state ─────────────────────────────────────────
@@ -25,7 +25,7 @@ function loadTargets() {
 function saveTargets(t) { localStorage.setItem(TARGET_KEY, JSON.stringify(t)); }
 function totalTargets(t) { return ASSET_CLASSES.reduce((s, a) => s + (parseFloat(t[a.key]) || 0), 0); }
 
-function planKey(pid)  { return `fin_plan_v1_${pid}`; }
+function planKey(pid) { return `fin_plan_v1_${pid}`; }
 function watchKey(pid) { return `fin_watch_v1_${pid}`; }
 function rulesKey(pid) { return `fin_rules_v1_${pid}`; }
 
@@ -70,7 +70,7 @@ function buildShell() {
                 <button class="btn btn-ghost" onclick="window.app.renderCurrentTab()">↺ Refresh</button>
             </div>
             <div class="mft-tab-bar" id="rebal-tab-bar">
-                <button class="mft-tab ${_activeTab === 'plan'  ? 'active' : ''}" data-tab="plan">💰 Cash Flow & Plan</button>
+                <button class="mft-tab ${_activeTab === 'plan' ? 'active' : ''}" data-tab="plan">💰 Cash Flow & Plan</button>
                 <button class="mft-tab ${_activeTab === 'watch' ? 'active' : ''}" data-tab="watch">👁 Watch List</button>
                 <button class="mft-tab ${_activeTab === 'rules' ? 'active' : ''}" data-tab="rules">📋 Rules</button>
             </div>
@@ -93,7 +93,7 @@ async function renderActiveTab(container, portfolioId, data) {
     const content = container.querySelector('#rebal-tab-content');
     if (!content) return;
     content.innerHTML = '';
-    if (_activeTab === 'plan')  renderPlanTab(content, portfolioId, data);
+    if (_activeTab === 'plan') renderPlanTab(content, portfolioId, data);
     else if (_activeTab === 'watch') renderWatchTab(content, portfolioId, data);
     else if (_activeTab === 'rules') renderRulesTab(content, portfolioId);
 }
@@ -101,25 +101,25 @@ async function renderActiveTab(container, portfolioId, data) {
 // ─── Tab 1: Cash Flow & Plan ──────────────────────────────
 function renderPlanTab(content, portfolioId, { netWorth, settings }) {
     const plan = loadPlan(portfolioId);
-    const salary       = parseFloat(settings?.salary)          || 0;
-    const expenses     = parseFloat(settings?.expenses)         || 0;
-    const efAmt        = parseFloat(settings?.emergency_fund)   || 0;
-    const efLocation   = settings?.emergency_fund_location      || '';
-    const taxRegime    = settings?.tax_regime                   || '';
-    const retYears     = parseFloat(settings?.retirement_years) || 0;
-    const lifeIns      = settings?.life_insurance                || false;
-    const healthIns    = settings?.health_insurance              || false;
+    const salary = parseFloat(settings?.salary) || 0;
+    const expenses = parseFloat(settings?.expenses) || 0;
+    const efAmt = parseFloat(settings?.emergency_fund) || 0;
+    const efLocation = settings?.emergency_fund_location || '';
+    const taxRegime = settings?.tax_regime || '';
+    const retYears = parseFloat(settings?.retirement_years) || 0;
+    const lifeIns = settings?.life_insurance || false;
+    const healthIns = settings?.health_insurance || false;
     const healthInsSpouse = settings?.health_insurance_for_spouse || false;
     const healthInsDep = settings?.health_insurance_for_dependents || false;
-    const dependents   = settings?.dependents                     || 0;
-    const maritalStatus = settings?.marital_status                || '';
+    const dependents = settings?.dependents || 0;
+    const maritalStatus = settings?.marital_status || '';
     const efTargetMonths = parseInt(settings?.emergency_fund_months) || 6;
 
-    const totalOutflow  = plan.sips.reduce((s, sip) => s + (parseFloat(sip.outflow)  || 0), 0);
-    const totalInvested = plan.sips.reduce((s, sip) => s + (parseFloat(sip.amount)   || 0), 0);
-    const ppfContrib    = parseFloat(plan.ppf) || 0;
-    const surplus       = salary - expenses - totalOutflow - ppfContrib;
-    const varMin        = parseFloat(plan.varMin) || 0;
+    const totalOutflow = plan.sips.reduce((s, sip) => s + (parseFloat(sip.outflow) || 0), 0);
+    const totalInvested = plan.sips.reduce((s, sip) => s + (parseFloat(sip.amount) || 0), 0);
+    const ppfContrib = parseFloat(plan.ppf) || 0;
+    const surplus = salary - expenses - totalOutflow - ppfContrib;
+    const varMin = parseFloat(plan.varMin) || 0;
 
     const noProfilePrompt = salary === 0
         ? `<div class="cc-warning-banner" style="margin-bottom:16px;">ℹ️ Set your salary and expenses in <strong>Settings → Financial Profile</strong> to unlock the cash flow summary.</div>`
@@ -132,13 +132,13 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
         : '';
 
     // Emergency fund
-    const efMonths    = expenses > 0 ? efAmt / expenses : 0;
+    const efMonths = expenses > 0 ? efAmt / expenses : 0;
     const efThreshold = expenses * efTargetMonths;
-    const efExcess    = Math.max(0, efAmt - efThreshold);
-    const efClass     = efMonths >= efTargetMonths ? 'value-positive' : efMonths >= (efTargetMonths / 2) ? 'value-neutral' : 'value-negative';
-    const efLabel     = efExcess > 0 ? '✓ Above target' : efMonths >= efTargetMonths ? '✓ Adequate' : efMonths >= (efTargetMonths / 2) ? '⚠ Partial' : '✗ Insufficient';
-    const efBarColor  = efMonths >= efTargetMonths ? (efExcess > 0 ? 'var(--accent)' : 'var(--green)') : efMonths >= (efTargetMonths / 2) ? 'var(--yellow)' : 'var(--red)';
-    const efBarWidth  = Math.min(100, (efMonths / efTargetMonths) * 100).toFixed(0);
+    const efExcess = Math.max(0, efAmt - efThreshold);
+    const efClass = efMonths >= efTargetMonths ? 'value-positive' : efMonths >= (efTargetMonths / 2) ? 'value-neutral' : 'value-negative';
+    const efLabel = efExcess > 0 ? '✓ Above target' : efMonths >= efTargetMonths ? '✓ Adequate' : efMonths >= (efTargetMonths / 2) ? '⚠ Partial' : '✗ Insufficient';
+    const efBarColor = efMonths >= efTargetMonths ? (efExcess > 0 ? 'var(--accent)' : 'var(--green)') : efMonths >= (efTargetMonths / 2) ? 'var(--yellow)' : 'var(--red)';
+    const efBarWidth = Math.min(100, (efMonths / efTargetMonths) * 100).toFixed(0);
 
     // Insurance and emergency fund recommendations
     let recommendationBanner = '';
@@ -317,9 +317,9 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
         modal.style.display = 'block';
         window.app.isSettingsModal = false;
         window.app._orderSaveHandler = () => {
-            const name    = document.getElementById('sip-name')?.value?.trim();
-            const bucket  = document.getElementById('sip-bucket')?.value;
-            const amount  = parseFloat(document.getElementById('sip-amount')?.value)  || 0;
+            const name = document.getElementById('sip-name')?.value?.trim();
+            const bucket = document.getElementById('sip-bucket')?.value;
+            const amount = parseFloat(document.getElementById('sip-amount')?.value) || 0;
             const outflow = parseFloat(document.getElementById('sip-outflow')?.value) || 0;
             if (!name) { Utilities.showNotification('Instrument name is required', 'error'); return; }
             const p = loadPlan(portfolioId);
@@ -331,9 +331,9 @@ function renderPlanTab(content, portfolioId, { netWorth, settings }) {
         };
     };
 
-    window._addSip       = () => showSipModal();
-    window._editSip      = (i) => showSipModal(loadPlan(portfolioId).sips[i], i);
-    window._deleteSip    = (i) => {
+    window._addSip = () => showSipModal();
+    window._editSip = (i) => showSipModal(loadPlan(portfolioId).sips[i], i);
+    window._deleteSip = (i) => {
         const p = loadPlan(portfolioId); p.sips.splice(i, 1); savePlan(portfolioId, p);
         renderPlanTab(content, portfolioId, { netWorth, settings });
     };
@@ -368,12 +368,12 @@ function renderWatchTab(content, portfolioId, { netWorth }) {
             <td data-label="Holding" style="${e.status === 'dismissed' ? 'opacity:0.5;' : ''}">${e.name}</td>
             <td data-label="Concern" style="${e.status === 'dismissed' ? 'opacity:0.5;' : ''}">${e.note || '—'}</td>
             <td data-label="Status">${e.status === 'dismissed'
-                ? '<span class="badge badge-muted">Dismissed</span>'
-                : '<span class="badge badge-yellow">Under Review</span>'}</td>
+            ? '<span class="badge badge-muted">Dismissed</span>'
+            : '<span class="badge badge-yellow">Under Review</span>'}</td>
             <td style="white-space:nowrap;">
                 ${e.status !== 'dismissed'
-                    ? `<button class="btn-ghost" style="font-size:12px;padding:4px 8px;" onclick="window._dismissWatch(${i})">✓ Dismiss</button>`
-                    : `<button class="btn-ghost" style="font-size:12px;padding:4px 8px;" onclick="window._restoreWatch(${i})">↺ Restore</button>`}
+            ? `<button class="btn-ghost" style="font-size:12px;padding:4px 8px;" onclick="window._dismissWatch(${i})">✓ Dismiss</button>`
+            : `<button class="btn-ghost" style="font-size:12px;padding:4px 8px;" onclick="window._restoreWatch(${i})">↺ Restore</button>`}
                 <button class="btn-ghost" style="font-size:12px;padding:4px 8px;color:var(--red);" onclick="window._deleteWatch(${i})">✕</button>
             </td>
         </tr>`).join('');
@@ -425,7 +425,7 @@ function renderWatchTab(content, portfolioId, { netWorth }) {
         };
     };
 
-    window._addWatch     = () => showWatchModal();
+    window._addWatch = () => showWatchModal();
     window._dismissWatch = (i) => {
         const wl = loadWatchList(portfolioId); wl[i].status = 'dismissed'; saveWatchList(portfolioId, wl);
         renderWatchTab(content, portfolioId, { netWorth });
@@ -434,7 +434,7 @@ function renderWatchTab(content, portfolioId, { netWorth }) {
         const wl = loadWatchList(portfolioId); wl[i].status = 'active'; saveWatchList(portfolioId, wl);
         renderWatchTab(content, portfolioId, { netWorth });
     };
-    window._deleteWatch  = (i) => {
+    window._deleteWatch = (i) => {
         const wl = loadWatchList(portfolioId); wl.splice(i, 1); saveWatchList(portfolioId, wl);
         renderWatchTab(content, portfolioId, { netWorth });
     };
@@ -462,7 +462,7 @@ function renderRulesTab(content, portfolioId) {
             ${rules.length > 0 ? rulesHTML : `<p style="color:var(--text-muted);">No rules yet. Add guiding principles for your investments.</p>`}
         </div>`;
 
-    window._addRule    = () => {
+    window._addRule = () => {
         const r = loadRules(portfolioId); r.push(''); saveRules(portfolioId, r);
         renderRulesTab(content, portfolioId);
         setTimeout(() => {

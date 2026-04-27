@@ -374,9 +374,9 @@ class PersonalFinanceApp {
     async _checkHoldingHasOrders(type, holdingId) {
         try {
             const orderApiMap = {
-                mutualFunds: { api: api.mfOrders,    holdingIdField: 'mf_id' },
-                stocks:      { api: api.stockOrders,  holdingIdField: 'stock_id' },
-                crypto:      { api: api.cryptoOrders, holdingIdField: 'crypto_id' },
+                mutualFunds: { api: api.mfOrders, holdingIdField: 'mf_id' },
+                stocks: { api: api.stockOrders, holdingIdField: 'stock_id' },
+                crypto: { api: api.cryptoOrders, holdingIdField: 'crypto_id' },
             };
             const cfg = orderApiMap[type];
             if (!cfg) return false;
@@ -603,6 +603,15 @@ class PersonalFinanceApp {
                             <li>Leave Investments id blank for new entries</li>
                         </ul>
                     </div>
+                    <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; color: var(--danger);">Danger Zone</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Permanently delete all your data. This action cannot be undone.
+                        </p>
+                        <button type="button" class="btn" id="settings-delete-all-btn" style="background-color: var(--danger); color: white; border: none;">
+                            🗑️ Delete All Data
+                        </button>
+                    </div>
                 </div>
 
                 <style>
@@ -637,6 +646,8 @@ class PersonalFinanceApp {
             if (importBtn) importBtn.addEventListener('click', () => this.importAllData());
             const templateBtn = document.getElementById('settings-template-btn');
             if (templateBtn) templateBtn.addEventListener('click', () => Utilities.createTemplate());
+            const deleteAllBtn = document.getElementById('settings-delete-all-btn');
+            if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAllData());
         } catch (error) {
             Utilities.showNotification('Failed to load settings', 'error');
         }
@@ -812,11 +823,11 @@ class PersonalFinanceApp {
         if (!data) return;
 
         const assetApiMap = {
-            'Savings':        { api: api.savings,       labelField: 'bank_name',   valueField: 'balance' },
-            'Fixed Deposits': { api: api.fixedDeposits, labelField: 'bank_name',   valueField: 'maturity' },
-            'Mutual Funds':   { api: api.mutualFunds,   labelField: 'fund_name',   valueField: 'current', investedField: 'invested' },
-            'Stocks':         { api: api.stocks,        labelField: 'stock_name',  valueField: 'current', investedField: 'invested' },
-            'Crypto':         { api: api.crypto,        labelField: 'coin_name',   valueField: 'current', investedField: 'invested' },
+            'Savings': { api: api.savings, labelField: 'bank_name', valueField: 'balance' },
+            'Fixed Deposits': { api: api.fixedDeposits, labelField: 'bank_name', valueField: 'maturity' },
+            'Mutual Funds': { api: api.mutualFunds, labelField: 'fund_name', valueField: 'current', investedField: 'invested' },
+            'Stocks': { api: api.stocks, labelField: 'stock_name', valueField: 'current', investedField: 'invested' },
+            'Crypto': { api: api.crypto, labelField: 'coin_name', valueField: 'current', investedField: 'invested' },
         };
 
         const config = assetApiMap[assetName];
@@ -858,9 +869,9 @@ class PersonalFinanceApp {
             body.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:8px;">
                     ${items.map(item => {
-                        const val = parseFloat(item[config.valueField]) || 0;
-                        const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
-                        return `
+                const val = parseFloat(item[config.valueField]) || 0;
+                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                return `
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-elevated);border-radius:8px;gap:10px;">
                                 <span style="font-size:14px;flex:1;">${item[config.labelField] || '—'}</span>
                                 <span style="font-family:var(--font-mono);font-size:13px;font-weight:600;">${Utilities.formatCurrency(val)}</span>
@@ -869,7 +880,7 @@ class PersonalFinanceApp {
                                     <div style="height:100%;background:var(--accent);width:${pct}%;"></div>
                                 </div>
                             </div>`;
-                    }).join('')}
+            }).join('')}
                     <div style="display:flex;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--border);margin-top:4px;font-weight:700;">
                         <span>Total</span>
                         <span style="font-family:var(--font-mono);">${Utilities.formatCurrency(total)}</span>
@@ -890,11 +901,11 @@ class PersonalFinanceApp {
         if (!modal) return;
 
         const items = [
-            { label: 'Diversification',     score: health.breakdown.diversification,  max: 25, hint: 'Asset classes with >5% allocation' },
-            { label: 'Credit Utilization',  score: health.breakdown.creditUtil,        max: 20, hint: `${health.utilPct?.toFixed(1) || 0}% overall utilization` },
-            { label: 'Emergency Fund',       score: health.breakdown.emergencyFund,     max: 20, hint: `${health.emergencyMonths?.toFixed(1) || 0} months of expenses covered` },
-            { label: 'Liability Ratio',      score: health.breakdown.liabilityRatio,    max: 20, hint: `${health.liabRatio?.toFixed(1) || 0}% of gross assets` },
-            { label: 'Goal Progress',        score: health.breakdown.goalProgress,      max: 15, hint: 'Progress toward financial goal' },
+            { label: 'Diversification', score: health.breakdown.diversification, max: 25, hint: 'Asset classes with >5% allocation' },
+            { label: 'Credit Utilization', score: health.breakdown.creditUtil, max: 20, hint: `${health.utilPct?.toFixed(1) || 0}% overall utilization` },
+            { label: 'Emergency Fund', score: health.breakdown.emergencyFund, max: 20, hint: `${health.emergencyMonths?.toFixed(1) || 0} months of expenses covered` },
+            { label: 'Liability Ratio', score: health.breakdown.liabilityRatio, max: 20, hint: `${health.liabRatio?.toFixed(1) || 0}% of gross assets` },
+            { label: 'Goal Progress', score: health.breakdown.goalProgress, max: 15, hint: 'Progress toward financial goal' },
         ];
 
         const gradeColor = health.score >= 85 ? 'var(--green)' : health.score >= 70 ? 'var(--accent)' : health.score >= 50 ? 'var(--yellow)' : 'var(--red)';
@@ -907,9 +918,9 @@ class PersonalFinanceApp {
             </div>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 ${items.map(item => {
-                    const pct = (item.score / item.max) * 100;
-                    const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
-                    return `
+            const pct = (item.score / item.max) * 100;
+            const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--yellow)' : 'var(--red)';
+            return `
                         <div style="padding:12px 14px;background:var(--bg-elevated);border-radius:10px;">
                             <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                                 <span style="font-size:13px;font-weight:600;">${item.label}</span>
@@ -920,7 +931,7 @@ class PersonalFinanceApp {
                             </div>
                             <div style="font-size:11px;color:var(--text-muted);">${item.hint}</div>
                         </div>`;
-                }).join('')}
+        }).join('')}
             </div>`;
         modal.style.display = 'block';
     }
@@ -936,6 +947,33 @@ class PersonalFinanceApp {
         } catch (error) {
             Utilities.showNotification('Sign out failed', 'error');
         }
+    }
+
+    _sanitizeOrderData(orderData, cfg) {
+        const sanitized = { ...orderData };
+        // Ensure charges is non-negative (database constraint)
+        if (sanitized.charges !== undefined) {
+            sanitized.charges = Math.max(0, parseFloat(sanitized.charges) || 0);
+        }
+        // Ensure amount is positive
+        if (sanitized.amount !== undefined) {
+            sanitized.amount = Math.max(0.01, parseFloat(sanitized.amount) || 0.01);
+        }
+        // Ensure units/quantity is positive
+        if (sanitized.units !== undefined) {
+            sanitized.units = Math.max(0.00000001, parseFloat(sanitized.units) || 0.00000001);
+        }
+        if (sanitized.quantity !== undefined) {
+            sanitized.quantity = Math.max(0.00000001, parseFloat(sanitized.quantity) || 0.00000001);
+        }
+        // Ensure price/nav is positive
+        if (sanitized.nav !== undefined) {
+            sanitized.nav = Math.max(0.0001, parseFloat(sanitized.nav) || 0.0001);
+        }
+        if (sanitized.price !== undefined) {
+            sanitized.price = Math.max(0.0001, parseFloat(sanitized.price) || 0.0001);
+        }
+        return sanitized;
     }
 
     async importAllData() {
@@ -979,25 +1017,91 @@ class PersonalFinanceApp {
                 }
 
                 const orderImports = [
-                    { key: 'mfOrders',     api: api.mfOrders,     holdingKey: 'mutualFunds', holdingIdField: 'mf_id' },
-                    { key: 'stockOrders',  api: api.stockOrders,  holdingKey: 'stocks',      holdingIdField: 'stock_id' },
-                    { key: 'cryptoOrders', api: api.cryptoOrders, holdingKey: 'crypto',      holdingIdField: 'crypto_id' },
+                    { key: 'mfOrders', api: api.mfOrders, holdingKey: 'mutualFunds', holdingIdField: 'mf_id' },
+                    { key: 'stockOrders', api: api.stockOrders, holdingKey: 'stocks', holdingIdField: 'stock_id' },
+                    { key: 'cryptoOrders', api: api.cryptoOrders, holdingKey: 'crypto', holdingIdField: 'crypto_id' },
                 ];
 
                 let skippedOrders = 0;
+                let importedOrders = 0;
                 for (const cfg of orderImports) {
                     if (data[cfg.key] && Array.isArray(data[cfg.key])) {
+                        console.log(`Processing ${cfg.key}: ${data[cfg.key].length} orders`);
                         for (const order of data[cfg.key]) {
                             const { id: _oid, created_at: _ca, updated_at: _ua, ...rest } = order;
-                            const newHoldingId = idMaps[cfg.holdingKey][rest[cfg.holdingIdField]];
-                            if (!newHoldingId) { skippedOrders++; continue; }
-                            await cfg.api.create({ ...rest, [cfg.holdingIdField]: newHoldingId, portfolio_id: this.portfolioId });
+                            const existingHoldingId = rest[cfg.holdingIdField];
+                            let newHoldingId = idMaps[cfg.holdingKey][existingHoldingId];
+
+                            // If order has a holding_id that was remapped from Excel, use the new ID
+                            if (newHoldingId) {
+                                try {
+                                    const orderData = this._sanitizeOrderData(rest, cfg);
+                                    await cfg.api.create({ ...orderData, [cfg.holdingIdField]: newHoldingId, portfolio_id: this.portfolioId });
+                                    importedOrders++;
+                                } catch (e) {
+                                    console.error(`Failed to create order:`, e, rest);
+                                    skippedOrders++;
+                                }
+                            } else if (existingHoldingId) {
+                                // Order has a holding_id but it wasn't remapped
+                                // Try to match by name first, then by ID lookup
+                                const holdingName = rest.name;
+                                let matchedHolding = null;
+
+                                if (holdingName) {
+                                    const holdings = await api[cfg.holdingKey].list(this.portfolioId);
+                                    const nameField = cfg.holdingKey === 'mutualFunds' ? 'fund_name' :
+                                        cfg.holdingKey === 'stocks' ? 'stock_name' : 'coin_name';
+                                    matchedHolding = holdings.data?.find(h => h[nameField]?.toLowerCase() === holdingName.toLowerCase());
+                                }
+
+                                if (matchedHolding) {
+                                    try {
+                                        const orderData = this._sanitizeOrderData(rest, cfg);
+                                        await cfg.api.create({ ...orderData, [cfg.holdingIdField]: matchedHolding.id, portfolio_id: this.portfolioId });
+                                        importedOrders++;
+                                    } catch (e) {
+                                        console.error(`Failed to create order:`, e, rest);
+                                        skippedOrders++;
+                                    }
+                                } else {
+                                    // Try to look up the holding by ID directly in the database
+                                    try {
+                                        const holding = await api[cfg.holdingKey].get(existingHoldingId);
+                                        if (holding?.data && holding.data.portfolio_id === this.portfolioId) {
+                                            // Transform field names for MF orders: units/nav instead of quantity/price
+                                            let orderData = this._sanitizeOrderData(rest, cfg);
+                                            if (cfg.holdingKey === 'mutualFunds') {
+                                                orderData.units = orderData.units || orderData.quantity;
+                                                orderData.nav = orderData.nav || orderData.price;
+                                                delete orderData.quantity;
+                                                delete orderData.price;
+                                            }
+                                            await cfg.api.create({ ...orderData, [cfg.holdingIdField]: existingHoldingId, portfolio_id: this.portfolioId });
+                                            importedOrders++;
+                                        } else {
+                                            console.log(`Skipped order with holding_id ${existingHoldingId} - not found in current portfolio`);
+                                            skippedOrders++;
+                                        }
+                                    } catch (e) {
+                                        console.error(`Failed to create order:`, e, rest);
+                                        console.log(`Skipped order with holding_id ${existingHoldingId} - lookup failed`);
+                                        skippedOrders++;
+                                    }
+                                }
+                            } else {
+                                // Order has no holding_id at all - skip it
+                                console.log(`Skipped order with no holding_id`);
+                                skippedOrders++;
+                            }
                         }
                     }
                 }
 
                 if (skippedOrders > 0) {
-                    Utilities.showNotification(`Import complete. ${skippedOrders} order(s) skipped (no matching holding).`, 'warning');
+                    Utilities.showNotification(`Import complete. ${importedOrders} order(s) imported. ${skippedOrders} order(s) skipped (no matching holding).`, 'warning');
+                } else if (importedOrders > 0) {
+                    Utilities.showNotification(`Import complete. ${importedOrders} order(s) imported.`, 'success');
                 }
 
                 Utilities.showNotification('Data imported successfully');
@@ -1009,6 +1113,52 @@ class PersonalFinanceApp {
         };
 
         input.click();
+    }
+
+    async deleteAllData() {
+        const firstConfirm = await Utilities.showConfirm(
+            '⚠️ WARNING: This will permanently delete ALL your data including:\n\n' +
+            '• Savings & Fixed Deposits\n' +
+            '• Mutual Funds, Stocks, Crypto\n' +
+            '• Liabilities & Credit Cards\n' +
+            '• Transactions & Budgets\n' +
+            '• Order History\n' +
+            '• Settings & Snapshots\n\n' +
+            'This action CANNOT be undone.\n\n' +
+            'Are you sure you want to continue?'
+        );
+        if (!firstConfirm) return;
+
+        const secondConfirm = await Utilities.showConfirm(
+            '🚨 FINAL WARNING: You are about to delete all your data permanently.\n\n' +
+            'Type confirmation will be required next.\n\n' +
+            'Continue?'
+        );
+        if (!secondConfirm) return;
+
+        const typedConfirm = prompt(
+            'To confirm deletion, type "DELETE" (all caps):\n\n' +
+            'This is your last chance to cancel.'
+        );
+
+        if (typedConfirm !== 'DELETE') {
+            Utilities.showNotification('Deletion cancelled. Confirmation did not match.', 'info');
+            return;
+        }
+
+        try {
+            Utilities.showNotification('Deleting all data...', 'info');
+            await api.deleteAllData(this.portfolioId);
+            Utilities.showNotification('All data deleted successfully', 'success');
+            this.closeModal();
+
+            // Reinitialize portfolio with default settings
+            await this.ensurePortfolio();
+            await this.refreshCurrentTab();
+        } catch (error) {
+            console.error('Delete all data error:', error);
+            Utilities.showNotification('Failed to delete data: ' + error.message, 'error');
+        }
     }
 }
 
