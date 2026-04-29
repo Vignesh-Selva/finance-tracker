@@ -25,7 +25,6 @@ class PersonalFinanceApp {
         this.sidebarCollapsed = false;
         this.userSidebarPref = null;
         this.isSettingsModal = false;
-        this.priceRefreshTimeouts = [];
 
         this.renderers = {
             dashboard: renderDashboard,
@@ -55,7 +54,6 @@ class PersonalFinanceApp {
             this.setupEventListeners();
             await this.initFXRates();
             await this.switchTab('dashboard');
-            this.startPriceRefreshScheduler();
         } catch (error) {
             console.error('App initialization error:', error);
             Utilities.showNotification('Failed to initialize app. Is the server running?', 'error');
@@ -226,20 +224,53 @@ class PersonalFinanceApp {
         await this.renderCurrentTab();
     }
 
-    // ─── Auto Price Refresh (Scheduled at 11 AM and 9 PM) ─────────
-
-    async refreshAllLive() {
-        if (this._refreshing) return;
-        this._refreshing = true;
+    async takeSnapshot() {
         try {
-            console.log('Auto-refreshing prices...');
-            const { results, errors } = await refreshAllPrices(this.portfolioId);
+            Utilities.showNotification('Taking snapshot...', 'info');
+            await api.dashboard.takeSnapshot(this.portfolioId);
+            Utilities.showNotification('Snapshot saved!', 'success');
+            await this.refreshCurrentTab();
+        } catch (error) {
+            console.error('Snapshot error:', error);
+            Utilities.showNotification('Failed to take snapshot: ' + error.message, 'error');
+        }
+    }
 
+    async handlePriceRefresh(settings) {
+        const statusEl = document.getElementById('price-refresh-status');
+        const lastSync = settings.last_sync ? new Date(settings.last_sync) : null;
+        const now = new Date();
+        
+        // Check if 24 hours have passed since last refresh
+        if (lastSync) {
+            const hoursSinceRefresh = (now - lastSync) / (1000 * 60 * 60);
+            if (hoursSinceRefresh < 24) {
+                const hoursLeft = Math.ceil(24 - hoursSinceRefresh);
+                statusEl.textContent = `⏳ Next refresh available in ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''}`;
+                statusEl.style.color = 'var(--text-muted)';
+                Utilities.showNotification('Price refresh limited to once per day', 'warning');
+                return;
+            }
+        }
+
+        // Disable button and show loading state
+        const btn = document.getElementById('settings-refresh-prices-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Refreshing...';
+        statusEl.textContent = 'Fetching prices from APIs...';
+        statusEl.style.color = 'var(--text-muted)';
+
+        try {
+            const { results, errors } = await refreshAllPrices(this.portfolioId);
             const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
+            
             if (errors.length > 0) {
+                statusEl.textContent = `⚠️ Refreshed ${updated} holdings with ${errors.length} error${errors.length > 1 ? 's' : ''}`;
+                statusEl.style.color = 'var(--danger)';
                 console.warn('Price refresh errors:', errors);
             } else {
-                console.log(`Auto-refreshed ${updated} holdings successfully`);
+                statusEl.textContent = `✅ Successfully refreshed ${updated} holdings`;
+                statusEl.style.color = '#10b981';
             }
 
             // Auto-snapshot after price refresh
@@ -250,60 +281,15 @@ class PersonalFinanceApp {
             }
 
             await this.refreshCurrentTab();
+            Utilities.showNotification(`Prices refreshed for ${updated} holdings`, 'success');
         } catch (error) {
-            console.error('Auto-refresh error:', error);
+            console.error('Price refresh error:', error);
+            statusEl.textContent = '❌ Refresh failed. Please try again later.';
+            statusEl.style.color = 'var(--danger)';
+            Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
         } finally {
-            this._refreshing = false;
-        }
-    }
-
-    // ─── Auto-Refresh Scheduler (11 AM and 9 PM daily) ─────────
-
-    startPriceRefreshScheduler() {
-        this.clearPriceRefreshScheduler();
-
-        const scheduleRefresh = (hour, minute) => {
-            const now = new Date();
-            const target = new Date();
-            target.setHours(hour, minute, 0, 0);
-
-            // If target time has passed today, schedule for tomorrow
-            if (now >= target) {
-                target.setDate(target.getDate() + 1);
-            }
-
-            const msUntilTarget = target.getTime() - now.getTime();
-            console.log(`Next auto-refresh scheduled for ${hour}:00 at: ${target.toLocaleString()}`);
-
-            const timeoutId = setTimeout(async () => {
-                console.log(`Running auto-refresh at ${hour}:00...`);
-                await this.refreshAllLive();
-                // Reschedule for next day at same time
-                scheduleRefresh(hour, minute);
-            }, msUntilTarget);
-
-            this.priceRefreshTimeouts.push(timeoutId);
-        };
-
-        // Schedule refreshes at 11 AM and 9 PM
-        scheduleRefresh(11, 0);  // 11 AM
-        scheduleRefresh(21, 0); // 9 PM
-    }
-
-    clearPriceRefreshScheduler() {
-        this.priceRefreshTimeouts.forEach(id => clearTimeout(id));
-        this.priceRefreshTimeouts = [];
-    }
-
-    async takeSnapshot() {
-        try {
-            Utilities.showNotification('Taking snapshot...', 'info');
-            await api.dashboard.takeSnapshot(this.portfolioId);
-            Utilities.showNotification('Snapshot saved!', 'success');
-            await this.refreshCurrentTab();
-        } catch (error) {
-            console.error('Snapshot error:', error);
-            Utilities.showNotification('Failed to take snapshot: ' + error.message, 'error');
+            btn.disabled = false;
+            btn.textContent = '🔄 Refresh Prices';
         }
     }
 
@@ -589,12 +575,19 @@ class PersonalFinanceApp {
                 <div class="settings-tab-content" id="tab-data">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
                         <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
-                        <button type="button" class="btn btn-secondary" id="settings-import-btn">📥 Import Data</button>
                         <button type="button" class="btn btn-ghost" id="settings-template-btn" style="font-size: 0.9rem;">📋 Download Template</button>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
                         New user? Download the template to see the Excel structure with sample data.
                     </p>
+                    <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Price Refresh</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                            Refresh prices for all mutual funds, stocks, and crypto. Limited to once per day.
+                        </p>
+                        <button type="button" class="btn btn-secondary" id="settings-refresh-prices-btn">🔄 Refresh Prices</button>
+                        <p id="price-refresh-status" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;"></p>
+                    </div>
                     <div style="border-top: 1px solid var(--border); padding-top: 16px;">
                         <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Import Notes</h4>
                         <ul style="font-size: 0.85rem; color: var(--text-muted); margin: 0; padding-left: 20px;">
@@ -648,6 +641,8 @@ class PersonalFinanceApp {
             if (templateBtn) templateBtn.addEventListener('click', () => Utilities.createTemplate());
             const deleteAllBtn = document.getElementById('settings-delete-all-btn');
             if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAllData());
+            const refreshPricesBtn = document.getElementById('settings-refresh-prices-btn');
+            if (refreshPricesBtn) refreshPricesBtn.addEventListener('click', () => this.handlePriceRefresh(settings));
         } catch {
             Utilities.showNotification('Failed to load settings', 'error');
         }
