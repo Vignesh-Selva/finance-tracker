@@ -1,262 +1,1162 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description"
-    content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, secure, your own Supabase.">
+  <meta name="description" content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, secure, your own Supabase.">
   <meta name="theme-color" content="#f5f4ef" id="theme-color-meta">
+  <link rel="icon" href="data:,">
   <title>Networth Tracker — Your entire financial life. One dashboard.</title>
-
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles/main.css">
-  <link rel="stylesheet" href="./styles/landing.css">
-
+  
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+    
+    .lp-page {
+      font-family: var(--font-ui, 'DM Sans', sans-serif);
+      background: var(--bg-primary, #f5f4ef);
+      color: var(--text-primary, #1a1a1a);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    
+    [data-theme="dark"] .lp-page {
+      background: var(--bg-primary, #0a0f1e);
+      color: var(--text-primary, #e2e8f0);
+    }
+    
+    .lp-section-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    
+    /* Navigation */
+    .lp-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(245, 244, 239, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      width: 100%;
+      padding: 0 16px;
+    }
+    
+    [data-theme="dark"] .lp-nav {
+      background: rgba(10, 15, 30, 0.9);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .lp-nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 0;
+    }
+    
+    .lp-nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-family: var(--font-display, 'Fraunces', serif);
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .lp-nav-links {
+      display: flex;
+      gap: 24px;
+    }
+    
+    .lp-nav-link {
+      color: var(--text-muted, #8a8a8a);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .lp-nav-link:hover {
+      color: var(--accent, #d97757);
+    }
+    
+    [data-theme="dark"] .lp-nav-link:hover {
+      color: var(--accent, #3b82f6);
+    }
+    
+    .lp-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .lp-btn-cta {
+      background: var(--accent, #d97757);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 24px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    [data-theme="dark"] .lp-btn-cta {
+      background: var(--accent, #3b82f6);
+    }
+    
+    .lp-btn-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+    }
+    
+    [data-theme="dark"] .lp-btn-cta:hover {
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .lp-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: space-around;
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .lp-hamburger span {
+      width: 100%;
+      height: 2px;
+      background: var(--text-primary);
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .lp-theme-toggle {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: all 0.2s ease;
+    }
+    
+    [data-theme="dark"] .lp-theme-toggle {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+    }
+    
+    .lp-theme-toggle:hover {
+      border-color: var(--accent, #d97757);
+    }
+    
+    [data-theme="dark"] .lp-theme-toggle:hover {
+      border-color: var(--accent, #3b82f6);
+    }
+    
+    .lp-theme-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--text-primary);
+      transition: opacity 0.2s ease;
+    }
+    
+    .lp-sun-icon {
+      display: none;
+    }
+    
+    .lp-moon-icon {
+      display: block;
+    }
+    
+    [data-theme="dark"] .lp-sun-icon {
+      display: block;
+    }
+    
+    [data-theme="dark"] .lp-moon-icon {
+      display: none;
+    }
+    
+    .lp-hamburger[aria-expanded="true"] span:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+    }
+    
+    .lp-hamburger[aria-expanded="true"] span:nth-child(2) {
+      opacity: 0;
+    }
+    
+    .lp-hamburger[aria-expanded="true"] span:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+    }
+    
+    /* Hero */
+    .lp-hero {
+      padding: 120px 0 80px;
+    }
+    
+    .lp-hero-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    
+    .lp-hero-content {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .lp-hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(217, 119, 87, 0.1);
+      color: var(--accent, #d97757);
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    
+    [data-theme="dark"] .lp-hero-chip {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent, #3b82f6);
+    }
+    
+    .lp-hero h1 {
+      font-family: var(--font-display, 'Fraunces', serif);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+    
+    .hero-italic {
+      color: var(--accent, #d97757);
+      font-style: italic;
+    }
+    
+    [data-theme="dark"] .hero-italic {
+      color: var(--accent, #3b82f6);
+    }
+    
+    .lp-hero-sub {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      color: var(--text-muted, #8a8a8a);
+      max-width: 600px;
+      margin-bottom: 32px;
+    }
+    
+    .lp-hero-ctas {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .lp-btn-secondary {
+      background: rgba(0, 0, 0, 0.03);
+      color: var(--text-primary);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 20px;
+      padding: 10px 24px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    [data-theme="dark"] .lp-btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .lp-btn-secondary:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+    
+    [data-theme="dark"] .lp-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .lp-hero-mockup {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    
+    [data-theme="dark"] .lp-hero-mockup {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    }
+    
+    .lp-mockup-header {
+      height: 48px;
+      background: var(--bg-elevated, #faf9f6);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+    }
+    
+    [data-theme="dark"] .lp-mockup-header {
+      background: var(--bg-elevated, #1a2332);
+    }
+    
+    .lp-mockup-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .lp-mockup-dot.r { background: #ff5f57; }
+    .lp-mockup-dot.y { background: #febc2e; }
+    .lp-mockup-dot.g { background: #28c840; }
+    
+    .lp-mockup-body {
+      padding: 24px;
+    }
+    
+    .lp-mock-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .lp-mock-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+    }
+    
+    .lp-mock-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .lp-mock-stat-val {
+      font-family: var(--font-mono, 'DM Mono', monospace);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .lp-mock-stat-chg {
+      font-size: 0.85rem;
+      color: var(--green, #059669);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    
+    /* How It Works */
+    .lp-section {
+      padding: 80px 0;
+    }
+    
+    .lp-section-label {
+      font-size: 0.85rem;
+      color: var(--accent, #d97757);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    
+    [data-theme="dark"] .lp-section-label {
+      color: var(--accent, #3b82f6);
+    }
+    
+    .lp-section-title {
+      font-family: var(--font-display, 'Fraunces', serif);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 300;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    
+    .lp-section-desc {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 48px;
+      line-height: 1.6;
+    }
+    
+    .lp-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .lp-step-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    [data-theme="dark"] .lp-step-card {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+    }
+    
+    .lp-step-number {
+      width: 48px;
+      height: 48px;
+      background: var(--accent, #d97757);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 auto 16px;
+    }
+    
+    [data-theme="dark"] .lp-step-number {
+      background: var(--accent, #3b82f6);
+    }
+    
+    .lp-step-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .lp-step-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    
+    /* Features Grid */
+    .lp-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .lp-feature-card {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    
+    [data-theme="dark"] .lp-feature-card {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+    }
+    
+    .lp-feature-card:hover {
+      border-color: var(--accent, #d97757);
+      transform: translateY(-4px);
+    }
+    
+    [data-theme="dark"] .lp-feature-card:hover {
+      border-color: var(--accent, #3b82f6);
+    }
+    
+    .lp-feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+    
+    .lp-feature-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .lp-feature-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    
+    /* Asset Badges */
+    .lp-badges-wrapper {
+      width: 100%;
+      background: rgba(250, 249, 246, 0.6);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 32px 0;
+    }
+    
+    [data-theme="dark"] .lp-badges-wrapper {
+      background: rgba(17, 24, 39, 0.6);
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .lp-badges-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    
+    .lp-badge {
+      font-family: var(--font-display, 'Fraunces', serif);
+      font-size: 1rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: var(--bg-card);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    
+    .lp-badge:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent, #d97757);
+    }
+    
+    [data-theme="dark"] .lp-badge:hover {
+      border-color: var(--accent, #3b82f6);
+    }
+    
+    /* Auth Box */
+    .lp-auth-box {
+      background: var(--bg-card, #ffffff);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 480px;
+      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    [data-theme="dark"] .lp-auth-box {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .lp-auth-box h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .lp-auth-box > p {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    
+    .lp-form-group {
+      margin-bottom: 16px;
+    }
+    
+    .lp-form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary, #666);
+      margin-bottom: 6px;
+    }
+    
+    [data-theme="dark"] .lp-form-label {
+      color: var(--text-secondary, #9ca3af);
+    }
+    
+    .lp-form-input {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    
+    .lp-form-input:focus {
+      outline: none;
+      border-color: var(--accent, #d97757);
+    }
+    
+    [data-theme="dark"] .lp-form-input:focus {
+      border-color: var(--accent, #3b82f6);
+    }
+    
+    .lp-btn-submit {
+      width: 100%;
+      background: var(--accent, #d97757);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      margin-top: 16px;
+    }
+    
+    [data-theme="dark"] .lp-btn-submit {
+      background: var(--accent, #3b82f6);
+    }
+    
+    .lp-btn-submit:hover {
+      transform: translateY(-2px);
+    }
+    
+    .lp-google-btn {
+      width: 100%;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      transition: transform 0.2s, background 0.2s;
+    }
+    
+    .lp-google-btn:hover {
+      transform: translateY(-2px);
+      background: var(--bg-elevated, #faf9f6);
+    }
+    
+    [data-theme="dark"] .lp-google-btn:hover {
+      background: var(--bg-elevated, #1a2332);
+    }
+    
+    .lp-divider {
+      display: flex;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+    
+    .lp-divider::before, .lp-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    
+    .lp-divider span {
+      padding: 0 12px;
+    }
+    
+    .lp-form-error, .lp-form-success {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .lp-form-error {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    
+    .lp-form-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    
+    .lp-toggle-text {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    
+    .lp-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--accent, #d97757);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+      padding: 0;
+    }
+    
+    [data-theme="dark"] .lp-toggle-btn {
+      color: var(--accent, #3b82f6);
+    }
+    
+    .lp-toggle-btn:hover {
+      text-decoration: underline;
+    }
+    
+    /* Footer */
+    .lp-footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 0;
+      text-align: center;
+    }
+    
+    .lp-footer-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display, 'Fraunces', serif);
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      margin-bottom: 16px;
+    }
+    
+    .lp-footer p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    
+    /* Desktop Responsive */
+    @media (min-width: 768px) {
+      .lp-hero {
+        min-height: 85vh;
+      }
+      
+      .lp-hero-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 48px;
+        align-items: center;
+      }
+      
+      .lp-hero h1 {
+        font-size: clamp(2.8rem, 4vw, 4rem);
+      }
+      
+      .lp-hero-sub {
+        max-width: 100%;
+      }
+      
+      .lp-hero-mockup {
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+      }
+      
+      .lp-badges-grid {
+        padding: 0 16px;
+      }
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 767px) {
+      .lp-section-wrapper {
+        padding: 0 20px;
+      }
+      
+      .lp-nav {
+        padding: 0 20px;
+      }
+      
+      .lp-nav-links, .lp-nav-actions .lp-btn-cta {
+        display: none;
+      }
+      
+      .lp-nav-actions .lp-theme-toggle {
+        display: flex;
+      }
+      
+      .lp-hamburger {
+        display: flex;
+      }
+      
+      .lp-nav-links.open {
+        display: flex;
+        position: fixed;
+        top: 72px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: var(--bg-card, #ffffff);
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+        gap: 16px;
+        z-index: 999;
+      }
+      
+      [data-theme="dark"] .lp-nav-links.open {
+        background: var(--bg-card, #111827);
+      }
+      
+      .lp-nav-link {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+      }
+      
+      .lp-hero-ctas {
+        flex-direction: column;
+      }
+      
+      .lp-hero-ctas a {
+        width: 100%;
+        text-align: center;
+      }
+      
+      .lp-mock-stats {
+        flex-direction: column;
+      }
+      
+      .lp-badges-grid {
+        padding: 0 20px;
+      }
+    }
+  </style>
+  
   <script>
     (function () {
-      function applyTheme(e) {
-        const isDark = e ? e.matches : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      function applyTheme(theme) {
+        const isDark = theme === 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
         document.getElementById('theme-color-meta').setAttribute('content', isDark ? '#0a0f1e' : '#f5f4ef');
+        localStorage.setItem('theme', theme);
       }
-      applyTheme();
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+      
+      function getInitialTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) return savedTheme;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      
+      applyTheme(getInitialTheme());
+      
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+          applyTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+      
+      window.toggleTheme = function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+      };
     })();
   </script>
 </head>
 
 <body class="lp-page">
 
-  <div class="lp-glow-1"></div>
-  <div class="lp-glow-2"></div>
-
-  <!-- ── Navigation ── -->
-  <nav class="lp-nav" id="lp-nav" aria-label="Main navigation">
+  <!-- Navigation -->
+  <nav class="lp-nav" aria-label="Main navigation">
     <div class="lp-nav-inner">
-      <a href="#hero" class="lp-nav-logo" aria-label="Networth Tracker home">
+      <a href="#" class="lp-nav-logo" data-scroll-to="hero" aria-label="Networth Tracker home">
         <span aria-hidden="true">💰</span>
         <span>Networth Tracker</span>
       </a>
-      <div class="lp-nav-links">
-        <a href="#features" class="lp-nav-link">Features</a>
-        <a href="#security" class="lp-nav-link">Security</a>
+      <div class="lp-nav-links" id="lp-nav-links">
+        <a href="#" class="lp-nav-link" data-scroll-to="features">Features</a>
+        <a href="#" class="lp-nav-link" data-scroll-to="how-it-works">How It Works</a>
+        <a href="#" class="lp-nav-link" data-scroll-to="security">Security</a>
       </div>
       <div class="lp-nav-actions">
-        <a href="#cta" class="lp-btn-signin" id="lp-signin-nav">Sign In</a>
-        <a href="#cta" class="lp-btn-cta">Get Started Free</a>
+        <button class="lp-theme-toggle" id="lp-theme-toggle" aria-label="Toggle theme">
+          <svg class="lp-theme-icon lp-sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="lp-theme-icon lp-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <a href="#" class="lp-btn-cta" data-scroll-to="cta">Get Started Free</a>
       </div>
+      <button class="lp-hamburger" id="lp-hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
 
   <main>
-    <!-- ── Hero ── -->
-    <section id="hero" class="lp-hero lp-container">
-      <div class="lp-fade-up">
-        <div class="lp-hero-chip">✨ Networth Tracker v2 is here</div>
-        <h1>Your entire financial life.<br><span>One dashboard.</span></h1>
-        <p class="lp-hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your
-          true net worth without checking five different apps.</p>
-        <div class="lp-hero-ctas">
-          <a href="#cta" class="lp-btn-cta">Start Tracking Now</a>
-          <a href="#features" class="lp-btn-secondary">Explore Features ↓</a>
-        </div>
-      </div>
-
-      <div class="lp-hero-mockup-wrapper lp-fade-up lp-delay-2">
-        <div class="lp-hero-mockup">
-          <div class="lp-hero-mockup-header">
-            <div class="lp-mockup-dot r"></div>
-            <div class="lp-mockup-dot y"></div>
-            <div class="lp-mockup-dot g"></div>
+    <!-- Hero Section -->
+    <section id="hero" class="lp-section">
+      <div class="lp-section-wrapper lp-hero">
+        <div class="lp-hero-grid">
+          <div class="lp-hero-content">
+            <div class="lp-hero-chip">✨ Networth Tracker v2 is here</div>
+            <h1>Your entire financial life.<br><span class="hero-italic">One dashboard.</span></h1>
+            <p class="lp-hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your true net worth without checking five different apps.</p>
+            <div class="lp-hero-ctas">
+              <a href="#" class="lp-btn-cta" data-scroll-to="cta">Start Tracking Now</a>
+              <a href="#" class="lp-btn-secondary" data-scroll-to="features">Explore Features ↓</a>
+            </div>
           </div>
-          <div class="lp-mockup-body">
-            <div class="lp-mock-stats">
-              <div class="lp-mock-stat">
-                <div class="lp-mock-stat-label">Net Worth</div>
-                <div class="lp-mock-stat-val">₹42,81,350</div>
-                <div class="lp-mock-stat-chg">↑ +2.4% vs last month</div>
-              </div>
-              <div class="lp-mock-stat">
-                <div class="lp-mock-stat-label">Mutual Funds P&L</div>
-                <div class="lp-mock-stat-val">₹1,09,766</div>
-                <div class="lp-mock-stat-chg">▲ +12.4% XIRR</div>
-              </div>
-              <div class="lp-mock-stat">
-                <div class="lp-mock-stat-label">EPF + PPF</div>
-                <div class="lp-mock-stat-val">₹8,36,200</div>
-                <div class="lp-mock-stat-chg" style="color: var(--text-muted)">→ Stable growth</div>
+          
+          <div class="lp-hero-mockup">
+            <div class="lp-mockup-header">
+              <div class="lp-mockup-dot r"></div>
+              <div class="lp-mockup-dot y"></div>
+              <div class="lp-mockup-dot g"></div>
+            </div>
+            <div class="lp-mockup-body">
+              <div class="lp-mock-stats">
+                <div class="lp-mock-stat">
+                  <div class="lp-mock-stat-label">Net Worth</div>
+                  <div class="lp-mock-stat-val" data-count="48472350">₹0</div>
+                  <div class="lp-mock-stat-chg">↑ +8.4% vs last month</div>
+                </div>
+                <div class="lp-mock-stat">
+                  <div class="lp-mock-stat-label">Mutual Funds P&L</div>
+                  <div class="lp-mock-stat-val" data-count="31245800">₹0</div>
+                  <div class="lp-mock-stat-chg">▲ +21.3% XIRR</div>
+                </div>
+                <div class="lp-mock-stat">
+                  <div class="lp-mock-stat-label">EPF + PPF</div>
+                  <div class="lp-mock-stat-val" data-count="8942600">₹0</div>
+                  <div class="lp-mock-stat-chg">→ Stable growth</div>
+                </div>
               </div>
             </div>
-
-            <svg viewBox="0 0 800 120" style="width: 100%; height: auto; overflow: visible;">
-              <defs>
-                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="currentColor" stop-opacity="0.3" />
-                  <stop offset="100%" stop-color="currentColor" stop-opacity="0.0" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0 L 800,120 L 0,120 Z"
-                fill="url(#chartGrad)" style="color: var(--accent);" />
-              <path class="lp-animated-line"
-                d="M 0,110 L 100,90 L 200,80 L 300,60 L 400,70 L 500,40 L 600,20 L 700,10 L 800,0" fill="none"
-                stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ── Marquee ── -->
-    <div class="lp-marquee-container lp-fade-up">
-      <div class="lp-marquee">
-        <div class="lp-marquee-item"><span>🏦</span> Savings Accounts</div>
-        <div class="lp-marquee-item"><span>🐷</span> Fixed Deposits</div>
-        <div class="lp-marquee-item"><span>📜</span> Mutual Funds</div>
-        <div class="lp-marquee-item"><span>📈</span> Stocks & ETFs</div>
-        <div class="lp-marquee-item"><span>🪙</span> Cryptocurrency</div>
-        <div class="lp-marquee-item"><span>💼</span> EPF & PPF</div>
-        <div class="lp-marquee-item"><span>💳</span> Credit Cards</div>
-
-        <!-- Duplicate for infinite scroll -->
-        <div class="lp-marquee-item"><span>🏦</span> Savings Accounts</div>
-        <div class="lp-marquee-item"><span>🐷</span> Fixed Deposits</div>
-        <div class="lp-marquee-item"><span>📜</span> Mutual Funds</div>
-        <div class="lp-marquee-item"><span>📈</span> Stocks & ETFs</div>
-        <div class="lp-marquee-item"><span>🪙</span> Cryptocurrency</div>
-        <div class="lp-marquee-item"><span>💼</span> EPF & PPF</div>
-        <div class="lp-marquee-item"><span>💳</span> Credit Cards</div>
+    <!-- Asset Badges -->
+    <div class="lp-badges-wrapper">
+      <div class="lp-badges-grid">
+        <div class="lp-badge"><span>🏦</span> Savings Accounts</div>
+        <div class="lp-badge"><span>🐷</span> Fixed Deposits</div>
+        <div class="lp-badge"><span>📜</span> Mutual Funds</div>
+        <div class="lp-badge"><span>📈</span> Stocks & ETFs</div>
+        <div class="lp-badge"><span>🪙</span> Cryptocurrency</div>
+        <div class="lp-badge"><span>💼</span> EPF & PPF</div>
+        <div class="lp-badge"><span>💳</span> Credit Cards</div>
       </div>
     </div>
 
-    <!-- ── Features ── -->
-    <section id="features" class="lp-section lp-container">
-      <div class="lp-section-label lp-fade-up">Everything you need</div>
-      <h2 class="lp-section-title lp-fade-up lp-delay-1">Powerful tools for serious wealth building.</h2>
-      <p class="lp-section-desc lp-fade-up lp-delay-2">Say goodbye to scattered spreadsheets. We combine live data
-        feeds, powerful analytics, and total privacy into one beautifully designed platform.</p>
-
-      <div class="lp-bento-grid">
-        <div class="lp-bento-item large lp-fade-up">
-          <div class="lp-bento-icon">⚡</div>
-          <h3 class="lp-bento-title">Live Price Refresh</h3>
-          <p class="lp-bento-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, and crypto from
-            CoinGecko. One click refreshes your entire portfolio — no manual entry, no stale data.</p>
-          <div class="lp-bento-bg">📈</div>
-        </div>
-
-        <div class="lp-bento-item lp-fade-up lp-delay-1">
-          <div class="lp-bento-icon">📊</div>
-          <h3 class="lp-bento-title">Net Worth History</h3>
-          <p class="lp-bento-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory. Watch
-            your consistency compound.</p>
-          <div class="lp-bento-bg">⏳</div>
-        </div>
-
-        <div class="lp-bento-item lp-fade-up">
-          <div class="lp-bento-icon">💳</div>
-          <h3 class="lp-bento-title">Credit Card Intelligence</h3>
-          <p class="lp-bento-desc">Track utilization across all cards. Get warned before you hit 30% to protect your
-            CIBIL score.</p>
-          <div class="lp-bento-bg">💳</div>
-        </div>
-
-        <div class="lp-bento-item large lp-fade-up lp-delay-1">
-          <div class="lp-bento-icon">🧭</div>
-          <h3 class="lp-bento-title">Smart Financial Advisor</h3>
-          <p class="lp-bento-desc">Built-in tools to track cash flow, set investment goals, analyze portfolio drift, and
-            calculate your exact emergency fund needs based on your salary and expenses.</p>
-          <div class="lp-bento-bg">🤖</div>
+    <!-- How It Works -->
+    <section id="how-it-works" class="lp-section">
+      <div class="lp-section-wrapper">
+        <div class="lp-section-label">How It Works</div>
+        <h2 class="lp-section-title">Get started in 3 simple steps</h2>
+        <p class="lp-section-desc">Set up your private financial dashboard in minutes. No credit card required.</p>
+        
+        <div class="lp-steps-grid">
+          <div class="lp-step-card">
+            <div class="lp-step-number">1</div>
+            <h3 class="lp-step-title">Create Your Account</h3>
+            <p class="lp-step-desc">Sign up with Google or email. Your data is stored in your own private Supabase instance.</p>
+          </div>
+          <div class="lp-step-card">
+            <div class="lp-step-number">2</div>
+            <h3 class="lp-step-title">Add Your Holdings</h3>
+            <p class="lp-step-desc">Import your investments or add them manually. We support mutual funds, stocks, crypto, and more.</p>
+          </div>
+          <div class="lp-step-card">
+            <div class="lp-step-number">3</div>
+            <h3 class="lp-step-title">Track & Grow</h3>
+            <p class="lp-step-desc">View your net worth, track performance, and get insights to grow your wealth.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ── Privacy & Security ── -->
-    <section id="security" class="lp-section lp-container">
-      <div class="lp-section-label lp-fade-up">Uncompromising Privacy</div>
-      <h2 class="lp-section-title lp-fade-up lp-delay-1">Your data is yours. Period.</h2>
-      <p class="lp-section-desc lp-fade-up lp-delay-2">We don't sell your data. We don't read your data. Everything is
-        isolated in your own private Supabase instance with Row-Level Security.</p>
-
-      <div class="lp-bento-grid" style="grid-template-columns: 1fr 1fr; margin-top: 48px;">
-        <div class="lp-bento-item lp-fade-up">
-          <div class="lp-bento-icon">🔒</div>
-          <h3 class="lp-bento-title">Row-Level Security</h3>
-          <p class="lp-bento-desc">Your financial records are strictly isolated. Cryptographic rules at the database
-            level guarantee that only your authenticated session can access your data.</p>
-        </div>
-        <div class="lp-bento-item lp-fade-up lp-delay-1">
-          <div class="lp-bento-icon">📤</div>
-          <h3 class="lp-bento-title">One-Click Excel Export</h3>
-          <p class="lp-bento-desc">No vendor lock-in. Download your entire financial history across all 8 sheets —
-            including transactions and order histories — into a clean .xlsx file anytime.</p>
+    <!-- Features -->
+    <section id="features" class="lp-section">
+      <div class="lp-section-wrapper">
+        <div class="lp-section-label">Features</div>
+        <h2 class="lp-section-title">Everything you need</h2>
+        <p class="lp-section-desc">Powerful tools for serious wealth building.</p>
+        
+        <div class="lp-features-grid">
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">⚡</div>
+            <h3 class="lp-feature-title">Live Price Refresh</h3>
+            <p class="lp-feature-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, and crypto from CoinGecko.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">📊</div>
+            <h3 class="lp-feature-title">Net Worth History</h3>
+            <p class="lp-feature-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">💳</div>
+            <h3 class="lp-feature-title">Credit Card Intelligence</h3>
+            <p class="lp-feature-desc">Track utilization across all cards. Get warned before you hit 30% to protect your CIBIL score.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">🧭</div>
+            <h3 class="lp-feature-title">Smart Financial Advisor</h3>
+            <p class="lp-feature-desc">Built-in tools to track cash flow, set investment goals, and analyze portfolio drift.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">📤</div>
+            <h3 class="lp-feature-title">Excel Export</h3>
+            <p class="lp-feature-desc">Download your entire financial history across all sheets into a clean .xlsx file anytime.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">🔒</div>
+            <h3 class="lp-feature-title">Row-Level Security</h3>
+            <p class="lp-feature-desc">Your financial records are strictly isolated. Only your authenticated session can access your data.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ── Auth Section ── -->
-    <section id="cta" class="lp-section lp-container">
-      <div class="lp-auth-box lp-fade-up">
-        <h3>Start tracking today</h3>
-        <p>Join for free. No credit card required.</p>
-
-        <div class="lp-form-error" id="lp-form-error" role="alert"></div>
-        <div class="lp-form-success" id="lp-form-success" role="status"></div>
-
-        <button type="button" class="lp-google-btn" id="lp-google-btn">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-              fill="#4285F4" />
-            <path
-              d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z"
-              fill="#34A853" />
-            <path
-              d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z"
-              fill="#FBBC05" />
-            <path
-              d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z"
-              fill="#EA4335" />
-          </svg>
-          <span>Continue with Google</span>
-        </button>
-
-        <div class="lp-divider"><span>or continue with email</span></div>
-
-        <form id="lp-auth-form" novalidate autocomplete="on">
-          <div class="lp-form-group" id="lp-name-group" style="display:none;">
-            <label class="lp-form-label" for="lp-name">Your Name</label>
-            <input type="text" id="lp-name" class="lp-form-input" placeholder="e.g. Rahul Sharma" autocomplete="name">
+    <!-- Privacy & Security -->
+    <section id="security" class="lp-section">
+      <div class="lp-section-wrapper">
+        <div class="lp-section-label">Privacy</div>
+        <h2 class="lp-section-title">Your data is yours. Period.</h2>
+        <p class="lp-section-desc">We don't sell your data. We don't read your data. Everything is isolated in your own private Supabase instance with Row-Level Security.</p>
+        
+        <div class="lp-features-grid">
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">🔒</div>
+            <h3 class="lp-feature-title">Row-Level Security</h3>
+            <p class="lp-feature-desc">Cryptographic rules at the database level guarantee that only your authenticated session can access your data.</p>
           </div>
-          <div class="lp-form-group">
-            <label class="lp-form-label" for="lp-email">Email Address</label>
-            <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required
-              autocomplete="email">
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">📤</div>
+            <h3 class="lp-feature-title">One-Click Excel Export</h3>
+            <p class="lp-feature-desc">No vendor lock-in. Download your entire financial history across all 8 sheets anytime.</p>
           </div>
-          <div class="lp-form-group">
-            <label class="lp-form-label" for="lp-password">Password</label>
-            <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required
-              autocomplete="new-password" minlength="6">
-          </div>
-          <button type="submit" class="lp-btn-submit" id="lp-form-submit">Sign Up Free</button>
-        </form>
+        </div>
+      </div>
+    </section>
 
-        <div class="lp-toggle-text">
-          <span id="lp-form-toggle-text">Already have an account? </span>
-          <button type="button" class="lp-toggle-btn" id="lp-form-toggle-btn">Sign In</button>
+    <!-- Auth Section -->
+    <section id="cta" class="lp-section">
+      <div class="lp-section-wrapper">
+        <div class="lp-auth-box">
+          <h3>Start tracking today</h3>
+          <p>Join for free. No credit card required.</p>
+          
+          <div class="lp-form-error" id="lp-form-error" role="alert"></div>
+          <div class="lp-form-success" id="lp-form-success" role="status"></div>
+          
+          <button type="button" class="lp-google-btn" id="lp-google-btn">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853" />
+              <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05" />
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335" />
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+          
+          <div class="lp-divider"><span>or continue with email</span></div>
+          
+          <form id="lp-auth-form" novalidate autocomplete="on">
+            <div class="lp-form-group" id="lp-name-group" style="display:none;">
+              <label class="lp-form-label" for="lp-name">Your Name</label>
+              <input type="text" id="lp-name" class="lp-form-input" placeholder="e.g. Rahul Sharma" autocomplete="name">
+            </div>
+            <div class="lp-form-group">
+              <label class="lp-form-label" for="lp-email">Email Address</label>
+              <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required autocomplete="email">
+            </div>
+            <div class="lp-form-group">
+              <label class="lp-form-label" for="lp-password">Password</label>
+              <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
+            </div>
+            <button type="submit" class="lp-btn-submit" id="lp-form-submit">Sign Up Free</button>
+          </form>
+          
+          <div class="lp-toggle-text">
+            <span id="lp-form-toggle-text">Already have an account? </span>
+            <button type="button" class="lp-toggle-btn" id="lp-form-toggle-btn">Sign In</button>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
   <footer class="lp-footer">
-    <div class="lp-container">
-      <a href="#hero" class="lp-footer-logo">
+    <div class="lp-section-wrapper">
+      <a href="#" class="lp-footer-logo" data-scroll-to="hero">
         <span aria-hidden="true">💰</span> Networth Tracker
       </a>
       <p>© 2025 Networth Tracker. Built for serious investors.</p>
@@ -294,7 +1194,6 @@
     const _successEl = document.getElementById('lp-form-success');
     const _toggleBtn = document.getElementById('lp-form-toggle-btn');
     const _toggleText = document.getElementById('lp-form-toggle-text');
-    const _navSignin = document.getElementById('lp-signin-nav');
     const _googleBtn = document.getElementById('lp-google-btn');
 
     function _showError(msg) {
@@ -333,13 +1232,6 @@
         _pwEl.setAttribute('autocomplete', 'current-password');
       }
     }
-
-    _navSignin.addEventListener('click', (e) => {
-      e.preventDefault();
-      _setSignUpMode(false);
-      document.getElementById('cta').scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => _emailEl.focus(), 600);
-    });
 
     _toggleBtn.addEventListener('click', () => _setSignUpMode(!_isSignUp));
 
@@ -415,33 +1307,88 @@
     });
   </script>
 
-  <!-- Intersection Observer for Animations -->
+  <!-- Hamburger Menu Toggle -->
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const hamburger = document.getElementById('lp-hamburger');
+      const navLinks = document.getElementById('lp-nav-links');
+      const themeToggle = document.getElementById('lp-theme-toggle');
+      
+      if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+          const isOpen = navLinks.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', isOpen);
+        });
+
+        navLinks.querySelectorAll('a').forEach(link => {
+          link.addEventListener('click', () => {
+            navLinks.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+          });
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
+            navLinks.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+      
+      if (themeToggle && window.toggleTheme) {
+        themeToggle.addEventListener('click', () => {
+          window.toggleTheme();
+        });
+      }
+      
+      // Smooth scroll handlers
+      document.querySelectorAll('[data-scroll-to]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('data-scroll-to');
+          const targetSection = document.getElementById(targetId);
+          if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+      
+      // Count-up animation for mock dashboard numbers
+      const countUpElements = document.querySelectorAll('.lp-mock-stat-val[data-count]');
+      
+      const animateCountUp = (element, targetValue) => {
+        const duration = 1800;
+        const startTime = performance.now();
+        
+        const updateCount = (currentTime) => {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeOut = 1 - Math.pow(1 - progress, 3);
+          const currentValue = Math.floor(easeOut * targetValue);
+          
+          element.textContent = '₹' + currentValue.toLocaleString('en-IN');
+          
+          if (progress < 1) {
+            requestAnimationFrame(updateCount);
+          }
+        };
+        
+        requestAnimationFrame(updateCount);
+      };
+      
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
+            const targetValue = parseInt(entry.target.getAttribute('data-count'));
+            animateCountUp(entry.target, targetValue);
             observer.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.1 });
-
-      document.querySelectorAll(".lp-fade-up").forEach(el => observer.observe(el));
-
-      // Animate hero SVG line
-      setTimeout(() => {
-        const line = document.querySelector('.lp-animated-line');
-        if (line) {
-          const length = line.getTotalLength ? line.getTotalLength() : 1000;
-          line.style.strokeDasharray = length;
-          line.style.strokeDashoffset = length;
-          line.style.transition = 'stroke-dashoffset 2s cubic-bezier(0.2, 0.8, 0.2, 1)';
-          requestAnimationFrame(() => {
-            line.style.strokeDashoffset = '0';
-          });
-        }
-      }, 500);
+      }, { threshold: 0.5 });
+      
+      countUpElements.forEach(element => {
+        observer.observe(element);
+      });
     });
   </script>
 </body>
