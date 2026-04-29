@@ -419,7 +419,9 @@ class PersonalFinanceApp {
             const formHTML = `
                 <div class="settings-tabs">
                     <button class="settings-tab active" data-tab="profile">👤 Profile</button>
-                    <button class="settings-tab" data-tab="financial">💼 Financial</button>
+                    <button class="settings-tab" data-tab="preferences">⚙️ Preferences</button>
+                    <button class="settings-tab" data-tab="income-planning">💰 Income & Planning</button>
+                    <button class="settings-tab" data-tab="insurance">🛡️ Insurance</button>
                     <button class="settings-tab" data-tab="goals">🎯 Goals</button>
                     <button class="settings-tab" data-tab="data">💾 Data</button>
                 </div>
@@ -429,43 +431,50 @@ class PersonalFinanceApp {
                         <label>Username:</label>
                         <input type="text" id="setting-username" value="${settings.username || currentUsername}" class="form-input" placeholder="Your display name" />
                     </div>
-                    <div class="form-group">
-                        <label>Gender:</label>
-                        <select id="setting-gender" class="form-input">
-                            <option value="">Select...</option>
-                            <option value="male" ${settings.gender === 'male' ? 'selected' : ''}>Male</option>
-                            <option value="female" ${settings.gender === 'female' ? 'selected' : ''}>Female</option>
-                            <option value="non-binary" ${settings.gender === 'non-binary' ? 'selected' : ''}>Non-binary</option>
-                            <option value="prefer-not-to-say" ${settings.gender === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Gender:</label>
+                            <select id="setting-gender" class="form-input">
+                                <option value="">Select...</option>
+                                <option value="male" ${settings.gender === 'male' ? 'selected' : ''}>Male</option>
+                                <option value="female" ${settings.gender === 'female' ? 'selected' : ''}>Female</option>
+                                <option value="non-binary" ${settings.gender === 'non-binary' ? 'selected' : ''}>Non-binary</option>
+                                <option value="prefer-not-to-say" ${settings.gender === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Date of Birth:</label>
+                            <input type="date" id="setting-date-of-birth" value="${settings.date_of_birth || ''}" class="form-input" />
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Profession:</label>
                         <input type="text" id="setting-profession" value="${settings.profession || ''}" class="form-input" placeholder="e.g., Software Engineer" />
                     </div>
                     <div class="form-group">
-                        <label>Age:</label>
-                        <input type="number" id="setting-age" value="${settings.age || ''}" class="form-input" min="0" max="120" placeholder="Your age" />
-                    </div>
-                    <div class="form-group">
                         <label>Location:</label>
                         <input type="text" id="setting-location" value="${settings.location || ''}" class="form-input" placeholder="City, Country" />
                     </div>
-                    <div class="form-group">
-                        <label>Marital Status:</label>
-                        <select id="setting-marital-status" class="form-input">
-                            <option value="">Select...</option>
-                            <option value="single" ${settings.marital_status === 'single' ? 'selected' : ''}>Single</option>
-                            <option value="married" ${settings.marital_status === 'married' ? 'selected' : ''}>Married</option>
-                            <option value="divorced" ${settings.marital_status === 'divorced' ? 'selected' : ''}>Divorced</option>
-                            <option value="widowed" ${settings.marital_status === 'widowed' ? 'selected' : ''}>Widowed</option>
-                            <option value="prefer-not-to-say" ${settings.marital_status === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Marital Status:</label>
+                            <select id="setting-marital-status" class="form-input">
+                                <option value="">Select...</option>
+                                <option value="single" ${settings.marital_status === 'single' ? 'selected' : ''}>Single</option>
+                                <option value="married" ${settings.marital_status === 'married' ? 'selected' : ''}>Married</option>
+                                <option value="divorced" ${settings.marital_status === 'divorced' ? 'selected' : ''}>Divorced</option>
+                                <option value="widowed" ${settings.marital_status === 'widowed' ? 'selected' : ''}>Widowed</option>
+                                <option value="prefer-not-to-say" ${settings.marital_status === 'prefer-not-to-say' ? 'selected' : ''}>Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Dependents:</label>
+                            <input type="number" id="setting-dependents" value="${settings.dependents ?? 0}" class="form-input" min="0" placeholder="Number of dependents" />
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Dependents:</label>
-                        <input type="number" id="setting-dependents" value="${settings.dependents ?? 0}" class="form-input" min="0" placeholder="Number of dependents" />
-                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="tab-preferences">
                     <div class="form-group">
                         <label>Risk Tolerance:</label>
                         <select id="setting-risk-tolerance" class="form-input">
@@ -475,53 +484,69 @@ class PersonalFinanceApp {
                             <option value="aggressive" ${settings.risk_tolerance === 'aggressive' ? 'selected' : ''}>Aggressive (High risk)</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Base Currency (stored amounts):</label>
-                        <select id="setting-currency" class="form-input">
-                            ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${settings.currency === c ? 'selected' : ''}>${c}</option>`).join('')}
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Base Currency (stored amounts):</label>
+                            <select id="setting-currency" class="form-input">
+                                ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${settings.currency === c ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Display Currency (visual conversion):</label>
+                            <select id="setting-display-currency" class="form-input">
+                                ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${(settings.display_currency || settings.currency) === c ? 'selected' : ''}>${c}</option>`).join('')}
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Display Currency (visual conversion):</label>
-                        <select id="setting-display-currency" class="form-input">
-                            ${COMMON_CURRENCIES.map(c => `<option value="${c}" ${(settings.display_currency || settings.currency) === c ? 'selected' : ''}>${c}</option>`).join('')}
-                        </select>
+                        <label>Crypto Cap (% of portfolio):</label>
+                        <small class="form-hint">Advisor warns if crypto exceeds this threshold</small>
+                        <input type="number" id="setting-btc-cap" value="${settings.btc_cap ?? 10}" class="form-input" min="0" max="100" step="1" placeholder="10" />
                     </div>
                 </div>
 
-                <div class="settings-tab-content" id="tab-financial">
-                    <div class="form-group">
-                        <label>Monthly Take-home Salary (₹):</label>
-                        <input type="number" id="setting-salary" value="${settings.salary || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 150000" />
+                <div class="settings-tab-content" id="tab-income-planning">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Monthly Take-home Salary (₹):</label>
+                            <input type="number" id="setting-salary" value="${settings.salary || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 150000" />
+                        </div>
+                        <div class="form-group">
+                            <label>Estimated Monthly Expenses (₹):</label>
+                            <input type="number" id="setting-expenses" value="${settings.expenses || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 60000" />
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Estimated Monthly Expenses (₹):</label>
-                        <input type="number" id="setting-expenses" value="${settings.expenses || ''}" class="form-input" min="0" step="1000" placeholder="e.g. 60000" />
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Tax Regime:</label>
+                            <select id="setting-tax-regime" class="form-input">
+                                <option value="">Select...</option>
+                                <option value="New Regime" ${settings.tax_regime === 'New Regime' ? 'selected' : ''}>New Regime</option>
+                                <option value="Old Regime" ${settings.tax_regime === 'Old Regime' ? 'selected' : ''}>Old Regime</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Retirement Horizon (years):</label>
+                            <input type="number" id="setting-retirement-years" value="${settings.retirement_years || ''}" class="form-input" min="0" max="50" placeholder="e.g. 15" />
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Tax Regime:</label>
-                        <select id="setting-tax-regime" class="form-input">
-                            <option value="">Select...</option>
-                            <option value="New Regime" ${settings.tax_regime === 'New Regime' ? 'selected' : ''}>New Regime</option>
-                            <option value="Old Regime" ${settings.tax_regime === 'Old Regime' ? 'selected' : ''}>Old Regime</option>
-                        </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Emergency Fund Amount (₹):</label>
+                            <small class="form-hint">Critical safety net — aim for your target months of expenses. Keep this in a liquid account (savings, liquid funds, or FD).</small>
+                            <input type="number" id="setting-emergency-fund" value="${settings.emergency_fund || ''}" class="form-input" min="0" step="10000" placeholder="e.g. 500000" />
+                        </div>
+                        <div class="form-group">
+                            <label>Emergency Fund Target (months of expenses):</label>
+                            <select id="setting-emergency-fund-months" class="form-input">
+                                <option value="6" ${(settings.emergency_fund_months ?? 6) === 6 ? 'selected' : ''}>6 months</option>
+                                <option value="12" ${(settings.emergency_fund_months ?? 6) === 12 ? 'selected' : ''}>12 months</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Retirement Horizon (years):</label>
-                        <input type="number" id="setting-retirement-years" value="${settings.retirement_years || ''}" class="form-input" min="0" max="50" placeholder="e.g. 15" />
-                    </div>
-                    <div class="form-group">
-                        <label>Emergency Fund Amount (₹):</label>
-                        <small class="form-hint">Critical safety net — aim for your target months of expenses. Keep this in a liquid account (savings, liquid funds, or FD).</small>
-                        <input type="number" id="setting-emergency-fund" value="${settings.emergency_fund || ''}" class="form-input" min="0" step="10000" placeholder="e.g. 500000" />
-                    </div>
-                    <div class="form-group">
-                        <label>Emergency Fund Target (months of expenses):</label>
-                        <select id="setting-emergency-fund-months" class="form-input">
-                            <option value="6" ${(settings.emergency_fund_months ?? 6) === 6 ? 'selected' : ''}>6 months</option>
-                            <option value="12" ${(settings.emergency_fund_months ?? 6) === 12 ? 'selected' : ''}>12 months</option>
-                        </select>
-                    </div>
+                </div>
+
+                <div class="settings-tab-content" id="tab-insurance">
                     <div class="form-group">
                         <label>Insurance Coverage:</label>
                         <small class="form-hint">Protect yourself and your dependents from financial shocks.</small>
@@ -546,15 +571,6 @@ class PersonalFinanceApp {
                             </label>` : ''}
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Crypto Cap (% of portfolio):</label>
-                        <small class="form-hint">Advisor warns if crypto exceeds this threshold</small>
-                        <input type="number" id="setting-btc-cap" value="${settings.btc_cap ?? 10}" class="form-input" min="0" max="100" step="1" placeholder="10" />
-                    </div>
-                    <div class="form-group">
-                        <label>Personal Context / Notes:</label>
-                        <textarea id="setting-context-note" class="form-input" rows="3" placeholder="Any context about your financial situation...">${settings.context_note || ''}</textarea>
-                    </div>
                 </div>
 
                 <div class="settings-tab-content" id="tab-goals">
@@ -575,6 +591,7 @@ class PersonalFinanceApp {
                 <div class="settings-tab-content" id="tab-data">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
                         <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
+                        <button type="button" class="btn btn-secondary" id="settings-import-btn">📥 Import Data</button>
                         <button type="button" class="btn btn-ghost" id="settings-template-btn" style="font-size: 0.9rem;">📋 Download Template</button>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
@@ -587,14 +604,6 @@ class PersonalFinanceApp {
                         </p>
                         <button type="button" class="btn btn-secondary" id="settings-refresh-prices-btn">🔄 Refresh Prices</button>
                         <p id="price-refresh-status" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;"></p>
-                    </div>
-                    <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Import Notes</h4>
-                        <ul style="font-size: 0.85rem; color: var(--text-muted); margin: 0; padding-left: 20px;">
-                            <li>Importing adds data — it does not delete your existing records</li>
-                            <li>Orders with missing holding_id will be skipped</li>
-                            <li>Leave Investments id blank for new entries</li>
-                        </ul>
                     </div>
                     <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px;">
                         <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; color: var(--danger);">Danger Zone</h4>
@@ -660,7 +669,7 @@ class PersonalFinanceApp {
             const username = document.getElementById('setting-username')?.value?.trim() || '';
             const gender = document.getElementById('setting-gender')?.value || null;
             const profession = document.getElementById('setting-profession')?.value?.trim() || null;
-            const age = parseInt(document.getElementById('setting-age')?.value) || null;
+            const dateOfBirth = document.getElementById('setting-date-of-birth')?.value || null;
             const location = document.getElementById('setting-location')?.value?.trim() || null;
             const maritalStatus = document.getElementById('setting-marital-status')?.value || null;
             const dependents = parseInt(document.getElementById('setting-dependents')?.value) || 0;
@@ -684,6 +693,35 @@ class PersonalFinanceApp {
             }
 
             const displayCurrency = document.getElementById('setting-display-currency')?.value || document.getElementById('setting-currency').value;
+            
+            // Calculate age from date_of_birth
+            let calculatedAge = null;
+            if (dateOfBirth) {
+                const birthDate = new Date(dateOfBirth);
+                const today = new Date();
+                
+                // Validate year is reasonable (between 1900 and current year)
+                const birthYear = birthDate.getFullYear();
+                const currentYear = today.getFullYear();
+                if (isNaN(birthYear) || birthYear < 1900 || birthYear > currentYear) {
+                    Utilities.showNotification('Invalid year in date of birth. Please enter a valid date.', 'error');
+                    return;
+                }
+                
+                let age = currentYear - birthYear;
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                calculatedAge = age;
+                
+                // Validate age is not over 110 years
+                if (calculatedAge > 110) {
+                    Utilities.showNotification('Date of birth cannot be more than 110 years ago', 'error');
+                    return;
+                }
+            }
+            
             const data = {
                 currency: document.getElementById('setting-currency').value,
                 display_currency: displayCurrency,
@@ -693,7 +731,8 @@ class PersonalFinanceApp {
                 username,
                 gender,
                 profession,
-                age,
+                date_of_birth: dateOfBirth,
+                age: calculatedAge,
                 location,
                 marital_status: maritalStatus,
                 dependents,

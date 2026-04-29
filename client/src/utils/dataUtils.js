@@ -214,7 +214,7 @@ function buildSettingsRows(settings) {
             username: r.username || '',
             gender: r.gender || '',
             profession: r.profession || '',
-            age: r.age || '',
+            date_of_birth: r.date_of_birth || '',
             location: r.location || '',
             marital_status: r.marital_status || '',
             dependents: r.dependents || 0,
@@ -343,7 +343,7 @@ function parseSettingsRows(rows) {
         username: r.username || '',
         gender: r.gender || null,
         profession: r.profession || null,
-        age: toNum(r.age) || null,
+        date_of_birth: r.date_of_birth || null,
         location: r.location || null,
         marital_status: r.marital_status || null,
         dependents: toNum(r.dependents) || 0,
@@ -383,7 +383,7 @@ export const DataUtils = {
         XLSX.utils.book_append_sheet(wb, buildSheetWithHeaders(cfRows, ['table_type', 'date', 'type', 'category', 'amount', 'description', 'monthly_limit', 'notes']), SHEET_NAMES.CASHFLOW);
 
         const settRows = buildSettingsRows(data.settings || []);
-        XLSX.utils.book_append_sheet(wb, buildSheetWithHeaders(settRows, ['currency', 'display_currency', 'goal', 'epf', 'ppf', 'username', 'gender', 'profession', 'age', 'location', 'marital_status', 'dependents', 'risk_tolerance']), SHEET_NAMES.SETTINGS);
+        XLSX.utils.book_append_sheet(wb, buildSheetWithHeaders(settRows, ['currency', 'display_currency', 'goal', 'epf', 'ppf', 'username', 'gender', 'profession', 'date_of_birth', 'location', 'marital_status', 'dependents', 'risk_tolerance']), SHEET_NAMES.SETTINGS);
 
         XLSX.writeFile(wb, filename);
     },
@@ -431,7 +431,7 @@ export const DataUtils = {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(templateCfRows), SHEET_NAMES.CASHFLOW);
 
         const templateSettRows = [
-            { currency: 'INR', display_currency: 'INR', goal: 5000000, epf: 200000, ppf: 50000, username: 'John Doe', gender: 'male', profession: 'Software Engineer', age: 30, location: 'Bangalore, India', marital_status: 'married', dependents: 1, risk_tolerance: 'moderate' },
+            { currency: 'INR', display_currency: 'INR', goal: 5000000, epf: 200000, ppf: 50000, username: 'John Doe', gender: 'male', profession: 'Software Engineer', date_of_birth: '1990-05-15', location: 'Bangalore, India', marital_status: 'married', dependents: 1, risk_tolerance: 'moderate' },
         ];
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(templateSettRows), SHEET_NAMES.SETTINGS);
 

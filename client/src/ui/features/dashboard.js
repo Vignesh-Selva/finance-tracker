@@ -144,16 +144,39 @@ export async function renderDashboard(portfolioId) {
 
         const authUser = await getCurrentUser().catch(() => null);
         const username = authUser?.user_metadata?.username || extractUsernameFromEmail(authUser?.email) || '';
+        
+        // Check if today is user's birthday
+        const isBirthday = settings?.date_of_birth ? (() => {
+            const dob = new Date(settings.date_of_birth);
+            const now = new Date();
+            return dob.getDate() === now.getDate() && dob.getMonth() === now.getMonth();
+        })() : false;
+        
         const { greeting, emoji, tip } = getDashboardGreeting(username);
+        
+        // Birthday messages
+        const birthdayMessages = [
+            `🎂 Happy Birthday, ${username}! Another year of financial growth!`,
+            `🎉 Wishing you a fantastic birthday, ${username}! May your net worth soar!`,
+            `🥳 It's your special day, ${username}! Celebrate wisely and invest for tomorrow!`,
+            `🎈 Birthday cheers, ${username}! Here's to another year of smart money moves!`,
+            `🎁 Happy Birthday, ${username}! The best gift is financial freedom!`,
+        ];
+        const birthdayMessage = birthdayMessages[Math.floor(Math.random() * birthdayMessages.length)];
+        
+        // Override greeting and tip on birthday
+        const displayGreeting = isBirthday ? birthdayMessage : `${greeting} ${emoji}`;
+        const displayTip = isBirthday ? "🎊 Take a moment to celebrate yourself today! You've earned it." : tip;
 
 
         const html = `
             <div class="section-header">
                 <div>
-                    <h2 style="margin-bottom:4px;">${greeting} ${emoji}</h2>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0;">${tip}</p>
+                    <h2 style="margin-bottom:4px;">${displayGreeting}</h2>
+                    <p style="font-size:13px;color:var(--text-muted);margin:0;">${displayTip}</p>
                 </div>
             </div>
+            ${isBirthday ? '<canvas id="birthdayConfetti" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>' : ''}
             <div class="stat-grid">
                 <div class="stat-card desktop-summary-card">
                     <h3>Net Worth</h3>
@@ -289,6 +312,69 @@ export async function renderDashboard(portfolioId) {
         `;
 
         container.innerHTML = html;
+
+        // Trigger confetti animation on birthday
+        if (isBirthday) {
+            setTimeout(() => {
+                const canvas = document.getElementById('birthdayConfetti');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    
+                    const particles = [];
+                    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+                    
+                    for (let i = 0; i < 150; i++) {
+                        particles.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height - canvas.height,
+                            size: Math.random() * 8 + 4,
+                            color: colors[Math.floor(Math.random() * colors.length)],
+                            speedX: Math.random() * 4 - 2,
+                            speedY: Math.random() * 3 + 2,
+                            rotation: Math.random() * 360,
+                            rotationSpeed: Math.random() * 4 - 2
+                        });
+                    }
+                    
+                    let animationId;
+                    const animate = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        particles.forEach(p => {
+                            p.y += p.speedY;
+                            p.x += p.speedX;
+                            p.rotation += p.rotationSpeed;
+                            
+                            if (p.y > canvas.height) {
+                                p.y = -20;
+                                p.x = Math.random() * canvas.width;
+                            }
+                            
+                            ctx.save();
+                            ctx.translate(p.x, p.y);
+                            ctx.rotate(p.rotation * Math.PI / 180);
+                            ctx.fillStyle = p.color;
+                            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                            ctx.restore();
+                        });
+                        
+                        animationId = requestAnimationFrame(animate);
+                    };
+                    
+                    animate();
+                    
+                    // Stop confetti after 5 seconds
+                    setTimeout(() => {
+                        cancelAnimationFrame(animationId);
+                        if (canvas && canvas.parentNode) {
+                            canvas.parentNode.removeChild(canvas);
+                        }
+                    }, 5000);
+                }
+            }, 500);
+        }
 
         await renderNetWorthChart(portfolioId);
         await renderNetWorthSparkline(snapshots);
