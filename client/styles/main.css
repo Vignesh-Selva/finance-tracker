@@ -1675,4 +1675,112 @@ th.sort-desc .sort-icon {
     .breakdown {
         padding: 14px;
     }
+
+    /* Settings modal mobile optimization */
+    .settings-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 12px;
+        scrollbar-width: thin;
+    }
+
+    .settings-tabs::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .settings-tab {
+        flex-shrink: 0;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .settings-tab-content {
+        padding: 4px 0;
+    }
+
+    .settings-tab-content .form-group {
+        margin-bottom: 12px;
+    }
+
+    .settings-tab-content .form-group label {
+        font-size: 0.85rem;
+    }
+
+    .settings-tab-content .form-input {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    .settings-tab-content .form-hint {
+        font-size: 0.75rem;
+    }
+
+    /* Single column grids in settings modal on mobile */
+    .settings-tab-content > div[style*="grid-template-columns: 1fr 1fr"],
+    .settings-tab-content > div[style*="display: grid"] {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .modal-body {
+        padding: 16px;
+        max-height: 70vh;
+    }
+}
+
+/* Settings modal base styles */
+.settings-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+
+.settings-tab {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.settings-tab:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.settings-tab.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+
+/* Settings modal mobile optimization for tablets */
+@media (max-width: 768px) {
+    .settings-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: thin;
+    }
+
+    .settings-tabs::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .settings-tab {
+        flex-shrink: 0;
+    }
 }

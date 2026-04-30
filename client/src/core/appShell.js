@@ -616,14 +616,6 @@ class PersonalFinanceApp {
                     </div>
                 </div>
 
-                <style>
-                    .settings-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
-                    .settings-tab { background: var(--bg-elevated); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); }
-                    .settings-tab:hover { background: var(--accent); color: white; }
-                    .settings-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-                    .settings-tab-content { display: none; }
-                    .settings-tab-content.active { display: block; }
-                </style>
             `;
 
             const modal = document.getElementById('dataModal');

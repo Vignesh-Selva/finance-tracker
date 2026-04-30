@@ -765,24 +765,113 @@
     /* Footer */
     .lp-footer {
       border-top: 1px solid var(--border);
-      padding: 48px 0;
-      text-align: center;
+      padding: 32px 0 24px;
+      background: var(--bg-card, #ffffff);
     }
-    
+
+    [data-theme="dark"] .lp-footer {
+      background: var(--bg-card, #111827);
+      border-color: var(--border, rgba(255, 255, 255, 0.1));
+    }
+
+    .lp-footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+
+    .lp-footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .lp-footer-logo {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       font-family: var(--font-display, 'Fraunces', serif);
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       color: var(--text-primary);
       text-decoration: none;
-      margin-bottom: 16px;
+      transition: color 0.2s;
     }
-    
-    .lp-footer p {
+
+    .lp-footer-logo:hover {
+      color: var(--accent, #d97757);
+    }
+
+    [data-theme="dark"] .lp-footer-logo:hover {
+      color: var(--accent, #3b82f6);
+    }
+
+    .lp-footer-tagline {
       color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      white-space: nowrap;
+    }
+
+    .lp-footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lp-footer-heading {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .lp-footer-links-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .lp-footer-link {
+      color: var(--text-muted);
+      text-decoration: none;
       font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .lp-footer-link:hover {
+      color: var(--accent, #d97757);
+    }
+
+    [data-theme="dark"] .lp-footer-link:hover {
+      color: var(--accent, #3b82f6);
+    }
+
+    .lp-footer-separator {
+      color: var(--text-muted);
+      opacity: 0.5;
+      font-size: 0.9rem;
+    }
+
+    .lp-footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .lp-footer-bottom p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .lp-footer-oss {
+      font-size: 0.8rem;
+      opacity: 0.7;
     }
     
     /* Desktop Responsive */
@@ -881,6 +970,31 @@
       
       .lp-badges-grid {
         padding: 0 20px;
+      }
+
+      .lp-footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .lp-footer-bottom {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+      }
+
+      .lp-footer-brand {
+        align-items: center;
+        text-align: center;
+      }
+
+      .lp-footer-tagline {
+        max-width: 100%;
+        white-space: normal;
+      }
+
+      .lp-footer-links {
+        align-items: center;
       }
     }
   </style>
@@ -1094,6 +1208,11 @@
         
         <div class="lp-features-grid">
           <div class="lp-feature-card">
+            <div class="lp-feature-icon">🚫</div>
+            <h3 class="lp-feature-title">No Third-Party Sharing</h3>
+            <p class="lp-feature-desc">We never sell, rent, or share your data with third parties. Your financial information stays strictly private.</p>
+          </div>
+          <div class="lp-feature-card">
             <div class="lp-feature-icon">🔒</div>
             <h3 class="lp-feature-title">Row-Level Security</h3>
             <p class="lp-feature-desc">Cryptographic rules at the database level guarantee that only your authenticated session can access your data.</p>
@@ -1102,6 +1221,21 @@
             <div class="lp-feature-icon">📤</div>
             <h3 class="lp-feature-title">One-Click Excel Export</h3>
             <p class="lp-feature-desc">No vendor lock-in. Download your entire financial history across all 8 sheets anytime.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">🗑️</div>
+            <h3 class="lp-feature-title">Complete Data Deletion</h3>
+            <p class="lp-feature-desc">Delete your entire account and all associated data with a single click. No data is kept after deletion.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">🛡️</div>
+            <h3 class="lp-feature-title">Encrypted Data at Rest</h3>
+            <p class="lp-feature-desc">All your financial data is encrypted when stored, ensuring it remains secure even in storage.</p>
+          </div>
+          <div class="lp-feature-card">
+            <div class="lp-feature-icon">📊</div>
+            <h3 class="lp-feature-title">No Analytics Tracking</h3>
+            <p class="lp-feature-desc">We don't track user behavior or use analytics. Your usage data stays private.</p>
           </div>
         </div>
       </div>
@@ -1156,10 +1290,39 @@
 
   <footer class="lp-footer">
     <div class="lp-section-wrapper">
-      <a href="#" class="lp-footer-logo" data-scroll-to="hero">
-        <span aria-hidden="true">💰</span> Networth Tracker
-      </a>
-      <p>© 2025 Networth Tracker. Built for serious investors.</p>
+      <div class="lp-footer-grid">
+        <div class="lp-footer-brand">
+          <a href="#" class="lp-footer-logo" data-scroll-to="hero">
+            <span aria-hidden="true">💰</span> Networth Tracker
+          </a>
+          <p class="lp-footer-tagline">Your entire financial life. One dashboard.</p>
+        </div>
+
+        <div class="lp-footer-links">
+          <h4 class="lp-footer-heading">Product</h4>
+          <div class="lp-footer-links-inline">
+            <a href="#" class="lp-footer-link" data-scroll-to="features">Features</a>
+            <span class="lp-footer-separator">|</span>
+            <a href="#" class="lp-footer-link" data-scroll-to="how-it-works">How It Works</a>
+            <span class="lp-footer-separator">|</span>
+            <a href="#" class="lp-footer-link" data-scroll-to="security">Security</a>
+          </div>
+        </div>
+
+        <div class="lp-footer-links">
+          <h4 class="lp-footer-heading">Resources</h4>
+          <div class="lp-footer-links-inline">
+            <span class="lp-footer-link" style="opacity: 0.5; cursor: not-allowed;">Documentation (Coming Soon)</span>
+            <span class="lp-footer-separator">|</span>
+            <a href="mailto:vignesh.dev.code@gmail.com" class="lp-footer-link">Report Issue</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-footer-bottom">
+        <p>© 2026 Networth Tracker. Built for serious investors.</p>
+        <p class="lp-footer-oss">Open source (PLANNED) • Private • Secure</p>
+      </div>
     </div>
   </footer>
 
@@ -1195,6 +1358,9 @@
     const _toggleBtn = document.getElementById('lp-form-toggle-btn');
     const _toggleText = document.getElementById('lp-form-toggle-text');
     const _googleBtn = document.getElementById('lp-google-btn');
+
+    // Initialize form in sign-up mode to show username field
+    _setSignUpMode(true);
 
     function _showError(msg) {
       _errorEl.textContent = msg;
