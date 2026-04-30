@@ -1476,6 +1476,11 @@
   <!-- Hamburger Menu Toggle -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Disable right-click
+      document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
+
       const hamburger = document.getElementById('lp-hamburger');
       const navLinks = document.getElementById('lp-nav-links');
       const themeToggle = document.getElementById('lp-theme-toggle');
