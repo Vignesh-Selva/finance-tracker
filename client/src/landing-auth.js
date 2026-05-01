@@ -13,12 +13,37 @@ try {
   console.error('Failed to initialize Supabase:', error);
 }
 
-// Check for existing session
+// Check for existing session and handle OAuth callback
 async function checkSession() {
   if (!supabase) return;
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    window.location.replace('./');
+
+  try {
+    // Check if URL has OAuth callback parameters
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hasOAuthParams = hashParams.has('access_token') || hashParams.has('error');
+
+    if (hasOAuthParams) {
+      console.log('Detected OAuth callback, processing...');
+      // Let Supabase handle the OAuth callback from URL automatically
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+
+      if (data.session) {
+        console.log('OAuth successful, redirecting to main app');
+        // Clear the hash from URL to remove tokens
+        window.location.hash = '';
+        // Redirect to main app
+        window.location.replace('./');
+      }
+    } else {
+      // Normal session check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.replace('./');
+      }
+    }
+  } catch (error) {
+    console.error('Session check error:', error);
   }
 }
 
