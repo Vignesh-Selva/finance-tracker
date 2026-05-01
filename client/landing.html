@@ -1614,6 +1614,8 @@
     </div>
   </footer>
 
+  <script type="module" src="/src/landing-auth.js"></script>
+
   <script>
     // NAV SCROLL EFFECT
     const nav = document.querySelector('nav');
@@ -1676,12 +1678,13 @@
     const submitBtn = document.getElementById('submit-btn');
     const toggleText = document.getElementById('toggle-text');
     const toggleLink = document.getElementById('toggle-link');
-    const authForm = document.getElementById('auth-form');
 
     let isSignUpMode = true;
+    window.isSignUpMode = isSignUpMode;
 
     function setFormMode(signUp) {
       isSignUpMode = signUp;
+      window.isSignUpMode = isSignUpMode;
       if (signUp) {
         // Signup mode
         formTitle.textContent = 'Create your account';
@@ -1702,6 +1705,7 @@
         toggleLink.textContent = 'Get Started Free';
       }
     }
+    window.setFormMode = setFormMode;
 
     // Toggle link click handler
     toggleLink.addEventListener('click', (e) => {
@@ -1719,26 +1723,6 @@
           setFormMode(false);
         }
       });
-    });
-
-    // Form submission handler
-    authForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email-input').value;
-      const password = document.getElementById('password-input').value;
-      const name = nameInput.value;
-
-      if (isSignUpMode) {
-        if (!email || !password || !name) {
-          alert('Please fill in all fields');
-          return;
-        }
-      } else {
-        if (!email || !password) {
-          alert('Please fill in email and password');
-          return;
-        }
-      }
     });
   </script>
 </body>

@@ -258,7 +258,7 @@ async function renderPortfolioTab(container, portfolioId) {
             const invested = item._invested;
             const current = parseFloat(item.current) || 0;
             const pl = current - invested;
-            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+            const _plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
             const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
             const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
             const xirrClass = xirr !== null ? (parseFloat(xirr.value) >= 0 ? 'color:var(--green)' : 'color:var(--red)') : '';

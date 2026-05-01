@@ -20,6 +20,7 @@ export default defineConfig({
         landing: path.resolve(__dirname, 'landing.html'),
       },
     },
+    copyPublicDir: true,
   },
   resolve: {
     alias: {

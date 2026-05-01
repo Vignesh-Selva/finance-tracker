@@ -4,8 +4,8 @@
   "description": "Track your entire financial life — savings, FDs, mutual funds, stocks, and crypto.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -5,7 +5,7 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register(...registerables);
 
-let netWorthChart = null;
+const _netWorthChart = null;
 let fiProjectionChart = null;
 let _chartFilter = 'ALL';
 let _cachedSnapshots = [];
@@ -92,7 +92,7 @@ export async function renderDashboard(portfolioId) {
         const changePercent = changePercentRaw.toFixed(2);
         const changePercentClass = changePercentRaw >= 0 ? 'positive' : 'negative';
 
-        const allocationHTML = allocation.length > 0
+        const _allocationHTML = allocation.length > 0
             ? `<div class="allocation-bar">${allocation.map(a =>
                 `<div class="allocation-segment" style="width:${a.percentage}%;background:${a.color}" title="${a.name}: ${a.percentage}%"></div>`
             ).join('')}</div>`
@@ -197,8 +197,8 @@ export async function renderDashboard(portfolioId) {
         const birthdayMessage = birthdayMessages[Math.floor(Math.random() * birthdayMessages.length)];
 
         // Override greeting and tip on birthday
-        const displayGreeting = isBirthday ? birthdayMessage : `${greeting} ${emoji}`;
-        const displayTip = isBirthday ? "🎊 Take a moment to celebrate yourself today! You've earned it." : tip;
+        const _displayGreeting = isBirthday ? birthdayMessage : `${greeting} ${emoji}`;
+        const _displayTip = isBirthday ? "🎊 Take a moment to celebrate yourself today! You've earned it." : tip;
 
 
         const html = `

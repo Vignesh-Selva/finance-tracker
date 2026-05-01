@@ -24,6 +24,16 @@ window.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
     });
 
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+        try {
+            await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered successfully');
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+        }
+    }
+
     try {
         const session = await getSession();
         if (session) {

@@ -77,7 +77,7 @@ export async function renderFixedDeposits(portfolioId) {
             </div>
             <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
                 ${fds.map(item => {
-            const invested = parseFloat(item.invested) || 0;
+            const _invested = parseFloat(item.invested) || 0;
             const maturity = parseFloat(item.maturity) || 0;
             const interest = item.interest_rate;
             return `

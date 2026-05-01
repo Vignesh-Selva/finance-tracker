@@ -109,7 +109,7 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
         const pricePerBtc = totalBtcQty > 0 ? totalBtcCurrent / totalBtcQty : null;
         const btcRemaining = Math.max(0, btcGoal - totalBtcQty);
         const btcProgress = btcGoal > 0 ? Math.min(100, (totalBtcQty / btcGoal) * 100) : 0;
-        const inrNeeded = pricePerBtc !== null && btcRemaining > 0 ? btcRemaining * pricePerBtc : null;
+        const _inrNeeded = pricePerBtc !== null && btcRemaining > 0 ? btcRemaining * pricePerBtc : null;
 
         // Platform badge colors
         const getPlatformBadge = (platform) => {
@@ -213,7 +213,7 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                     </td>
                 </tr>`;
             if (item._isBtcGroup && item._subRows) {
-                item._subRows.forEach((subItem, idx) => {
+                item._subRows.forEach((subItem, _idx) => {
                     const subInvested = subItem._invested;
                     const subCurrent = parseFloat(subItem.current) || 0;
                     const subPl = subCurrent - subInvested;
@@ -413,7 +413,7 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
 
         // Mobile BTC group expansion toggle
         tabContent.querySelectorAll('.mobile-btc-group').forEach(groupRow => {
-            groupRow.addEventListener('click', (e) => {
+            groupRow.addEventListener('click', (_e) => {
                 const subrowsContainer = groupRow.nextElementSibling;
                 const icon = groupRow.querySelector('.btc-expand-icon');
                 if (subrowsContainer && subrowsContainer.classList.contains('mobile-btc-subrows')) {
