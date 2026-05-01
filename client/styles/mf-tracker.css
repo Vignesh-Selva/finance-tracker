@@ -1,23 +1,22 @@
 /* ═══════════════════════════════════════════════════════════
    Mutual Fund Tracker — Scoped Styles
-   Design: Dark theme cards with glow effects, DM Sans/Mono
+   Design: Dark theme, Syne/DM Mono, new accent #e8ff47
    ═══════════════════════════════════════════════════════════ */
 
-/* ─── Design Tokens (scoped under .mft) ───────────────── */
+/* ─── Design Tokens (scoped under .mft) ────────────────── */
 .mft {
-  /* Inherit all tokens from parent design system */
   --mft-bg:         var(--bg-primary);
   --mft-card:       var(--bg-card);
   --mft-card-border:var(--border);
   --mft-accent:     var(--accent);
-  --mft-accent-glow:var(--accent-glow);
+  --mft-accent-glow:var(--accent-dim);
   --mft-green:      var(--green);
   --mft-red:        var(--red);
-  --mft-yellow:     var(--yellow);
-  --mft-orange:     #f97316;
-  --mft-highlight:  var(--highlight);
+  --mft-yellow:     var(--amber);
+  --mft-orange:     var(--c-crypto);
+  --mft-highlight:  var(--bg-elevated);
   --mft-text:       var(--text-primary);
-  --mft-muted:      var(--text-muted);
+  --mft-muted:      var(--muted);
   --mft-font-ui:    var(--font-ui);
   --mft-font-mono:  var(--font-mono);
 }
@@ -38,7 +37,7 @@
 .mft-summary-card {
   background: var(--mft-card);
   border: 1px solid var(--mft-card-border);
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 16px 20px;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
@@ -46,7 +45,7 @@
 .mft-summary-card:hover {
   transform: translateY(-2px);
   border-color: var(--mft-accent);
-  box-shadow: var(--shadow-card), var(--shadow-glow);
+  box-shadow: var(--shadow-card), 0 0 0 1px var(--accent-dim);
 }
 
 .mft-summary-label {
@@ -84,7 +83,7 @@
   padding: 10px 14px 10px 36px;
   background: var(--mft-card);
   border: 1px solid var(--mft-card-border);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--mft-text);
   font-family: var(--mft-font-ui);
   font-size: 0.9rem;
@@ -94,7 +93,7 @@
 
 .mft-search-input:focus {
   border-color: var(--mft-accent);
-  box-shadow: 0 0 0 3px var(--mft-accent-glow);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 .mft-search-icon {
@@ -113,8 +112,8 @@
   left: 0;
   right: 0;
   background: var(--mft-card);
-  border: 1px solid var(--mft-card-border);
-  border-radius: 10px;
+  border: 1px solid var(--border2);
+  border-radius: 16px;
   max-height: 280px;
   overflow-y: auto;
   z-index: 50;
@@ -152,8 +151,8 @@
 }
 
 .mft-pill {
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 6px 16px;
+  border-radius: 100px;
   font-size: 0.8rem;
   font-weight: 500;
   border: 1px solid var(--mft-card-border);
@@ -167,13 +166,13 @@
 .mft-pill:hover,
 .mft-pill.active {
   border-color: var(--mft-accent);
-  background: var(--mft-accent-glow);
+  background: var(--accent-dim);
   color: var(--mft-accent);
 }
 
 .mft-btn {
   padding: 8px 18px;
-  border-radius: 8px;
+  border-radius: 100px;
   font-size: 0.85rem;
   font-weight: 600;
   border: none;
@@ -187,12 +186,12 @@
 
 .mft-btn-primary {
   background: var(--mft-accent);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  color: #09090b;
+  box-shadow: 0 2px 8px var(--accent-dim);
 }
 
 .mft-btn-primary:hover {
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 16px var(--accent-dim);
   transform: translateY(-1px);
 }
 
@@ -200,15 +199,16 @@
   background: transparent;
   color: var(--mft-muted);
   border: 1px solid var(--mft-card-border);
+  border-radius: 100px;
 }
 
 .mft-btn-ghost:hover {
   color: var(--mft-text);
-  border-color: var(--mft-text);
+  border-color: var(--border2);
 }
 
 .mft-btn-sm {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 0.78rem;
 }
 
@@ -231,27 +231,16 @@
 .mft-card {
   background: var(--mft-card);
   border: 1px solid var(--mft-card-border);
-  border-radius: 14px;
+  border-radius: 20px;
   margin-bottom: 14px;
   overflow: hidden;
-  animation: mftFadeIn 0.35s ease-out both;
+  animation: fadeUp 0.35s ease-out both;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .mft-card:hover {
   border-color: var(--mft-accent);
-  box-shadow: var(--shadow-card), var(--shadow-glow);
-}
-
-@keyframes mftFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  box-shadow: var(--shadow-card), 0 0 0 1px var(--accent-dim);
 }
 
 /* Stagger animation delay for each card */
@@ -337,9 +326,9 @@
 }
 
 .mft-badge-category {
-  background: var(--mft-accent-glow);
+  background: var(--accent-dim);
   color: var(--mft-accent);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(232,255,71,0.15);
 }
 
 .mft-badge-amc {
@@ -380,15 +369,15 @@
   display: inline-flex;
   flex-direction: column;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-elevated);
   border: 1px solid var(--mft-card-border);
-  border-radius: 8px;
+  border-radius: 12px;
   min-width: 100px;
   transition: background 0.2s;
 }
 
 .mft-chip:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface3);
 }
 
 .mft-chip-label {
@@ -419,8 +408,8 @@
   margin-left: 4px;
   letter-spacing: 0.02em;
 }
-.mft-ter-delta.positive { color: var(--mft-green); background: rgba(16,185,129,0.12); }
-.mft-ter-delta.negative { color: var(--mft-red);   background: rgba(239,68,68,0.12);  }
+.mft-ter-delta.positive { color: var(--mft-green); background: var(--green-dim); }
+.mft-ter-delta.negative { color: var(--mft-red);   background: var(--red-dim);  }
 
 /* ─── Change Alert Badges ─────────────────────────────── */
 .mft-alerts {
@@ -438,37 +427,37 @@
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 500;
-  animation: mftFadeIn 0.3s ease-out;
+  animation: fadeUp 0.3s ease-out;
 }
 
 .mft-alert-red {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--red-dim);
   color: var(--mft-red);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(248,113,113,0.2);
 }
 
 .mft-alert-yellow {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(251,191,36,0.12);
   color: var(--mft-yellow);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(251,191,36,0.2);
 }
 
 .mft-alert-orange {
-  background: rgba(249, 115, 22, 0.12);
+  background: rgba(251,146,60,0.12);
   color: var(--mft-orange);
-  border: 1px solid rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(251,146,60,0.2);
 }
 
 .mft-alert-green {
-  background: rgba(16, 185, 129, 0.12);
+  background: var(--green-dim);
   color: var(--mft-green);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(74,222,128,0.2);
 }
 
 .mft-alert-info {
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--accent-dim);
   color: var(--mft-accent);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(232,255,71,0.15);
 }
 
 .mft-alert-dismiss {
@@ -487,17 +476,13 @@
   display: none;
   padding: 0 20px 20px;
   border-top: 1px solid var(--mft-card-border);
-  animation: mftSlideDown 0.25s ease-out;
+  animation: fadeUp 0.25s ease-out;
 }
 
 .mft-card.expanded .mft-card-body {
   display: block;
 }
 
-@keyframes mftSlideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 .mft-detail-grid {
   display: grid;
@@ -527,8 +512,8 @@
 
 /* Holdings value (when portfolioContext is provided) */
 .mft-holdings {
-  background: var(--mft-highlight);
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  border-radius: 16px;
   padding: 14px 16px;
   margin-top: 14px;
   display: grid;
@@ -559,9 +544,9 @@
 .mft-ai-summary {
   margin-top: 14px;
   padding: 12px 14px;
-  background: rgba(59, 130, 246, 0.05);
-  border: 1px solid rgba(59, 130, 246, 0.12);
-  border-radius: 8px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(232,255,71,0.12);
+  border-radius: 12px;
   font-size: 0.82rem;
   line-height: 1.55;
   color: var(--mft-text);
@@ -597,17 +582,12 @@
   height: 6px;
   border-radius: 50%;
   background: var(--mft-accent);
-  animation: mftBounce 1.4s infinite ease-in-out both;
+  animation: pulse 1.4s infinite ease-in-out both;
 }
 
 .mft-loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .mft-loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 .mft-loading-dots span:nth-child(3) { animation-delay: 0s; }
-
-@keyframes mftBounce {
-  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
 
 /* Card-level loading spinner */
 .mft-card-loading {
@@ -625,10 +605,10 @@
   border: 2px solid var(--mft-card-border);
   border-top-color: var(--mft-accent);
   border-radius: 50%;
-  animation: mftSpin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
-@keyframes mftSpin {
+@keyframes spin {
   to { transform: rotate(360deg); }
 }
 
@@ -662,7 +642,7 @@
   padding: 8px 12px;
   background: var(--mft-card);
   border: 1px solid var(--mft-card-border);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--mft-text);
   font-family: var(--mft-font-ui);
   font-size: 0.82rem;

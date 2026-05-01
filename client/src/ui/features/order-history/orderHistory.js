@@ -324,12 +324,45 @@ function _buildTable(orders, holdings, cfg, state) {
                 <tbody>${rows}</tbody>
             </table>
         </div>
+        <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;margin-top:16px;">
+            ${orders.map(o => {
+                const holdingName = holdingMap.get(o[cfg.holdingIdField]) || '—';
+                const qty = parseFloat(o[cfg.unitsField] ?? o.units ?? o.quantity) || 0;
+                const price = parseFloat(o[cfg.priceField] ?? o.nav ?? o.price) || 0;
+                const amount = parseFloat(o.amount) || 0;
+                const date = o.execution_date
+                    ? new Date(o.execution_date + 'T00:00:00').toLocaleDateString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                    })
+                    : '—';
+                const typeBadge = o.order_type === 'Buy'
+                    ? '<span style="background:rgba(74,222,128,0.15);color:var(--green);padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;">BUY</span>'
+                    : '<span style="background:rgba(248,113,113,0.15);color:var(--red);padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600;">SELL</span>';
+                return `
+                    <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-order-id="${o.id}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${holdingName}</span>
+                            <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(amount)}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${date} ${typeBadge}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
         <style>
             .oh-table th, .oh-table td { padding: 10px 10px; font-size: 13px; white-space: nowrap; }
             .oh-table th:first-child, .oh-table td:first-child { white-space: normal; max-width: 180px; }
             .row-selected { background-color: rgba(59,130,246,0.08); }
             .oh-row-checkbox { cursor: pointer; width:16px;height:16px; }
             #oh-select-all { cursor: pointer; width:16px;height:16px; }
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+                .stat-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+                .stat-card { padding: 16px !important; }
+            }
         </style>`;
 }
 
@@ -537,6 +570,87 @@ function _wireEvents(el, portfolioId, assetType, holdings, allOrders, state, cfg
                 state.sortDir = 'desc';
             }
             _renderContent(el, portfolioId, assetType, holdings, allOrders, state, cfg, false);
+        });
+    });
+
+    // Mobile list tap handlers
+    el.querySelectorAll('[data-order-id]').forEach(row => {
+        row.addEventListener('click', () => {
+            const orderId = row.dataset.orderId;
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const holdingMap = new Map(holdings.map(h => [h.id, h[cfg.holdingNameField]]));
+            const holdingName = holdingMap.get(order[cfg.holdingIdField]) || '—';
+            const qty = parseFloat(order[cfg.unitsField] ?? order.units ?? order.quantity) || 0;
+            const price = parseFloat(order[cfg.priceField] ?? order.nav ?? order.price) || 0;
+            const amount = parseFloat(order.amount) || 0;
+            const charges = parseFloat(order.charges) || 0;
+            const date = order.execution_date
+                ? new Date(order.execution_date + 'T00:00:00').toLocaleDateString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric',
+                })
+                : '—';
+
+            const fields = {
+                'Holding': holdingName,
+                'Date': date,
+                'Type': order.order_type,
+                'Amount': Utilities.formatCurrency(amount),
+            };
+            fields[cfg.unitsLabel] = qty.toFixed(cfg.decimals);
+            fields[cfg.priceLabel] = price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+            if (charges > 0) fields['Charges'] = Utilities.formatCurrency(charges);
+            if (order.platform) fields['Platform'] = order.platform;
+            if (order.remarks) fields['Remarks'] = order.remarks;
+
+            const actions = [
+                {
+                    label: 'Edit',
+                    onClick: () => {
+                        _showOrderForm(order, portfolioId, assetType, holdings, allOrders, cfg, el, state);
+                        const sheet = document.getElementById('mobile-bottom-sheet');
+                        const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                        if (sheet) sheet.style.transform = 'translateY(100%)';
+                        if (overlay) overlay.remove();
+                        if (sheet) setTimeout(() => sheet.remove(), 300);
+                    }
+                },
+                {
+                    label: 'Delete',
+                    onClick: async () => {
+                        const holdingOrders = allOrders.filter(o => o[cfg.holdingIdField] === order[cfg.holdingIdField]);
+                        const afterDelete = holdingOrders.filter(o => o.id !== orderId);
+                        const posAfter = computeDerivedPosition(afterDelete, cfg.unitsField);
+
+                        let message = 'Delete this order? The portfolio position will be recomputed.';
+                        if (afterDelete.length === 0) {
+                            message = 'This is the last order for this holding. Deleting it returns the holding to legacy mode with zero derived values. Continue?';
+                        } else if (posAfter.units === 0) {
+                            message = 'Deleting this order will result in a zero position. The holding will appear as closed. Continue?';
+                        }
+
+                        if (!await Utilities.showConfirm(message)) return;
+
+                        try {
+                            await cfg.orderApi().delete(orderId);
+                            state.selectedOrders.delete(orderId);
+                            Utilities.showNotification('Order deleted', 'success');
+                            await renderOrderHistoryTab(el, portfolioId, assetType);
+                        } catch {
+                            Utilities.showNotification('Failed to delete order', 'error');
+                        }
+
+                        const sheet = document.getElementById('mobile-bottom-sheet');
+                        const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                        if (sheet) sheet.style.transform = 'translateY(100%)';
+                        if (overlay) overlay.remove();
+                        if (sheet) setTimeout(() => sheet.remove(), 300);
+                    }
+                }
+            ];
+
+            Utilities.openBottomSheet(fields, actions);
         });
     });
 

@@ -45,17 +45,18 @@ function _buildShell() {
     return `
         <div class="mft">
             <div class="section-header">
-                <h2 class="page-title">Stocks &amp; ETFs</h2>
+                <div>
+                    <p class="page-eyebrow">WEALTH OS · STOCKS &amp; ETFS</p>
+                    <h1 class="page-title">Stocks &amp; ETFs</h1>
+                </div>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('stocks')">+ Add Stock</button>
             </div>
             <div class="mft-tab-bar" id="st-tab-bar">
-                <button class="mft-tab ${_stocksActiveTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">
-                    📊 Portfolio
-                </button>
-                <button class="mft-tab ${_stocksActiveTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">
-                    📋 Order History
-                </button>
+                <button class="mft-tab ${_stocksActiveTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">Portfolio</button>
+                <button class="mft-tab ${_stocksActiveTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">Order History</button>
             </div>
             <div id="st-tab-content"></div>
+            <button class="fab-add" onclick="window.app.showAddForm('stocks')" title="Add Stock">+</button>
         </div>`;
 }
 
@@ -154,15 +155,12 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
         });
 
         tabContent.innerHTML = `
-            <div class="section-header" style="margin-top:20px;">
+            <div class="section-header">
                 <div style="display:flex;gap:8px;align-items:center;">
                     ${closedCount > 0 ? `
                     <button class="btn btn-ghost btn-sm" id="st-toggle-closed">
                         ${_stocksShowClosed ? '📁 Hide Closed' : '📂 Show Closed'} (${closedCount})
                     </button>` : ''}
-                </div>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn btn-primary" onclick="window.app.showAddForm('stocks')">+ Add Stock</button>
                 </div>
             </div>
             <div class="stat-grid">
@@ -185,6 +183,30 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
+            </div>
+            <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
+                ${stocks.map(item => {
+            const invested = item._invested;
+            const current = parseFloat(item.current) || 0;
+            const pl = current - invested;
+            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+            const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
+            const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
+            const xirrClass = xirr !== null ? (parseFloat(xirr.value) >= 0 ? 'color:var(--green)' : 'color:var(--red)') : '';
+            const plClass = pl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+            return `
+                        <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-stock-id="${item.id}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.stock_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(current)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${item.ticker || '—'} · ${item._qty.toFixed(4)}</span>
+                                <span style="font-family:var(--font-mono);font-size:11px;${plClass};font-weight:500;">${plPct}%</span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
             </div>` : '<p class="empty-state">No stocks added yet.</p>'}
         `;
 
@@ -207,6 +229,65 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                 renderOrderHistoryTab(tc, portfolioId, 'stocks');
             });
         });
+
+        // Mobile list tap handlers
+        tabContent.querySelectorAll('[data-stock-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const stockId = row.dataset.stockId;
+                const stock = stocks.find(s => s.id === stockId);
+                if (!stock) return;
+                const invested = stock._invested;
+                const current = parseFloat(stock.current) || 0;
+                const pl = current - invested;
+                const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+                const xirr = FinanceUtils.xirrFromHolding(invested, current, stock._firstOrderDate || stock.created_at);
+                const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
+                const fields = {
+                    'Stock Name': stock.stock_name,
+                    'Ticker': stock.ticker || '—',
+                    'Quantity': stock._qty.toFixed(4),
+                    'Invested': Utilities.formatCurrency(invested),
+                    'Current Value': Utilities.formatCurrency(current),
+                    'P/L': `${Utilities.formatCurrency(pl)} (${plPct}%)`,
+                    'XIRR': xirrValue,
+                };
+                const actions = [
+                    {
+                        label: 'Edit',
+                        onClick: () => {
+                            window.app.editEntry('stocks', stockId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: () => {
+                            window.app.deleteEntry('stocks', stockId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    }
+                ];
+                Utilities.openBottomSheet(fields, actions);
+            });
+        });
+
+        // Add mobile CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+            }
+        `;
+        tabContent.appendChild(mobileStyle);
     } catch {
         tabContent.innerHTML = '<div class="error-state"><p>Failed to load stocks.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }

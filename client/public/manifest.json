@@ -1,7 +1,7 @@
 {
-  "name": "Personal Finance Manager",
-  "short_name": "Finance Manager",
-  "description": "Track your expenses and net worth in one place",
+  "name": "Wealth OS",
+  "short_name": "Wealth OS",
+  "description": "Track your entire financial life — savings, FDs, mutual funds, stocks, and crypto.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

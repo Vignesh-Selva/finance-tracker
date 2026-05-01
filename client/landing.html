@@ -1,1565 +1,1744 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Track savings, fixed deposits, mutual funds, stocks, ETFs, and crypto with live prices. Know your true net worth — private, secure, your own Supabase.">
-  <meta name="theme-color" content="#f5f4ef" id="theme-color-meta">
-  <link rel="icon" href="data:,">
-  <title>Networth Tracker — Your entire financial life. One dashboard.</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#09090b">
+  <title>Wealth OS — Your entire financial life. One dashboard.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles/main.css">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
   <style>
-    *, *::before, *::after {
+    /* ─── RESET & BASE ──────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
-    }
-    
-    html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #09090b;
+      color: #fafafa;
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
       overflow-x: hidden;
-      max-width: 100vw;
+      -webkit-font-smoothing: antialiased;
     }
-    
-    .lp-page {
-      font-family: var(--font-ui, 'DM Sans', sans-serif);
-      background: var(--bg-primary, #f5f4ef);
-      color: var(--text-primary, #1a1a1a);
-      transition: background 0.3s ease, color 0.3s ease;
+
+    /* ─── TOKENS ────────────────────────────────────────── */
+    :root {
+      --bg: #09090b;
+      --surface: #111113;
+      --surface2: #18181b;
+      --surface3: #1f1f23;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.13);
+      --text: #fafafa;
+      --muted: #71717a;
+      --muted2: #3f3f46;
+      --green: #4ade80;
+      --green-dim: rgba(74, 222, 128, 0.1);
+      --red: #f87171;
+      --amber: #fbbf24;
+      --accent: #e8ff47;
+      --accent2: rgba(232, 255, 71, 0.08);
+      --blue: #60a5fa;
+
+      --nav-h: 64px;
+      --max: 1140px;
+      --r: 20px;
     }
-    
-    [data-theme="dark"] .lp-page {
-      background: var(--bg-primary, #0a0f1e);
-      color: var(--text-primary, #e2e8f0);
+
+    /* ─── NOISE OVERLAY ─────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.5;
     }
-    
-    .lp-section-wrapper {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 16px;
+
+    /* ─── SCROLLBAR ─────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 4px;
     }
-    
-    /* Navigation */
-    .lp-nav {
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface3);
+      border-radius: 4px;
+    }
+
+    /* ─── NAV ───────────────────────────────────────────── */
+    nav {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      z-index: 1000;
-      background: rgba(245, 244, 239, 0.9);
+      z-index: 100;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      padding: 0 clamp(16px, 4vw, 48px);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
+    }
+
+    nav.scrolled {
+      background: rgba(9, 9, 11, 0.85);
+      border-color: var(--border);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      width: 100%;
-      padding: 0 16px;
     }
-    
-    [data-theme="dark"] .lp-nav {
-      background: rgba(10, 15, 30, 0.9);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .lp-nav-inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+
+    .nav-inner {
       width: 100%;
-      max-width: 1200px;
+      max-width: var(--max);
       margin: 0 auto;
-      padding: 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    
-    .lp-nav-logo {
+
+    .nav-logo {
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
       text-decoration: none;
-      font-family: var(--font-display, 'Fraunces', serif);
-      font-size: 1.25rem;
-      font-weight: 500;
-      color: var(--text-primary);
     }
-    
-    .lp-nav-links {
+
+    .nav-logo span {
+      font-size: 20px;
+    }
+
+    .nav-links {
       display: flex;
-      gap: 24px;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
     }
-    
-    .lp-nav-link {
-      color: var(--text-muted, #8a8a8a);
+
+    .nav-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
       text-decoration: none;
-      font-weight: 500;
       transition: color 0.2s;
     }
-    
-    .lp-nav-link:hover {
-      color: var(--accent, #d97757);
+
+    .nav-links a:hover {
+      color: var(--text);
     }
-    
-    [data-theme="dark"] .lp-nav-link:hover {
-      color: var(--accent, #3b82f6);
-    }
-    
-    .lp-nav-actions {
+
+    .nav-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
-    
-    .lp-btn-cta {
-      background: var(--accent, #d97757);
-      color: #fff;
-      border: none;
-      border-radius: 20px;
-      padding: 10px 24px;
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
+
+    .btn-ghost {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 100px;
       cursor: pointer;
+      transition: all 0.2s;
       text-decoration: none;
-      transition: all 0.2s ease;
+      display: inline-block;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      border-color: var(--border2);
+    }
+
+    .btn-primary {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #09090b;
+      background: var(--accent);
+      border: none;
+      padding: 9px 20px;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
       white-space: nowrap;
     }
-    
-    [data-theme="dark"] .lp-btn-cta {
-      background: var(--accent, #3b82f6);
+
+    .btn-primary:hover {
+      background: #f0ff6a;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(232, 255, 71, 0.25);
     }
-    
-    .lp-btn-cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
-    }
-    
-    [data-theme="dark"] .lp-btn-cta:hover {
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-    
-    .lp-hamburger {
+
+    /* mobile nav toggle */
+    .nav-toggle {
       display: none;
       flex-direction: column;
-      justify-content: space-around;
-      width: 28px;
-      height: 28px;
-      background: transparent;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
       border: none;
-      cursor: pointer;
-      padding: 0;
+      padding: 4px;
     }
-    
-    .lp-hamburger span {
-      width: 100%;
-      height: 2px;
-      background: var(--text-primary);
+
+    .nav-toggle span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: var(--muted);
       border-radius: 2px;
-      transition: all 0.3s ease;
+      transition: all 0.3s;
     }
-    
-    .lp-theme-toggle {
-      width: 36px;
-      height: 36px;
-      background: var(--bg-card, #ffffff);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: pointer;
+
+    /* mobile menu */
+    .nav-mobile {
+      display: none;
+      position: fixed;
+      top: var(--nav-h);
+      left: 0;
+      right: 0;
+      background: rgba(9, 9, 11, 0.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 24px clamp(16px, 4vw, 48px) 32px;
+      z-index: 99;
+      transform: translateY(-10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+
+    .nav-mobile.open {
+      display: block;
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .nav-mobile ul {
+      list-style: none;
+      margin-bottom: 24px;
+    }
+
+    .nav-mobile ul li {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-mobile ul li a {
+      display: block;
+      padding: 14px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      transition: color 0.2s;
+    }
+
+    .nav-mobile ul li a:hover {
+      color: var(--text);
+    }
+
+    .nav-mobile .btn-primary {
+      width: 100%;
+      text-align: center;
+      padding: 14px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
+    /* ─── HERO ──────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 0;
-      transition: all 0.2s ease;
+      padding: calc(var(--nav-h) + 40px) clamp(16px, 4vw, 48px) 80px;
+      position: relative;
+      overflow: hidden;
     }
-    
-    [data-theme="dark"] .lp-theme-toggle {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
+
+    /* grid lines bg */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
     }
-    
-    .lp-theme-toggle:hover {
-      border-color: var(--accent, #d97757);
+
+    .hero-glow {
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(232, 255, 71, 0.04) 0%, transparent 70%);
+      pointer-events: none;
     }
-    
-    [data-theme="dark"] .lp-theme-toggle:hover {
-      border-color: var(--accent, #3b82f6);
+
+    .hero-inner {
+      width: 100%;
+      max-width: var(--max);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(40px, 6vw, 80px);
+      align-items: center;
     }
-    
-    .lp-theme-icon {
-      width: 20px;
-      height: 20px;
-      color: var(--text-primary);
-      transition: opacity 0.2s ease;
-    }
-    
-    .lp-sun-icon {
-      display: none;
-    }
-    
-    .lp-moon-icon {
-      display: block;
-    }
-    
-    [data-theme="dark"] .lp-sun-icon {
-      display: block;
-    }
-    
-    [data-theme="dark"] .lp-moon-icon {
-      display: none;
-    }
-    
-    .lp-hamburger[aria-expanded="true"] span:nth-child(1) {
-      transform: rotate(45deg) translate(6px, 6px);
-    }
-    
-    .lp-hamburger[aria-expanded="true"] span:nth-child(2) {
-      opacity: 0;
-    }
-    
-    .lp-hamburger[aria-expanded="true"] span:nth-child(3) {
-      transform: rotate(-45deg) translate(6px, -6px);
-    }
-    
-    /* Hero */
-    .lp-hero {
-      padding: 120px 0 80px;
-    }
-    
-    .lp-hero-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-    }
-    
-    .lp-hero-content {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .lp-hero-chip {
+
+    .hero-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(217, 119, 87, 0.1);
-      color: var(--accent, #d97757);
-      padding: 6px 16px;
-      border-radius: 30px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 24px;
+      background: rgba(232, 255, 71, 0.06);
+      border: 1px solid rgba(232, 255, 71, 0.18);
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      animation: fadeUp 0.5s ease both;
     }
-    
-    [data-theme="dark"] .lp-hero-chip {
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--accent, #3b82f6);
+
+    .hero-badge-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 2s ease infinite;
     }
-    
-    .lp-hero h1 {
-      font-family: var(--font-display, 'Fraunces', serif);
-      font-size: clamp(2.5rem, 5vw, 4rem);
+
+    .hero-h1 {
+      font-family: 'Instrument Serif', serif;
       font-weight: 400;
-      line-height: 1.1;
-      color: var(--text-primary);
-      margin-bottom: 24px;
+      font-size: clamp(38px, 5.5vw, 68px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 8px;
+      animation: fadeUp 0.5s 0.1s ease both;
     }
-    
-    .hero-italic {
-      color: var(--accent, #d97757);
+
+    .hero-h1 em {
       font-style: italic;
+      color: var(--accent);
+      display: block;
     }
-    
-    [data-theme="dark"] .hero-italic {
-      color: var(--accent, #3b82f6);
+
+    .hero-sub {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(14px, 1.6vw, 17px);
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 440px;
+      margin-bottom: 36px;
+      animation: fadeUp 0.5s 0.2s ease both;
     }
-    
-    .lp-hero-sub {
-      font-size: 1.2rem;
-      line-height: 1.6;
-      color: var(--text-muted, #8a8a8a);
-      max-width: 600px;
-      margin-bottom: 32px;
-    }
-    
-    .lp-hero-ctas {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    
-    .lp-btn-secondary {
-      background: rgba(0, 0, 0, 0.03);
-      color: var(--text-primary);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 20px;
-      padding: 10px 24px;
-      font-family: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s ease;
-    }
-    
-    [data-theme="dark"] .lp-btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .lp-btn-secondary:hover {
-      background: rgba(0, 0, 0, 0.06);
-    }
-    
-    [data-theme="dark"] .lp-btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .lp-hero-mockup {
-      background: var(--bg-card, #ffffff);
-      border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
-      border-radius: 24px;
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-    
-    [data-theme="dark"] .lp-hero-mockup {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
-      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
-    }
-    
-    .lp-mockup-header {
-      height: 48px;
-      background: var(--bg-elevated, #faf9f6);
-      border-bottom: 1px solid var(--border);
+
+    .hero-ctas {
       display: flex;
       align-items: center;
-      padding: 0 16px;
-      gap: 8px;
+      gap: 12px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.5s 0.3s ease both;
     }
-    
-    [data-theme="dark"] .lp-mockup-header {
-      background: var(--bg-elevated, #1a2332);
+
+    .btn-hero {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #09090b;
+      background: var(--accent);
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+      display: inline-block;
     }
-    
-    .lp-mockup-dot {
-      width: 12px;
-      height: 12px;
+
+    .btn-hero:hover {
+      background: #f0ff6a;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(232, 255, 71, 0.28);
+    }
+
+    .btn-hero-ghost {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid var(--border2);
+      padding: 13px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-hero-ghost:hover {
+      color: var(--text);
+      border-color: var(--border2);
+    }
+
+    .hero-trust {
+      margin-top: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted2);
+      animation: fadeUp 0.5s 0.4s ease both;
+    }
+
+    .trust-dot {
+      width: 3px;
+      height: 3px;
+      background: var(--muted2);
       border-radius: 50%;
     }
-    
-    .lp-mockup-dot.r { background: #ff5f57; }
-    .lp-mockup-dot.y { background: #febc2e; }
-    .lp-mockup-dot.g { background: #28c840; }
-    
-    .lp-mockup-body {
-      padding: 24px;
+
+    /* HERO MOCKUP */
+    .hero-mockup {
+      animation: fadeUp 0.6s 0.2s ease both;
+      position: relative;
     }
-    
-    .lp-mock-stats {
+
+    .mockup-window {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    .mockup-bar {
+      background: var(--surface2);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mockup-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .mockup-dot.r {
+      background: #ef4444;
+    }
+
+    .mockup-dot.y {
+      background: #f59e0b;
+    }
+
+    .mockup-dot.g {
+      background: #22c55e;
+    }
+
+    .mockup-body {
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin-bottom: 24px;
+      gap: 12px;
     }
-    
-    .lp-mock-stat {
-      background: var(--bg-card);
+
+    .mockup-card {
+      background: var(--surface2);
       border: 1px solid var(--border);
-      padding: 16px;
       border-radius: 12px;
+      padding: 16px;
     }
-    
-    .lp-mock-stat-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+
+    .mockup-card-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-weight: 700;
-      margin-bottom: 8px;
+      color: var(--muted2);
+      margin-bottom: 6px;
     }
-    
-    .lp-mock-stat-val {
-      font-family: var(--font-mono, 'DM Mono', monospace);
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
+
+    .mockup-card-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
-    
-    .lp-mock-stat-chg {
-      font-size: 0.85rem;
-      color: var(--green, #059669);
-      font-weight: 600;
-      margin-top: 4px;
+
+    .mockup-card-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--green);
+      margin-top: 3px;
     }
-    
-    /* How It Works */
-    .lp-section {
-      padding: 80px 0;
+
+    .mockup-card-sub.neg {
+      color: var(--red);
     }
-    
-    .lp-section-label {
-      font-size: 0.85rem;
-      color: var(--accent, #d97757);
-      font-weight: 700;
+
+    .mockup-card-sub.neu {
+      color: var(--muted);
+    }
+
+    /* floating glow on mockup */
+    .mockup-glow {
+      position: absolute;
+      bottom: -80px;
+      right: -80px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(232, 255, 71, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ─── TICKER ────────────────────────────────────────── */
+    .ticker-section {
+      padding: 0 0 0 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ticker-track {
+      display: flex;
+      gap: 0;
+      animation: ticker 20s linear infinite;
+      width: max-content;
+    }
+
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-right: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .ticker-label {
+      color: var(--muted2);
+    }
+
+    .ticker-val {
+      color: var(--text);
+    }
+
+    .ticker-chg {
+      color: var(--green);
+    }
+
+    .ticker-chg.neg {
+      color: var(--red);
+    }
+
+    /* ─── SECTION COMMON ────────────────────────────────── */
+    section {
+      padding: clamp(64px, 10vw, 120px) clamp(16px, 4vw, 48px);
+    }
+
+    .section-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-    
-    [data-theme="dark"] .lp-section-label {
-      color: var(--accent, #3b82f6);
-    }
-    
-    .lp-section-title {
-      font-family: var(--font-display, 'Fraunces', serif);
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 300;
-      color: var(--text-primary);
-      text-align: center;
+      color: var(--accent);
+      display: block;
       margin-bottom: 16px;
     }
-    
-    .lp-section-desc {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      text-align: center;
-      max-width: 600px;
-      margin: 0 auto 48px;
-      line-height: 1.6;
+
+    .section-h2 {
+      font-family: 'Instrument Serif', serif;
+      font-weight: 400;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 16px;
     }
-    
-    .lp-steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
+
+    .section-h2 em {
+      font-style: italic;
+      color: var(--accent);
     }
-    
-    .lp-step-card {
-      background: var(--bg-card, #ffffff);
+
+    .section-sub {
+      font-size: clamp(13px, 1.5vw, 16px);
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* ─── ASSET CLASSES ─────────────────────────────────── */
+    .assets-section {
+      padding-top: clamp(40px, 6vw, 80px);
+      padding-bottom: clamp(40px, 6vw, 80px);
+    }
+
+    .assets-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .assets-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .asset-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      text-align: center;
+      padding: 10px 18px;
+      border-radius: 100px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: all 0.2s;
+      cursor: default;
+      flex-shrink: 0;
     }
-    
-    [data-theme="dark"] .lp-step-card {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
+
+    .asset-pill:hover {
+      border-color: var(--border2);
+      color: var(--text);
     }
-    
-    .lp-step-number {
-      width: 48px;
-      height: 48px;
-      background: var(--accent, #d97757);
-      color: #fff;
-      border-radius: 50%;
+
+    .asset-pill-icon {
+      font-size: 14px;
+    }
+
+    /* ─── HOW IT WORKS ──────────────────────────────────── */
+    .hiw-section {}
+
+    .hiw-header {
+      margin-bottom: clamp(40px, 6vw, 64px);
+    }
+
+    .hiw-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .step-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-3px);
+    }
+
+    .step-num {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 64px;
+      font-weight: 400;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.04);
+      position: absolute;
+      top: 12px;
+      right: 20px;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .step-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      color: #09090b;
+      margin-bottom: 20px;
+    }
+
+    .step-title {
+      font-family: 'Syne', sans-serif;
       font-weight: 700;
-      margin: 0 auto 16px;
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 10px;
     }
-    
-    [data-theme="dark"] .lp-step-number {
-      background: var(--accent, #3b82f6);
+
+    .step-desc {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
     }
-    
-    .lp-step-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
+
+    /* ─── FEATURES ──────────────────────────────────────── */
+    .features-section {}
+
+    .feat-header {
+      margin-bottom: clamp(40px, 6vw, 64px);
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 24px;
+      transition: border-color 0.3s, transform 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feat-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
+    }
+
+    .feat-card.wide {
+      grid-column: span 2;
+    }
+
+    .feat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .feat-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
       margin-bottom: 8px;
     }
-    
-    .lp-step-desc {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      line-height: 1.5;
+
+    .feat-desc {
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.65;
     }
-    
-    /* Features Grid */
-    .lp-features-grid {
+
+    .feat-card-accent {
+      background: linear-gradient(135deg, #0f1a0f 0%, var(--surface) 100%);
+      border-color: rgba(74, 222, 128, 0.15);
+    }
+
+    .feat-card-accent .feat-icon {
+      border-color: rgba(74, 222, 128, 0.2);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    /* ─── PRIVACY ───────────────────────────────────────── */
+    .privacy-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-header {
+      text-align: center;
+      margin-bottom: clamp(40px, 6vw, 64px);
+    }
+
+    .privacy-header .section-sub {
+      margin: 0 auto;
+    }
+
+    .privacy-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
-    
-    .lp-feature-card {
-      background: var(--bg-card, #ffffff);
+
+    .priv-card {
+      background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--r);
       padding: 24px;
       transition: border-color 0.3s, transform 0.3s;
     }
-    
-    [data-theme="dark"] .lp-feature-card {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
+
+    .priv-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-2px);
     }
-    
-    .lp-feature-card:hover {
-      border-color: var(--accent, #d97757);
-      transform: translateY(-4px);
+
+    .priv-icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+      display: block;
     }
-    
-    [data-theme="dark"] .lp-feature-card:hover {
-      border-color: var(--accent, #3b82f6);
-    }
-    
-    .lp-feature-icon {
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-    }
-    
-    .lp-feature-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-primary);
+
+    .priv-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
       margin-bottom: 8px;
     }
-    
-    .lp-feature-desc {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      line-height: 1.5;
+
+    .priv-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-family: 'Syne', sans-serif;
     }
-    
-    /* Asset Badges */
-    .lp-badges-wrapper {
-      width: 100%;
-      background: rgba(250, 249, 246, 0.6);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      padding: 32px 0;
-    }
-    
-    [data-theme="dark"] .lp-badges-wrapper {
-      background: rgba(17, 24, 39, 0.6);
-      border-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .lp-badges-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 16px;
-    }
-    
-    .lp-badge {
-      font-family: var(--font-display, 'Fraunces', serif);
-      font-size: 1rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border: 1px solid var(--border);
-      border-radius: 30px;
-      background: var(--bg-card);
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-    
-    .lp-badge:hover {
-      transform: translateY(-2px);
-      border-color: var(--accent, #d97757);
-    }
-    
-    [data-theme="dark"] .lp-badge:hover {
-      border-color: var(--accent, #3b82f6);
-    }
-    
-    /* Auth Box */
-    .lp-auth-box {
-      background: var(--bg-card, #ffffff);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 32px;
+
+    /* ─── SIGNUP ────────────────────────────────────────── */
+    .signup-section {}
+
+    .signup-inner {
       max-width: 480px;
       margin: 0 auto;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-    
-    [data-theme="dark"] .lp-auth-box {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
-    
-    .lp-auth-box h3 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 8px;
       text-align: center;
     }
-    
-    .lp-auth-box > p {
-      color: var(--text-muted);
+
+    .signup-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: clamp(28px, 5vw, 48px);
+      margin-top: 40px;
+      text-align: left;
+    }
+
+    .signup-card h3 {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text);
       text-align: center;
-      margin-bottom: 24px;
-      font-size: 0.95rem;
-    }
-    
-    .lp-form-group {
-      margin-bottom: 16px;
-    }
-    
-    .lp-form-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary, #666);
       margin-bottom: 6px;
     }
-    
-    [data-theme="dark"] .lp-form-label {
-      color: var(--text-secondary, #9ca3af);
+
+    .signup-card .sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted2);
+      text-align: center;
+      margin-bottom: 28px;
     }
-    
-    .lp-form-input {
+
+    .btn-google {
       width: 100%;
-      background: var(--bg-primary);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-family: inherit;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
-    }
-    
-    .lp-form-input:focus {
-      outline: none;
-      border-color: var(--accent, #d97757);
-    }
-    
-    [data-theme="dark"] .lp-form-input:focus {
-      border-color: var(--accent, #3b82f6);
-    }
-    
-    .lp-btn-submit {
-      width: 100%;
-      background: var(--accent, #d97757);
-      color: #fff;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
-      margin-top: 16px;
-    }
-    
-    [data-theme="dark"] .lp-btn-submit {
-      background: var(--accent, #3b82f6);
-    }
-    
-    .lp-btn-submit:hover {
-      transform: translateY(-2px);
-    }
-    
-    .lp-google-btn {
-      width: 100%;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      transition: transform 0.2s, background 0.2s;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 13px;
+      border-radius: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
     }
-    
-    .lp-google-btn:hover {
-      transform: translateY(-2px);
-      background: var(--bg-elevated, #faf9f6);
+
+    .btn-google:hover {
+      background: var(--surface3);
+      border-color: var(--border2);
     }
-    
-    [data-theme="dark"] .lp-google-btn:hover {
-      background: var(--bg-elevated, #1a2332);
-    }
-    
-    .lp-divider {
+
+    .divider {
       display: flex;
       align-items: center;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      margin-bottom: 24px;
+      gap: 12px;
+      margin: 20px 0;
     }
-    
-    .lp-divider::before, .lp-divider::after {
+
+    .divider::before,
+    .divider::after {
       content: '';
       flex: 1;
       height: 1px;
       background: var(--border);
     }
-    
-    .lp-divider span {
-      padding: 0 12px;
+
+    .divider span {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted2);
     }
-    
-    .lp-form-error, .lp-form-success {
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      margin-bottom: 16px;
-      display: none;
+
+    .form-group {
+      margin-bottom: 14px;
     }
-    
-    .lp-form-error {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.2);
+
+    .form-label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 7px;
     }
-    
-    .lp-form-success {
-      background: rgba(16, 185, 129, 0.1);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.2);
+
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      transition: border-color 0.2s;
+      outline: none;
     }
-    
-    .lp-toggle-text {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
+
+    .form-input::placeholder {
+      color: var(--muted2);
     }
-    
-    .lp-toggle-btn {
-      background: none;
+
+    .form-input:focus {
+      border-color: rgba(232, 255, 71, 0.4);
+    }
+
+    .btn-signup {
+      width: 100%;
+      background: var(--accent);
       border: none;
-      color: var(--accent, #d97757);
-      font-weight: 600;
+      color: #09090b;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
       cursor: pointer;
-      font-family: inherit;
-      font-size: inherit;
-      padding: 0;
+      transition: all 0.25s;
+      margin-top: 6px;
     }
-    
-    [data-theme="dark"] .lp-toggle-btn {
-      color: var(--accent, #3b82f6);
+
+    .btn-signup:hover {
+      background: #f0ff6a;
+      box-shadow: 0 8px 24px rgba(232, 255, 71, 0.25);
     }
-    
-    .lp-toggle-btn:hover {
+
+    .signin-link {
+      text-align: center;
+      margin-top: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted2);
+    }
+
+    .signin-link a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .signin-link a:hover {
       text-decoration: underline;
     }
-    
-    /* Footer */
-    .lp-footer {
+
+    /* ─── FOOTER ────────────────────────────────────────── */
+    footer {
+      background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 32px 0 24px;
-      background: var(--bg-card, #ffffff);
+      padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 48px) clamp(24px, 4vw, 40px);
     }
 
-    [data-theme="dark"] .lp-footer {
-      background: var(--bg-card, #111827);
-      border-color: var(--border, rgba(255, 255, 255, 0.1));
-    }
-
-    .lp-footer-grid {
+    .footer-inner {
+      max-width: var(--max);
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 32px;
-      margin-bottom: 24px;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 40px;
     }
 
-    .lp-footer-brand {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .lp-footer-logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-display, 'Fraunces', serif);
-      font-size: 1.4rem;
-      color: var(--text-primary);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .lp-footer-logo:hover {
-      color: var(--accent, #d97757);
-    }
-
-    [data-theme="dark"] .lp-footer-logo:hover {
-      color: var(--accent, #3b82f6);
-    }
-
-    .lp-footer-tagline {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
-      white-space: nowrap;
-    }
-
-    .lp-footer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .lp-footer-heading {
-      font-size: 0.85rem;
+    .footer-brand .logo {
+      font-family: 'Syne', sans-serif;
       font-weight: 700;
-      color: var(--text-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 4px;
-    }
-
-    .lp-footer-links-inline {
+      font-size: 15px;
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
 
-    .lp-footer-link {
-      color: var(--text-muted);
+    .footer-brand p {
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .footer-col h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 16px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-col ul li a {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      color: var(--muted);
       text-decoration: none;
-      font-size: 0.9rem;
       transition: color 0.2s;
     }
 
-    .lp-footer-link:hover {
-      color: var(--accent, #d97757);
+    .footer-col ul li a:hover {
+      color: var(--text);
     }
 
-    [data-theme="dark"] .lp-footer-link:hover {
-      color: var(--accent, #3b82f6);
-    }
-
-    .lp-footer-separator {
-      color: var(--text-muted);
-      opacity: 0.5;
-      font-size: 0.9rem;
-    }
-
-    .lp-footer-bottom {
+    .footer-bottom {
+      max-width: var(--max);
+      margin: 32px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
-    .lp-footer-bottom p {
-      color: var(--text-muted);
-      font-size: 0.85rem;
+    .footer-bottom p {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted2);
+      letter-spacing: 0.06em;
     }
 
-    .lp-footer-oss {
-      font-size: 0.8rem;
-      opacity: 0.7;
+    .footer-tags {
+      display: flex;
+      gap: 8px;
     }
-    
-    /* Desktop Responsive */
-    @media (min-width: 768px) {
-      .lp-hero {
-        min-height: 85vh;
+
+    .footer-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--muted2);
+    }
+
+    /* ─── ANIMATIONS ─────────────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
       }
-      
-      .lp-hero-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 48px;
-        align-items: center;
-      }
-      
-      .lp-hero h1 {
-        font-size: clamp(2.8rem, 4vw, 4rem);
-      }
-      
-      .lp-hero-sub {
-        max-width: 100%;
-      }
-      
-      .lp-hero-mockup {
-        animation: float 6s ease-in-out infinite;
-      }
-      
-      @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-12px); }
-      }
-      
-      .lp-badges-grid {
-        padding: 0 16px;
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
-    
-    /* Mobile Responsive */
-    @media (max-width: 767px) {
-      .lp-section-wrapper {
-        padding: 0 20px;
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
       }
-      
-      .lp-nav {
-        padding: 0 20px;
+
+      50% {
+        opacity: 0.4;
       }
-      
-      .lp-nav-links, .lp-nav-actions .lp-btn-cta {
+    }
+
+    @keyframes ticker {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .hero-mockup {
+      animation: fadeUp 0.6s 0.2s ease both, float 6s 1s ease-in-out infinite;
+    }
+
+    /* scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 {
+      transition-delay: 0.1s;
+    }
+
+    .reveal-delay-2 {
+      transition-delay: 0.2s;
+    }
+
+    .reveal-delay-3 {
+      transition-delay: 0.3s;
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+
+      .nav-links,
+      .btn-ghost {
         display: none;
       }
-      
-      .lp-nav-actions .lp-theme-toggle {
+
+      .nav-toggle {
         display: flex;
-      }
-      
-      .lp-hamburger {
-        display: flex;
-      }
-      
-      .lp-nav-links.open {
-        display: flex;
-        position: fixed;
-        top: 72px;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        background: var(--bg-card, #ffffff);
-        border-bottom: 1px solid var(--border);
-        padding: 24px;
-        gap: 16px;
-        z-index: 999;
-      }
-      
-      [data-theme="dark"] .lp-nav-links.open {
-        background: var(--bg-card, #111827);
-      }
-      
-      .lp-nav-link {
-        width: 100%;
-        text-align: center;
-        padding: 12px;
-      }
-      
-      .lp-hero-ctas {
-        flex-direction: column;
-      }
-      
-      .lp-hero-ctas a {
-        width: 100%;
-        text-align: center;
-      }
-      
-      .lp-mock-stats {
-        flex-direction: column;
-      }
-      
-      .lp-badges-grid {
-        padding: 0 20px;
       }
 
-      .lp-footer-grid {
+      .hero-inner {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 48px;
+        text-align: center;
       }
 
-      .lp-footer-bottom {
+      .hero-badge {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-sub {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-ctas {
+        justify-content: center;
+      }
+
+      .hero-trust {
+        justify-content: center;
+      }
+
+      .hero-mockup {
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      .hiw-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .feat-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .feat-card.wide {
+        grid-column: span 2;
+      }
+
+      .privacy-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .footer-brand {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .feat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feat-card.wide {
+        grid-column: span 1;
+      }
+
+      .privacy-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-brand {
+        grid-column: span 1;
+      }
+
+      .hiw-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-hero,
+      .btn-hero-ghost {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .hero-ctas {
         flex-direction: column;
-        gap: 8px;
-        text-align: center;
-      }
-
-      .lp-footer-brand {
-        align-items: center;
-        text-align: center;
-      }
-
-      .lp-footer-tagline {
-        max-width: 100%;
-        white-space: normal;
-      }
-
-      .lp-footer-links {
-        align-items: center;
       }
     }
   </style>
-  
-  <script>
-    (function () {
-      function applyTheme(theme) {
-        const isDark = theme === 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-        document.getElementById('theme-color-meta').setAttribute('content', isDark ? '#0a0f1e' : '#f5f4ef');
-        localStorage.setItem('theme', theme);
-      }
-      
-      function getInitialTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) return savedTheme;
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
-      
-      applyTheme(getInitialTheme());
-      
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem('theme')) {
-          applyTheme(e.matches ? 'dark' : 'light');
-        }
-      });
-      
-      window.toggleTheme = function() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
-      };
-    })();
-  </script>
 </head>
 
-<body class="lp-page">
+<body>
 
-  <!-- Navigation -->
-  <nav class="lp-nav" aria-label="Main navigation">
-    <div class="lp-nav-inner">
-      <a href="#" class="lp-nav-logo" data-scroll-to="hero" aria-label="Networth Tracker home">
-        <span aria-hidden="true">💰</span>
-        <span>Networth Tracker</span>
-      </a>
-      <div class="lp-nav-links" id="lp-nav-links">
-        <a href="#" class="lp-nav-link" data-scroll-to="features">Features</a>
-        <a href="#" class="lp-nav-link" data-scroll-to="how-it-works">How It Works</a>
-        <a href="#" class="lp-nav-link" data-scroll-to="security">Security</a>
-      </div>
-      <div class="lp-nav-actions">
-        <button class="lp-theme-toggle" id="lp-theme-toggle" aria-label="Toggle theme">
-          <svg class="lp-theme-icon lp-sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-          <svg class="lp-theme-icon lp-moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-          </svg>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo"><span>💰</span> Wealth OS</a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#security">Security</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="#signup" class="btn-ghost" data-mode="signin">Sign In</a>
+        <a href="#signup" class="btn-primary" data-mode="signup">Get Started Free</a>
+        <button class="nav-toggle" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
         </button>
-        <a href="#" class="lp-btn-cta" data-scroll-to="cta">Get Started Free</a>
       </div>
-      <button class="lp-hamburger" id="lp-hamburger" aria-label="Toggle menu" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
     </div>
   </nav>
 
-  <main>
-    <!-- Hero Section -->
-    <section id="hero" class="lp-section">
-      <div class="lp-section-wrapper lp-hero">
-        <div class="lp-hero-grid">
-          <div class="lp-hero-content">
-            <div class="lp-hero-chip">✨ Networth Tracker v2 is here</div>
-            <h1>Your entire financial life.<br><span class="hero-italic">One dashboard.</span></h1>
-            <p class="lp-hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your true net worth without checking five different apps.</p>
-            <div class="lp-hero-ctas">
-              <a href="#" class="lp-btn-cta" data-scroll-to="cta">Start Tracking Now</a>
-              <a href="#" class="lp-btn-secondary" data-scroll-to="features">Explore Features ↓</a>
-            </div>
+  <!-- MOBILE MENU -->
+  <div class="nav-mobile">
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#security">Security</a></li>
+    </ul>
+    <a href="#signup" class="btn-primary" data-mode="signup">Get Started Free</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-inner">
+      <div class="hero-content">
+        <div class="hero-badge"><span class="hero-badge-dot"></span> Wealth OS is here</div>
+        <h1 class="hero-h1">Your entire financial life.<br><em>One dashboard.</em></h1>
+        <p class="hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your
+          true net worth without checking five different apps.</p>
+        <div class="hero-ctas">
+          <a href="#signup" class="btn-hero">Start Tracking Now</a>
+          <a href="#features" class="btn-hero-ghost">Explore Features ↓</a>
+        </div>
+        <div class="hero-trust">
+          <span class="trust-dot"></span>
+          <span>Private • Secure • Your Data</span>
+          <span class="trust-dot"></span>
+        </div>
+      </div>
+      <div class="hero-mockup">
+        <div class="mockup-window">
+          <div class="mockup-bar">
+            <div class="mockup-dot r"></div>
+            <div class="mockup-dot y"></div>
+            <div class="mockup-dot g"></div>
           </div>
-          
-          <div class="lp-hero-mockup">
-            <div class="lp-mockup-header">
-              <div class="lp-mockup-dot r"></div>
-              <div class="lp-mockup-dot y"></div>
-              <div class="lp-mockup-dot g"></div>
+          <div class="mockup-body">
+            <div class="mockup-card">
+              <div class="mockup-card-label">Net Worth</div>
+              <div class="mockup-card-val">₹48.4L</div>
+              <div class="mockup-card-sub">↑ +8.4% vs last month</div>
             </div>
-            <div class="lp-mockup-body">
-              <div class="lp-mock-stats">
-                <div class="lp-mock-stat">
-                  <div class="lp-mock-stat-label">Net Worth</div>
-                  <div class="lp-mock-stat-val" data-count="48472350">₹0</div>
-                  <div class="lp-mock-stat-chg">↑ +8.4% vs last month</div>
-                </div>
-                <div class="lp-mock-stat">
-                  <div class="lp-mock-stat-label">Mutual Funds P&L</div>
-                  <div class="lp-mock-stat-val" data-count="31245800">₹0</div>
-                  <div class="lp-mock-stat-chg">▲ +21.3% XIRR</div>
-                </div>
-                <div class="lp-mock-stat">
-                  <div class="lp-mock-stat-label">EPF + PPF</div>
-                  <div class="lp-mock-stat-val" data-count="8942600">₹0</div>
-                  <div class="lp-mock-stat-chg">→ Stable growth</div>
-                </div>
-              </div>
+            <div class="mockup-card">
+              <div class="mockup-card-label">Mutual Funds P&L</div>
+              <div class="mockup-card-val">₹31.2L</div>
+              <div class="mockup-card-sub">▲ +21.3% XIRR</div>
+            </div>
+            <div class="mockup-card">
+              <div class="mockup-card-label">EPF + PPF</div>
+              <div class="mockup-card-val">₹8.9L</div>
+              <div class="mockup-card-sub neu">→ Stable growth</div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Asset Badges -->
-    <div class="lp-badges-wrapper">
-      <div class="lp-badges-grid">
-        <div class="lp-badge"><span>🏦</span> Savings Accounts</div>
-        <div class="lp-badge"><span>🐷</span> Fixed Deposits</div>
-        <div class="lp-badge"><span>📜</span> Mutual Funds</div>
-        <div class="lp-badge"><span>📈</span> Stocks & ETFs</div>
-        <div class="lp-badge"><span>🪙</span> Cryptocurrency</div>
-        <div class="lp-badge"><span>💼</span> EPF & PPF</div>
-        <div class="lp-badge"><span>💳</span> Credit Cards</div>
+        <div class="mockup-glow"></div>
       </div>
     </div>
+  </section>
 
-    <!-- How It Works -->
-    <section id="how-it-works" class="lp-section">
-      <div class="lp-section-wrapper">
-        <div class="lp-section-label">How It Works</div>
-        <h2 class="lp-section-title">Get started in 3 simple steps</h2>
-        <p class="lp-section-desc">Set up your private financial dashboard in minutes. No credit card required.</p>
-        
-        <div class="lp-steps-grid">
-          <div class="lp-step-card">
-            <div class="lp-step-number">1</div>
-            <h3 class="lp-step-title">Create Your Account</h3>
-            <p class="lp-step-desc">Sign up with Google or email. Your data is stored in your own private Supabase instance.</p>
-          </div>
-          <div class="lp-step-card">
-            <div class="lp-step-number">2</div>
-            <h3 class="lp-step-title">Add Your Holdings</h3>
-            <p class="lp-step-desc">Import your investments or add them manually. We support mutual funds, stocks, crypto, and more.</p>
-          </div>
-          <div class="lp-step-card">
-            <div class="lp-step-number">3</div>
-            <h3 class="lp-step-title">Track & Grow</h3>
-            <p class="lp-step-desc">View your net worth, track performance, and get insights to grow your wealth.</p>
-          </div>
+  <!-- TICKER -->
+  <div class="ticker-section">
+    <div class="ticker-track">
+      <div class="ticker-item"><span class="ticker-label">Nifty 50</span><span class="ticker-val">24,328.50</span><span
+          class="ticker-chg">▲ +0.42%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Sensex</span><span class="ticker-val">80,242.24</span><span
+          class="ticker-chg">▲ +0.38%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Bitcoin</span><span class="ticker-val">₹84,22,400</span><span
+          class="ticker-chg neg">▼ −1.24%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Gold ETF</span><span class="ticker-val">₹7,842</span><span
+          class="ticker-chg">▲ +0.18%</span></div>
+      <div class="ticker-item"><span class="ticker-label">USD/INR</span><span class="ticker-val">₹83.94</span><span
+          class="ticker-chg neg">▼ −0.06%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Nifty Bank</span><span
+          class="ticker-val">52,140.80</span><span class="ticker-chg">▲ +0.61%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Ethereum</span><span class="ticker-val">₹2,28,650</span><span
+          class="ticker-chg">▲ +0.93%</span></div>
+      <!-- duplicate for seamless loop -->
+      <div class="ticker-item"><span class="ticker-label">Nifty 50</span><span class="ticker-val">24,328.50</span><span
+          class="ticker-chg">▲ +0.42%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Sensex</span><span class="ticker-val">80,242.24</span><span
+          class="ticker-chg">▲ +0.38%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Bitcoin</span><span class="ticker-val">₹84,22,400</span><span
+          class="ticker-chg neg">▼ −1.24%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Gold ETF</span><span class="ticker-val">₹7,842</span><span
+          class="ticker-chg">▲ +0.18%</span></div>
+      <div class="ticker-item"><span class="ticker-label">USD/INR</span><span class="ticker-val">₹83.94</span><span
+          class="ticker-chg neg">▼ −0.06%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Nifty Bank</span><span
+          class="ticker-val">52,140.80</span><span class="ticker-chg">▲ +0.61%</span></div>
+      <div class="ticker-item"><span class="ticker-label">Ethereum</span><span class="ticker-val">₹2,28,650</span><span
+          class="ticker-chg">▲ +0.93%</span></div>
+    </div>
+  </div>
+
+  <!-- ASSET CLASSES -->
+  <section class="assets-section">
+    <div class="section-inner">
+      <span class="eyebrow">Track Everything</span>
+      <div class="assets-scroll">
+        <div class="asset-pill"><span class="asset-pill-icon">🏦</span> Savings Accounts</div>
+        <div class="asset-pill"><span class="asset-pill-icon">📈</span> Fixed Deposits</div>
+        <div class="asset-pill"><span class="asset-pill-icon">💼</span> Mutual Funds</div>
+        <div class="asset-pill"><span class="asset-pill-icon">📊</span> Stocks</div>
+        <div class="asset-pill"><span class="asset-pill-icon">🪙</span> Crypto</div>
+        <div class="asset-pill"><span class="asset-pill-icon">🏠</span> EPF & PPF</div>
+        <div class="asset-pill"><span class="asset-pill-icon">💎</span> Gold ETFs</div>
+        <div class="asset-pill"><span class="asset-pill-icon">🏢</span> ESOPs</div>
+        <div class="asset-pill"><span class="asset-pill-icon">🎯</span> NPS</div>
+        <div class="asset-pill"><span class="asset-pill-icon">💵</span> Cash</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="hiw-section" id="how-it-works">
+    <div class="section-inner">
+      <div class="hiw-header">
+        <span class="eyebrow">How It Works</span>
+        <h2 class="section-h2">Get started in <em>minutes</em></h2>
+        <p class="section-sub">No complex setup. Just connect your data and start tracking.</p>
+      </div>
+      <div class="hiw-grid">
+        <div class="step-card">
+          <span class="step-num">1</span>
+          <div class="step-badge">1</div>
+          <h3 class="step-title">Connect your Supabase</h3>
+          <p class="step-desc">Create a free Supabase project and add your credentials. Your data stays in your own
+            database.</p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">2</span>
+          <div class="step-badge">2</div>
+          <h3 class="step-title">Add your holdings</h3>
+          <p class="step-desc">Manually enter your investments or import from brokers. We support all major asset
+            classes.</p>
+        </div>
+        <div class="step-card">
+          <span class="step-num">3</span>
+          <div class="step-badge">3</div>
+          <h3 class="step-title">Track in real-time</h3>
+          <p class="step-desc">Live prices, automated P&L calculations, and beautiful charts. All in one dashboard.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Features -->
-    <section id="features" class="lp-section">
-      <div class="lp-section-wrapper">
-        <div class="lp-section-label">Features</div>
-        <h2 class="lp-section-title">Everything you need</h2>
-        <p class="lp-section-desc">Powerful tools for serious wealth building.</p>
-        
-        <div class="lp-features-grid">
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">⚡</div>
-            <h3 class="lp-feature-title">Live Price Refresh</h3>
-            <p class="lp-feature-desc">Mutual fund NAV from mfapi.in, stock prices from Yahoo Finance, and crypto from CoinGecko.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">📊</div>
-            <h3 class="lp-feature-title">Net Worth History</h3>
-            <p class="lp-feature-desc">Automatic daily snapshots build a timeline chart of your wealth trajectory.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">💳</div>
-            <h3 class="lp-feature-title">Credit Card Intelligence</h3>
-            <p class="lp-feature-desc">Track utilization across all cards. Get warned before you hit 30% to protect your CIBIL score.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🧭</div>
-            <h3 class="lp-feature-title">Smart Financial Advisor</h3>
-            <p class="lp-feature-desc">Built-in tools to track cash flow, set investment goals, and analyze portfolio drift.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">📤</div>
-            <h3 class="lp-feature-title">Excel Export</h3>
-            <p class="lp-feature-desc">Download your entire financial history across all sheets into a clean .xlsx file anytime.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🔒</div>
-            <h3 class="lp-feature-title">Row-Level Security</h3>
-            <p class="lp-feature-desc">Your financial records are strictly isolated. Only your authenticated session can access your data.</p>
-          </div>
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="section-inner">
+      <div class="feat-header">
+        <span class="eyebrow">Features</span>
+        <h2 class="section-h2">Everything you need to <em>manage wealth</em></h2>
+        <p class="section-sub">Powerful tools designed for Indian investors.</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon">📊</div>
+          <h3 class="feat-title">Net Worth Dashboard</h3>
+          <p class="feat-desc">See your complete financial picture at a glance with beautiful charts and real-time
+            updates.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📈</div>
+          <h3 class="feat-title">Live Prices</h3>
+          <p class="feat-desc">Real-time stock, mutual fund, and crypto prices from trusted sources.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🎯</div>
+          <h3 class="feat-title">XIRR Tracking</h3>
+          <p class="feat-desc">Calculate accurate returns on your SIPs and lumpsum investments.</p>
+        </div>
+        <div class="feat-card wide feat-card-accent">
+          <div class="feat-icon">🔒</div>
+          <h3 class="feat-title">100% Private</h3>
+          <p class="feat-desc">Your data never leaves your Supabase. No analytics, no tracking, no data selling.
+            Complete privacy by design.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📱</div>
+          <h3 class="feat-title">Responsive Design</h3>
+          <p class="feat-desc">Works perfectly on desktop, tablet, and mobile. Track anywhere.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">⚡</div>
+          <h3 class="feat-title">Fast & Lightweight</h3>
+          <p class="feat-desc">Built for speed. No bloat, no unnecessary features. Just what you need.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Privacy & Security -->
-    <section id="security" class="lp-section">
-      <div class="lp-section-wrapper">
-        <div class="lp-section-label">Privacy</div>
-        <h2 class="lp-section-title">Your data is yours. Period.</h2>
-        <p class="lp-section-desc">We don't sell your data. We don't read your data. Everything is isolated in your own private Supabase instance with Row-Level Security.</p>
-        
-        <div class="lp-features-grid">
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🚫</div>
-            <h3 class="lp-feature-title">No Third-Party Sharing</h3>
-            <p class="lp-feature-desc">We never sell, rent, or share your data with third parties. Your financial information stays strictly private.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🔒</div>
-            <h3 class="lp-feature-title">Row-Level Security</h3>
-            <p class="lp-feature-desc">Cryptographic rules at the database level guarantee that only your authenticated session can access your data.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">📤</div>
-            <h3 class="lp-feature-title">One-Click Excel Export</h3>
-            <p class="lp-feature-desc">No vendor lock-in. Download your entire financial history across all 8 sheets anytime.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🗑️</div>
-            <h3 class="lp-feature-title">Complete Data Deletion</h3>
-            <p class="lp-feature-desc">Delete your entire account and all associated data with a single click. No data is kept after deletion.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">🛡️</div>
-            <h3 class="lp-feature-title">Encrypted Data at Rest</h3>
-            <p class="lp-feature-desc">All your financial data is encrypted when stored, ensuring it remains secure even in storage.</p>
-          </div>
-          <div class="lp-feature-card">
-            <div class="lp-feature-icon">📊</div>
-            <h3 class="lp-feature-title">No Analytics Tracking</h3>
-            <p class="lp-feature-desc">We don't track user behavior or use analytics. Your usage data stays private.</p>
-          </div>
+  <!-- PRIVACY / SECURITY -->
+  <section class="privacy-section" id="security">
+    <div class="section-inner">
+      <div class="privacy-header">
+        <span class="eyebrow">Security</span>
+        <h2 class="section-h2">Your data is <em>yours alone</em></h2>
+        <p class="section-sub">We don't store your data. We don't sell it. It stays in your Supabase.</p>
+      </div>
+      <div class="privacy-grid">
+        <div class="priv-card">
+          <span class="priv-icon">🔐</span>
+          <h3 class="priv-title">Client-Side Encryption</h3>
+          <p class="priv-desc">All sensitive data is encrypted before it leaves your browser.</p>
+        </div>
+        <div class="priv-card">
+          <span class="priv-icon">🗄️</span>
+          <h3 class="priv-title">Your Own Database</h3>
+          <p class="priv-desc">Connect to your own Supabase project. We never see your data.</p>
+        </div>
+        <div class="priv-card">
+          <span class="priv-icon">🚫</span>
+          <h3 class="priv-title">No Tracking</h3>
+          <p class="priv-desc">Zero analytics. No cookies. No third-party scripts.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Auth Section -->
-    <section id="cta" class="lp-section">
-      <div class="lp-section-wrapper">
-        <div class="lp-auth-box">
-          <h3>Start tracking today</h3>
-          <p>Join for free. No credit card required.</p>
-          
-          <div class="lp-form-error" id="lp-form-error" role="alert"></div>
-          <div class="lp-form-success" id="lp-form-success" role="status"></div>
-          
-          <button type="button" class="lp-google-btn" id="lp-google-btn">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853" />
-              <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05" />
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335" />
-            </svg>
-            <span>Continue with Google</span>
-          </button>
-          
-          <div class="lp-divider"><span>or continue with email</span></div>
-          
-          <form id="lp-auth-form" novalidate autocomplete="on">
-            <div class="lp-form-group" id="lp-name-group" style="display:none;">
-              <label class="lp-form-label" for="lp-name">Your Name</label>
-              <input type="text" id="lp-name" class="lp-form-input" placeholder="e.g. Rahul Sharma" autocomplete="name">
-            </div>
-            <div class="lp-form-group">
-              <label class="lp-form-label" for="lp-email">Email Address</label>
-              <input type="email" id="lp-email" class="lp-form-input" placeholder="you@example.com" required autocomplete="email">
-            </div>
-            <div class="lp-form-group">
-              <label class="lp-form-label" for="lp-password">Password</label>
-              <input type="password" id="lp-password" class="lp-form-input" placeholder="At least 6 characters" required autocomplete="new-password" minlength="6">
-            </div>
-            <button type="submit" class="lp-btn-submit" id="lp-form-submit">Sign Up Free</button>
-          </form>
-          
-          <div class="lp-toggle-text">
-            <span id="lp-form-toggle-text">Already have an account? </span>
-            <button type="button" class="lp-toggle-btn" id="lp-form-toggle-btn">Sign In</button>
+  <!-- SIGNUP -->
+  <section class="signup-section" id="signup">
+    <div class="section-inner signup-inner">
+      <span class="eyebrow">Get Started</span>
+      <h2 class="section-h2">Start tracking <em>today</em></h2>
+      <p class="section-sub">Free forever. No credit card required.</p>
+      <div class="signup-card">
+        <h3 id="form-title">Create your account</h3>
+        <p class="sub" id="form-sub">Join Wealth OS in seconds</p>
+        <a href="#" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853"/>
+            <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </a>
+        <div class="divider"><span>OR</span></div>
+        <form id="auth-form">
+          <div class="form-group" id="name-group" style="display: none;">
+            <label class="form-label">Name</label>
+            <input type="text" id="name-input" class="form-input" placeholder="Your full name">
           </div>
-        </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="email-input" class="form-input" placeholder="you@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="password-input" class="form-input" placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn-signup" id="submit-btn">Create Account</button>
+        </form>
+        <p class="signin-link"><span id="toggle-text">Already have an account? </span><a href="#" id="toggle-link">Sign In</a></p>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <footer class="lp-footer">
-    <div class="lp-section-wrapper">
-      <div class="lp-footer-grid">
-        <div class="lp-footer-brand">
-          <a href="#" class="lp-footer-logo" data-scroll-to="hero">
-            <span aria-hidden="true">💰</span> Networth Tracker
-          </a>
-          <p class="lp-footer-tagline">Your entire financial life. One dashboard.</p>
-        </div>
-
-        <div class="lp-footer-links">
-          <h4 class="lp-footer-heading">Product</h4>
-          <div class="lp-footer-links-inline">
-            <a href="#" class="lp-footer-link" data-scroll-to="features">Features</a>
-            <span class="lp-footer-separator">|</span>
-            <a href="#" class="lp-footer-link" data-scroll-to="how-it-works">How It Works</a>
-            <span class="lp-footer-separator">|</span>
-            <a href="#" class="lp-footer-link" data-scroll-to="security">Security</a>
-          </div>
-        </div>
-
-        <div class="lp-footer-links">
-          <h4 class="lp-footer-heading">Resources</h4>
-          <div class="lp-footer-links-inline">
-            <span class="lp-footer-link" style="opacity: 0.5; cursor: not-allowed;">Documentation (Coming Soon)</span>
-            <span class="lp-footer-separator">|</span>
-            <a href="mailto:vignesh.dev.code@gmail.com" class="lp-footer-link">Report Issue</a>
-          </div>
-        </div>
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo"><span>💰</span> Wealth OS</div>
+        <p>Your entire financial life. One dashboard. Private, secure, and completely yours.</p>
       </div>
-
-      <div class="lp-footer-bottom">
-        <p>© 2026 Networth Tracker. Built for serious investors.</p>
-        <p class="lp-footer-oss">Open source (PLANNED) • Private • Secure</p>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#signup">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">Changelog</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Wealth OS. All rights reserved.</p>
+      <div class="footer-tags">
+        <span class="footer-tag">Open Source</span>
+        <span class="footer-tag">Privacy First</span>
+        <span class="footer-tag">Made in India</span>
       </div>
     </div>
   </footer>
 
-  <!-- Supabase Auth Script -->
-  <script type="module">
-    import { createClient } from '@supabase/supabase-js';
-    const _url = import.meta.env.VITE_SUPABASE_URL || '';
-    const _key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-    const _configured = Boolean(_url && _key);
-    const _sb = _configured
-      ? createClient(_url, _key)
-      : createClient('https://placeholder.supabase.co', 'placeholder');
-
-    if (_configured) {
-      _sb.auth.getSession().then(({ data: { session } }) => {
-        if (session) window.location.replace('./');
-      }).catch(() => { });
-
-      _sb.auth.onAuthStateChange((_ev, session) => {
-        if (session) window.location.replace('./');
-      });
-    }
-
-    let _isSignUp = true;
-    const _form = document.getElementById('lp-auth-form');
-    const _emailEl = document.getElementById('lp-email');
-    const _pwEl = document.getElementById('lp-password');
-    const _nameEl = document.getElementById('lp-name');
-    const _nameGroup = document.getElementById('lp-name-group');
-    const _submitBtn = document.getElementById('lp-form-submit');
-    const _errorEl = document.getElementById('lp-form-error');
-    const _successEl = document.getElementById('lp-form-success');
-    const _toggleBtn = document.getElementById('lp-form-toggle-btn');
-    const _toggleText = document.getElementById('lp-form-toggle-text');
-    const _googleBtn = document.getElementById('lp-google-btn');
-
-    // Initialize form in sign-up mode to show username field
-    _setSignUpMode(true);
-
-    function _showError(msg) {
-      _errorEl.textContent = msg;
-      _errorEl.style.display = 'block';
-      _successEl.style.display = 'none';
-    }
-
-    function _showSuccess(msg) {
-      _successEl.textContent = msg;
-      _successEl.style.display = 'block';
-      _errorEl.style.display = 'none';
-    }
-
-    function _clearMessages() {
-      _errorEl.style.display = 'none';
-      _successEl.style.display = 'none';
-    }
-
-    function _setSignUpMode(signUp) {
-      _isSignUp = signUp;
-      _clearMessages();
-      if (_isSignUp) {
-        _submitBtn.textContent = 'Sign Up Free';
-        _toggleText.textContent = 'Already have an account? ';
-        _toggleBtn.textContent = 'Sign In';
-        _nameGroup.style.display = 'block';
-        _nameEl.required = true;
-        _pwEl.setAttribute('autocomplete', 'new-password');
-      } else {
-        _submitBtn.textContent = 'Sign In';
-        _toggleText.textContent = "Don't have an account? ";
-        _toggleBtn.textContent = 'Sign Up Free';
-        _nameGroup.style.display = 'none';
-        _nameEl.required = false;
-        _pwEl.setAttribute('autocomplete', 'current-password');
-      }
-    }
-
-    _toggleBtn.addEventListener('click', () => _setSignUpMode(!_isSignUp));
-
-    _googleBtn.addEventListener('click', async () => {
-      _clearMessages();
-      if (!_configured) {
-        _showError('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-        return;
-      }
-      _googleBtn.disabled = true;
-      _googleBtn.innerHTML = '<span>Signing in...</span>';
-      try {
-        const baseUrl = window.location.href.split('landing.html')[0];
-        const { error } = await _sb.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: baseUrl }
-        });
-        if (error) throw error;
-      } catch (err) {
-        _showError(err.message || 'Google Sign-In failed.');
-        _googleBtn.disabled = false;
-        _googleBtn.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853" />
-            <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05" />
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.416 0 2.166 2.243.688 5.265L3.8 7.595A5.968 5.968 0 0 1 9 3.58z" fill="#EA4335" />
-          </svg>
-          <span>Continue with Google</span>`;
-      }
-    });
-
-    _form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      _clearMessages();
-
-      const email = _emailEl.value.trim();
-      const password = _pwEl.value;
-      const name = _nameEl.value.trim();
-
-      if (!email || !password) { _showError('Please fill out all required fields.'); return; }
-      if (_isSignUp && !name) { _showError('Please enter your name.'); return; }
-
-      if (!_configured) {
-        _showError('Supabase is not configured.');
-        return;
-      }
-
-      _submitBtn.disabled = true;
-      _submitBtn.textContent = _isSignUp ? 'Creating account...' : 'Signing in...';
-
-      try {
-        if (_isSignUp) {
-          const { data, error } = await _sb.auth.signUp({
-            email, password, options: { data: { username: name } }
-          });
-          if (error) throw error;
-          if (data.session) window.location.replace('./');
-          else {
-            _showSuccess('Account created! Check your email to confirm.');
-            _setSignUpMode(false);
-          }
-        } else {
-          const { error } = await _sb.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-        }
-      } catch (err) {
-        _showError(err.message || 'Authentication failed.');
-      } finally {
-        _submitBtn.disabled = false;
-        _submitBtn.textContent = _isSignUp ? 'Sign Up Free' : 'Sign In';
-      }
-    });
-  </script>
-
-  <!-- Hamburger Menu Toggle -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Disable right-click
-      document.addEventListener('contextmenu', (e) => {
+    // NAV SCROLL EFFECT
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // MOBILE MENU TOGGLE
+    const navToggle = document.querySelector('.nav-toggle');
+    const navMobile = document.querySelector('.nav-mobile');
+    let menuOpen = false;
+
+    navToggle.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      navMobile.classList.toggle('open', menuOpen);
+      navToggle.setAttribute('aria-expanded', menuOpen);
+    });
+
+    // Close mobile menu when clicking a link
+    navMobile.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        menuOpen = false;
+        navMobile.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', false);
+      });
+    });
+
+    // SCROLL REVEAL
+    const revealElements = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // SMOOTH SCROLL
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
         e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
+    });
 
-      const hamburger = document.getElementById('lp-hamburger');
-      const navLinks = document.getElementById('lp-nav-links');
-      const themeToggle = document.getElementById('lp-theme-toggle');
-      
-      if (hamburger && navLinks) {
-        hamburger.addEventListener('click', () => {
-          const isOpen = navLinks.classList.toggle('open');
-          hamburger.setAttribute('aria-expanded', isOpen);
-        });
+    // AUTH FORM MODE SWITCHING
+    const formTitle = document.getElementById('form-title');
+    const formSub = document.getElementById('form-sub');
+    const nameGroup = document.getElementById('name-group');
+    const nameInput = document.getElementById('name-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleLink = document.getElementById('toggle-link');
+    const authForm = document.getElementById('auth-form');
 
-        navLinks.querySelectorAll('a').forEach(link => {
-          link.addEventListener('click', () => {
-            navLinks.classList.remove('open');
-            hamburger.setAttribute('aria-expanded', 'false');
-          });
-        });
+    let isSignUpMode = true;
 
-        document.addEventListener('click', (e) => {
-          if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
-            navLinks.classList.remove('open');
-            hamburger.setAttribute('aria-expanded', 'false');
-          }
-        });
+    function setFormMode(signUp) {
+      isSignUpMode = signUp;
+      if (signUp) {
+        // Signup mode
+        formTitle.textContent = 'Create your account';
+        formSub.textContent = 'Join Wealth OS in seconds';
+        nameGroup.style.display = 'block';
+        nameInput.required = true;
+        submitBtn.textContent = 'Create Account';
+        toggleText.textContent = 'Already have an account? ';
+        toggleLink.textContent = 'Sign In';
+      } else {
+        // Signin mode
+        formTitle.textContent = 'Welcome back';
+        formSub.textContent = 'Sign in to your account';
+        nameGroup.style.display = 'none';
+        nameInput.required = false;
+        submitBtn.textContent = 'Sign In';
+        toggleText.textContent = "Don't have an account? ";
+        toggleLink.textContent = 'Get Started Free';
       }
-      
-      if (themeToggle && window.toggleTheme) {
-        themeToggle.addEventListener('click', () => {
-          window.toggleTheme();
-        });
+    }
+
+    // Toggle link click handler
+    toggleLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      setFormMode(!isSignUpMode);
+    });
+
+    // Handle data-mode attributes on navigation links
+    document.querySelectorAll('[data-mode]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const mode = link.getAttribute('data-mode');
+        if (mode === 'signup') {
+          setFormMode(true);
+        } else if (mode === 'signin') {
+          setFormMode(false);
+        }
+      });
+    });
+
+    // Form submission handler
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email-input').value;
+      const password = document.getElementById('password-input').value;
+      const name = nameInput.value;
+
+      if (isSignUpMode) {
+        if (!email || !password || !name) {
+          alert('Please fill in all fields');
+          return;
+        }
+      } else {
+        if (!email || !password) {
+          alert('Please fill in email and password');
+          return;
+        }
       }
-      
-      // Smooth scroll handlers
-      document.querySelectorAll('[data-scroll-to]').forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetId = link.getAttribute('data-scroll-to');
-          const targetSection = document.getElementById(targetId);
-          if (targetSection) {
-            targetSection.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
-      });
-      
-      // Count-up animation for mock dashboard numbers
-      const countUpElements = document.querySelectorAll('.lp-mock-stat-val[data-count]');
-      
-      const animateCountUp = (element, targetValue) => {
-        const duration = 1800;
-        const startTime = performance.now();
-        
-        const updateCount = (currentTime) => {
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-          const currentValue = Math.floor(easeOut * targetValue);
-          
-          element.textContent = '₹' + currentValue.toLocaleString('en-IN');
-          
-          if (progress < 1) {
-            requestAnimationFrame(updateCount);
-          }
-        };
-        
-        requestAnimationFrame(updateCount);
-      };
-      
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const targetValue = parseInt(entry.target.getAttribute('data-count'));
-            animateCountUp(entry.target, targetValue);
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.5 });
-      
-      countUpElements.forEach(element => {
-        observer.observe(element);
-      });
     });
   </script>
 </body>

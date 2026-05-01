@@ -61,15 +61,15 @@ function buildPageShell() {
     return `
         <div class="mft">
             <div class="section-header">
-                <h2 class="page-title">Mutual Funds</h2>
+                <div>
+                    <p class="page-eyebrow">WEALTH OS · MUTUAL FUNDS</p>
+                    <h1 class="page-title">Mutual Funds</h1>
+                </div>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('mutualFunds')">+ Add Fund</button>
             </div>
             <div class="mft-tab-bar" id="mft-tab-bar">
-                <button class="mft-tab ${_activeTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">
-                    📊 Portfolio
-                </button>
-                <button class="mft-tab ${_activeTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">
-                    📋 Order History
-                </button>
+                <button class="mft-tab ${_activeTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">Portfolio</button>
+                <button class="mft-tab ${_activeTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">Order History</button>
                 <!-- <button class="mft-tab ${_activeTab === 'sip' ? 'active' : ''}" data-tab="sip">
                     📅 SIP Tracker
                 </button> -->
@@ -81,6 +81,7 @@ function buildPageShell() {
                 </button> -->
             </div>
             <div id="mft-tab-content"></div>
+            <button class="fab-add" onclick="window.app.showAddForm('mutualFunds')" title="Add Fund">+</button>
         </div>`;
 }
 
@@ -210,15 +211,12 @@ async function renderPortfolioTab(container, portfolioId) {
         });
 
         content.innerHTML = `
-            <div class="section-header" style="margin-top:20px;">
+            <div class="section-header">
                 <div style="display:flex;gap:8px;align-items:center;">
                     ${closedCount > 0 ? `
                     <button class="btn btn-ghost btn-sm" id="mf-toggle-closed">
                         ${_mfShowClosed ? '📁 Hide Closed' : '📂 Show Closed'} (${closedCount})
                     </button>` : ''}
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-primary" onclick="window.app.showAddForm('mutualFunds')">+ Add Fund</button>
                 </div>
             </div>
             <div class="stat-grid">
@@ -254,6 +252,31 @@ async function renderPortfolioTab(container, portfolioId) {
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
+            </div>
+            <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
+                ${funds.map(item => {
+            const invested = item._invested;
+            const current = parseFloat(item.current) || 0;
+            const pl = current - invested;
+            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+            const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
+            const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
+            const xirrClass = xirr !== null ? (parseFloat(xirr.value) >= 0 ? 'color:var(--green)' : 'color:var(--red)') : '';
+            const plClass = pl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+            const fundName = item.fund_name.length > 30 ? item.fund_name.substring(0, 30) + '...' : item.fund_name;
+            return `
+                        <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-fund-id="${item.id}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.fund_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(current)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${fundName}</span>
+                                <span style="font-family:var(--font-mono);font-size:11px;${xirrClass};font-weight:500;">${xirrValue}</span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
             </div>` : '<p class="empty-state">No mutual funds added yet.</p>'}
         `;
 
@@ -276,6 +299,65 @@ async function renderPortfolioTab(container, portfolioId) {
                 renderOrderHistoryTab(tabContent, portfolioId, 'mutualFunds');
             });
         });
+
+        // Mobile list tap handlers
+        content.querySelectorAll('[data-fund-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const fundId = row.dataset.fundId;
+                const fund = funds.find(f => f.id === fundId);
+                if (!fund) return;
+                const invested = fund._invested;
+                const current = parseFloat(fund.current) || 0;
+                const pl = current - invested;
+                const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+                const xirr = FinanceUtils.xirrFromHolding(invested, current, fund._firstOrderDate || fund.created_at);
+                const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
+                const fields = {
+                    'Fund Name': fund.fund_name,
+                    'Type': fund.fund_type || 'Equity',
+                    'Units': fund._units.toFixed(4),
+                    'Invested': Utilities.formatCurrency(invested),
+                    'Current Value': Utilities.formatCurrency(current),
+                    'P/L': `${Utilities.formatCurrency(pl)} (${plPct}%)`,
+                    'XIRR': xirrValue,
+                };
+                const actions = [
+                    {
+                        label: 'Edit',
+                        onClick: () => {
+                            window.app.editEntry('mutualFunds', fundId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: () => {
+                            window.app.deleteEntry('mutualFunds', fundId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    }
+                ];
+                Utilities.openBottomSheet(fields, actions);
+            });
+        });
+
+        // Add mobile CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+            }
+        `;
+        content.appendChild(mobileStyle);
     } catch {
         content.innerHTML = '<div class="error-state"><p>Failed to load mutual funds.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
     }
@@ -474,7 +556,7 @@ async function _renderSIPTab(container, portfolioId) {
         }).join('');
 
         content.innerHTML = `
-            <div class="stat-grid" style="margin-top:20px;">
+            <div class="stat-grid">
                 <div class="stat-card">
                     <h3>Monthly SIP Outflow</h3>
                     <p class="stat-value mono">${Utilities.formatCurrency(monthlyTotal)}</p>
@@ -581,7 +663,7 @@ async function _renderFundResearchTab(container) {
 // ─── Tracker Shell HTML ───────────────────────────────────
 function buildTrackerShell() {
     return `
-        <div style="margin-top:20px;">
+        <div>
             <div class="section-header">
                 <div></div>
                 <div style="display:flex; gap:10px;">

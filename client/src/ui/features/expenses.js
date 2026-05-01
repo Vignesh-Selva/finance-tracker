@@ -37,15 +37,16 @@ export async function renderExpenses(portfolioId) {
         <div class="section-header" style="margin-bottom:0;">
             <h2>Expenses & Income</h2>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="window.app.showAddForm('transactions')">+ Transaction</button>
-                <button class="btn btn-ghost" onclick="window._showAddRecurring()">+ Recurring</button>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('transactions')">+ Transaction</button>
+                <button class="btn btn-ghost btn-add-desktop" onclick="window._showAddRecurring()">+ Recurring</button>
             </div>
         </div>
         <div class="mft-tab-bar" style="margin-top:12px;">
             <button class="mft-tab ${_expenseTab === 'transactions' ? 'active' : ''}" onclick="window._switchExpenseTab('transactions')">💸 Transactions</button>
             <button class="mft-tab ${_expenseTab === 'recurring' ? 'active' : ''}" onclick="window._switchExpenseTab('recurring')">🔁 Recurring Templates</button>
         </div>
-        <div id="expense-tab-content"></div>`;
+        <div id="expense-tab-content"></div>
+        <button class="fab-add" onclick="window._expenseFabAdd()" title="Add">+</button>`;
 
     window._switchExpenseTab = (tab) => {
         _expenseTab = tab;
@@ -55,6 +56,10 @@ export async function renderExpenses(portfolioId) {
     };
 
     window._showAddRecurring = () => window.app.showAddForm('recurringTransactions');
+    window._expenseFabAdd = () => {
+        if (_expenseTab === 'transactions') window.app.showAddForm('transactions');
+        else window.app.showAddForm('recurringTransactions');
+    };
 
     if (_expenseTab === 'transactions') renderTransactionsTab(portfolioId);
     else renderRecurringTab(portfolioId);

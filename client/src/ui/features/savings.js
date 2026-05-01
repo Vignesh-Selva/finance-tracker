@@ -46,8 +46,11 @@ export async function renderSavings(portfolioId) {
 
         const html = `
             <div class="section-header">
-                <h2>Savings Accounts</h2>
-                <button class="btn btn-primary" onclick="window.app.showAddForm('savings')">+ Add Account</button>
+                <div>
+                    <p class="page-eyebrow">WEALTH OS · SAVINGS</p>
+                    <h1 class="page-title">Savings Accounts</h1>
+                </div>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('savings')">+ Add Account</button>
             </div>
             <div class="stat-grid">
                 <div class="stat-card">
@@ -66,10 +69,80 @@ export async function renderSavings(portfolioId) {
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
-            </div>` : '<p class="empty-state">No savings accounts added yet. Click "+ Add Account" to get started.</p>'}
+            </div>
+            <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
+                ${savings.map(item => {
+            const balance = parseFloat(item.balance) || 0;
+            return `
+                        <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-savings-id="${item.id}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.bank_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(balance)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${item.account_type} · ${item.bank_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--green);font-weight:500;">+₹${(balance * 0.04 / 12).toFixed(0)}/mo</span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>` : '<p class="empty-state">No savings accounts added yet.</p>'}
+            <button class="fab-add" onclick="window.app.showAddForm('savings')" title="Add Savings Account">+</button>
         `;
 
         container.innerHTML = html;
+
+        // Mobile list tap handlers
+        container.querySelectorAll('[data-savings-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const savingsId = row.dataset.savingsId;
+                const savingsItem = savings.find(s => s.id === savingsId);
+                if (!savingsItem) return;
+                const balance = parseFloat(savingsItem.balance) || 0;
+                const monthlyInterest = (balance * 0.04 / 12).toFixed(0);
+                const fields = {
+                    'Bank Name': savingsItem.bank_name,
+                    'Account Type': savingsItem.account_type,
+                    'Balance': Utilities.formatCurrency(balance),
+                    'Est. Monthly Interest': `+₹${monthlyInterest}`,
+                };
+                const actions = [
+                    {
+                        label: 'Edit',
+                        onClick: () => {
+                            window.app.editEntry('savings', savingsId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: () => {
+                            window.app.deleteEntry('savings', savingsId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    }
+                ];
+                Utilities.openBottomSheet(fields, actions);
+            });
+        });
+
+        // Add mobile CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+            }
+        `;
+        container.appendChild(mobileStyle);
     } catch (error) {
         console.error('Savings render error:', error);
         container.innerHTML = '<div class="error-state"><p>Failed to load savings.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';

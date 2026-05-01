@@ -7,6 +7,9 @@ Chart.register(...registerables);
 
 let netWorthChart = null;
 let fiProjectionChart = null;
+let _chartFilter = 'ALL';
+let _cachedSnapshots = [];
+let _cachedPortfolioId = null;
 
 function getDashboardGreeting(username) {
     const hour = new Date().getHours();
@@ -95,6 +98,29 @@ export async function renderDashboard(portfolioId) {
             ).join('')}</div>`
             : '<p class="empty-state">Add assets to see allocation</p>';
 
+        // Horizontal segmented bar above legend — fixed order, flex-based
+        const segmentColors = {
+            'Savings': '#4ade80',
+            'Fixed Deposits': '#fbbf24',
+            'EPF': '#22d3ee',
+            'Mutual Funds': '#60a5fa',
+            'PPF': '#a78bfa',
+            'Stocks': '#c084fc',
+            'Crypto': '#fb923c',
+        };
+        const segmentOrder = ['Savings', 'Fixed Deposits', 'EPF', 'Mutual Funds', 'PPF', 'Stocks', 'Crypto'];
+        const allocationMap = Object.fromEntries(allocation.map(a => [a.name, a.percentage]));
+        const allocationBarSegmentsHTML = segmentOrder
+            .map(name => {
+                const pct = allocationMap[name] || 0;
+                return pct > 0 ? `<div style="height:100%;border-radius:4px;flex:${pct};background:${segmentColors[name]};min-width:0;" title="${name}: ${pct}%"></div>` : '';
+            })
+            .filter(Boolean)
+            .join('');
+        const allocationBarHorizontalHTML = allocationBarSegmentsHTML
+            ? `<div style="display:flex;height:8px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:20px;">${allocationBarSegmentsHTML}</div>`
+            : '';
+
         const hasInvestments = (netWorth.mutual_funds + netWorth.stocks + netWorth.crypto) > 0;
 
         // Auto-snapshot on first load of the day (non-blocking)
@@ -102,7 +128,6 @@ export async function renderDashboard(portfolioId) {
         const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1].snapshot_date.split('T')[0] : null;
         if (lastSnapshot !== today) {
             api.dashboard.takeSnapshot(portfolioId)
-                .then(() => console.log('Auto-snapshot taken for', today))
                 .catch((e) => console.warn('Auto-snapshot failed:', e));
         }
 
@@ -144,16 +169,23 @@ export async function renderDashboard(portfolioId) {
 
         const authUser = await getCurrentUser().catch(() => null);
         const username = authUser?.user_metadata?.username || extractUsernameFromEmail(authUser?.email) || '';
-        
+
         // Check if today is user's birthday
         const isBirthday = settings?.date_of_birth ? (() => {
             const dob = new Date(settings.date_of_birth);
             const now = new Date();
             return dob.getDate() === now.getDate() && dob.getMonth() === now.getMonth();
         })() : false;
-        
+
         const { greeting, emoji, tip } = getDashboardGreeting(username);
-        
+
+        const getGreetingTimeOfDay = () => {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'morning';
+            if (hour < 17) return 'afternoon';
+            return 'evening';
+        };
+
         // Birthday messages
         const birthdayMessages = [
             `🎂 Happy Birthday, ${username}! Another year of financial growth!`,
@@ -163,22 +195,29 @@ export async function renderDashboard(portfolioId) {
             `🎁 Happy Birthday, ${username}! The best gift is financial freedom!`,
         ];
         const birthdayMessage = birthdayMessages[Math.floor(Math.random() * birthdayMessages.length)];
-        
+
         // Override greeting and tip on birthday
         const displayGreeting = isBirthday ? birthdayMessage : `${greeting} ${emoji}`;
         const displayTip = isBirthday ? "🎊 Take a moment to celebrate yourself today! You've earned it." : tip;
 
 
         const html = `
-            <div class="section-header">
+            <div class="dash-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;">
                 <div>
-                    <h2 style="margin-bottom:4px;">${displayGreeting}</h2>
-                    <p style="font-size:13px;color:var(--text-muted);margin:0;">${displayTip}</p>
+                    <p class="dash-eyebrow" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Wealth OS · Personal Finance</p>
+                    <h1 class="dash-greeting" style="font-family:var(--font-display);font-size:clamp(32px,5vw,48px);font-weight:400;font-style:italic;line-height:1;color:var(--text-primary);letter-spacing:-0.01em;margin:0;">${isBirthday ? birthdayMessage : `Good ${getGreetingTimeOfDay()}, <em>${username || 'there'}</em>`}</h1>
+                </div>
+                <div class="dash-header-right" style="display:flex;align-items:center;gap:20px;">
+                    <span class="dash-refresh-badge" style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:0.08em;"><span class="dash-live-dot" style="width:6px;height:6px;background:var(--green);border-radius:50%;display:inline-block;margin-right:6px;animation:dashPulse 2s ease infinite;"></span><span id="header-clock"></span></span>
                 </div>
             </div>
+            <style>
+                @keyframes dashPulse { 0%,100% { opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.4); } 50% { opacity:0.7;box-shadow:0 0 0 4px rgba(74,222,128,0); } }
+            </style>
             ${isBirthday ? '<canvas id="birthdayConfetti" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>' : ''}
             <div class="stat-grid">
-                <div class="stat-card desktop-summary-card">
+                <div class="stat-card desktop-summary-card" style="background:linear-gradient(135deg,#0f1a0f 0%,#0d1320 100%);border-color:rgba(74,222,128,0.15);position:relative;overflow:hidden;">
+                    <div style="content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(74,222,128,0.08) 0%,transparent 70%);pointer-events:none;"></div>
                     <h3>Net Worth</h3>
                     <p class="stat-value">${Utilities.formatCurrency(netWorth.total)}</p>
                     <p class="stat-change ${changePercentClass}" style="font-size:1rem;font-weight:700;margin-top:6px;">${changePercentRaw >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(changePercent))}% this month</p>
@@ -191,9 +230,13 @@ export async function renderDashboard(portfolioId) {
                     <p class="stat-value">${Utilities.formatCurrency(netWorth.total + netWorth.liabilities)}</p>
                     <div style="font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:4px;">
                         <div style="display:flex;justify-content:space-between;"><span>Savings + FD</span><span class="mono">${Utilities.formatCurrency(netWorth.savings + netWorth.fixed_deposits)}</span></div>
+                        <div style="width:100%;height:2px;background:var(--surface3);border-radius:2px;margin:3px 0;overflow:hidden;"><div style="height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1);width:${((netWorth.savings + netWorth.fixed_deposits) / (netWorth.total + netWorth.liabilities) * 100).toFixed(1)}%;background:var(--c-savings);"></div></div>
                         <div style="display:flex;justify-content:space-between;"><span>MF + Stocks</span><span class="mono">${Utilities.formatCurrency(netWorth.mutual_funds + netWorth.stocks)}</span></div>
+                        <div style="width:100%;height:2px;background:var(--surface3);border-radius:2px;margin:3px 0;overflow:hidden;"><div style="height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1);width:${((netWorth.mutual_funds + netWorth.stocks) / (netWorth.total + netWorth.liabilities) * 100).toFixed(1)}%;background:var(--c-mf);"></div></div>
                         <div style="display:flex;justify-content:space-between;"><span>Crypto</span><span class="mono">${Utilities.formatCurrency(netWorth.crypto)}</span></div>
+                        <div style="width:100%;height:2px;background:var(--surface3);border-radius:2px;margin:3px 0;overflow:hidden;"><div style="height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1);width:${(netWorth.crypto / (netWorth.total + netWorth.liabilities) * 100).toFixed(1)}%;background:var(--c-crypto);"></div></div>
                         <div style="display:flex;justify-content:space-between;"><span>EPF + PPF</span><span class="mono">${Utilities.formatCurrency(netWorth.epf + netWorth.ppf)}</span></div>
+                        <div style="width:100%;height:2px;background:var(--surface3);border-radius:2px;margin:3px 0;overflow:hidden;"><div style="height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.16,1,0.3,1);width:${((netWorth.epf + netWorth.ppf) / (netWorth.total + netWorth.liabilities) * 100).toFixed(1)}%;background:var(--c-epf);"></div></div>
                     </div>
                 </div>
                 <div class="stat-card desktop-summary-card">
@@ -202,6 +245,11 @@ export async function renderDashboard(portfolioId) {
                     <div style="font-size:13px;line-height:1.6;color:var(--text-muted);margin-top:4px;">
                         <div style="display:flex;justify-content:space-between;"><span>Active Loans</span><span class="mono">${Utilities.formatCurrency(netWorth.liabilities)}</span></div>
                         <div style="display:flex;justify-content:space-between;"><span>Credit Card Debt</span><span class="mono">${Utilities.formatCurrency(totalCCOutstanding)}</span></div>
+                        ${totalCCOutstanding > 0 && nextCCLabel ? `
+                        <div style="margin-top:12px;padding:10px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.1);border-radius:8px;">
+                            <p style="font-family:var(--font-mono);font-size:9px;color:var(--green);letter-spacing:0.06em;margin:0;">DEBT-FREE TRAJECTORY</p>
+                            <p style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin:3px 0 0;">Due ${nextCCLabel.date} · ${ccUtilization.toFixed(0)}% utilization</p>
+                        </div>` : ''}
                     </div>
                 </div>
                 ${creditCards.length > 0 ? `
@@ -210,9 +258,14 @@ export async function renderDashboard(portfolioId) {
                     <p class="stat-value mono ${ccUrgencyClass || (totalCCDue > 0 ? 'value-negative' : '')}">${Utilities.formatCurrency(totalCCDue)}</p>
                     <p class="stat-change">${creditCards.length} card${creditCards.length !== 1 ? 's' : ''}${nextCCLabel ? ` · Due ${nextCCLabel.date}` : ''}</p>
                     ${totalCCLimit > 0 ? `
-                    <div style="display:flex;justify-content:space-between;margin-top:8px;">
-                        <span style="font-size:12px;color:var(--text-muted);">Utilization</span>
-                        <span style="font-size:12px;font-weight:600;color:${ccUtilization > 70 ? 'var(--red)' : ccUtilization > 50 ? 'var(--yellow)' : 'var(--green)'};">${ccUtilization.toFixed(0)}%</span>
+                    <div style="margin-top:8px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                            <span style="font-size:12px;color:var(--text-muted);">Utilization</span>
+                            <span style="font-size:12px;font-weight:700;color:${ccUtilization > 70 ? 'var(--red)' : ccUtilization > 50 ? 'var(--yellow)' : 'var(--green)'}">${ccUtilization.toFixed(0)}%</span>
+                        </div>
+                        <div style="background:var(--bg-elevated);border-radius:100px;height:4px;overflow:hidden;">
+                            <div style="height:100%;width:${Math.min(ccUtilization, 100).toFixed(1)}%;background:${ccUtilization > 70 ? 'var(--red)' : ccUtilization > 50 ? 'var(--yellow)' : 'var(--green)'};border-radius:100px;transition:width .4s;"></div>
+                        </div>
                     </div>
                     ` : ''}
                 </div>` : `
@@ -249,7 +302,7 @@ export async function renderDashboard(portfolioId) {
             </div>
             <div class="breakdown">
                 <h3>Asset Allocation</h3>
-                ${allocationHTML}
+                ${allocationBarHorizontalHTML}
                 ${legendHTML}
             </div>
             <div class="section-header"></div>
@@ -257,25 +310,33 @@ export async function renderDashboard(portfolioId) {
                 <h3>Investments P/L</h3>
                 ${hasInvestments ? `
                 <div class="stat-grid">
-                    <div class="stat-card">
+                    <div class="stat-card" style="background:linear-gradient(135deg,${totalPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${totalPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'};">
                         <h3>Total P/L</h3>
                         <p class="stat-value ${totalPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(totalPL.pl)}</p>
                         <p class="stat-change">${totalPL.plPercent}%</p>
+                        <div style="margin-top:14px;height:1px;background:${totalPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">ALL INSTRUMENTS COMBINED</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('mutualFunds')" style="cursor:pointer;">
+                    <div class="stat-card" onclick="window.app.switchTab('mutualFunds')" style="cursor:pointer;background:linear-gradient(135deg,${mfPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${mfPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
                         <h3>Mutual Funds P/L</h3>
                         <p class="stat-value ${mfPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(mfPL.pl)}</p>
                         <p class="stat-change">${mfPL.plPercent}%</p>
+                        <div style="margin-top:14px;height:1px;background:${mfPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">MUTUAL FUNDS PORTFOLIO</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('stocks')" style="cursor:pointer;">
+                    <div class="stat-card" onclick="window.app.switchTab('stocks')" style="cursor:pointer;background:linear-gradient(135deg,${stocksPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${stocksPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
                         <h3>Stocks & ETF P/L</h3>
                         <p class="stat-value ${stocksPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(stocksPL.pl)}</p>
                         <p class="stat-change">${stocksPL.plPercent}%</p>
+                        <div style="margin-top:14px;height:1px;background:${stocksPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">STOCKS & ETF PORTFOLIO</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('crypto')" style="cursor:pointer;">
+                    <div class="stat-card" onclick="window.app.switchTab('crypto')" style="cursor:pointer;background:linear-gradient(135deg,${cryptoPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${cryptoPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
                         <h3>Crypto P/L</h3>
                         <p class="stat-value ${cryptoPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(cryptoPL.pl)}</p>
                         <p class="stat-change">${cryptoPL.plPercent}%</p>
+                        <div style="margin-top:14px;height:1px;background:${cryptoPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">CRYPTO PORTFOLIO</p>
                     </div>
                 </div>
                 <div class="mobile-summary-card" style="display:none;">
@@ -300,10 +361,15 @@ export async function renderDashboard(portfolioId) {
                 <button class="btn btn-primary" onclick="window.app.switchTab('mutualFunds')">+ Add Investment</button>`}
             </div>
 
-            <div class="breakdown" style="margin-top:20px;">
-                <h3>Net Worth History</h3>
-                <div class="chart-container" style="position:relative;height:300px;width:100%;margin-top:12px;">
-                    <canvas id="netWorthChart"></canvas>
+            <div class="breakdown">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <h3 style="margin:0;">Net Worth History</h3>
+                    <div style="display:flex;gap:6px;">
+                        ${['1W', '1M', 'ALL'].map(f => `<button class="chart-filter-pill${f === 'ALL' ? ' active' : ''}" data-filter="${f}" onclick="window._setChartFilter('${f}')" style="background:${f === 'ALL' ? 'rgba(232,255,71,0.08)' : 'transparent'};color:${f === 'ALL' ? '#e8ff47' : 'var(--muted2)'};border:${f === 'ALL' ? '1px solid rgba(232,255,71,0.25)' : '1px solid var(--border)'};border-radius:100px;padding:4px 10px;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;">${f}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="chart-container" style="position:relative;height:220px;width:100%;padding-left:0;">
+                    <div id="netWorthChart" style="width:100%;height:100%;overflow:visible;"></div>
                 </div>
             </div>
 
@@ -313,6 +379,19 @@ export async function renderDashboard(portfolioId) {
 
         container.innerHTML = html;
 
+        // Live clock update
+        const _updateClock = () => {
+            const el = document.getElementById('header-clock');
+            if (!el) return;
+            const now = new Date();
+            el.textContent = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        };
+        _updateClock();
+        const _clockInterval = setInterval(() => {
+            if (!document.getElementById('header-clock')) { clearInterval(_clockInterval); return; }
+            _updateClock();
+        }, 60000);
+
         // Trigger confetti animation on birthday
         if (isBirthday) {
             setTimeout(() => {
@@ -321,10 +400,20 @@ export async function renderDashboard(portfolioId) {
                     const ctx = canvas.getContext('2d');
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
-                    
+
                     const particles = [];
-                    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
-                    
+                    const cs = getComputedStyle(document.documentElement);
+                    const colors = [
+                        cs.getPropertyValue('--red').trim(),
+                        cs.getPropertyValue('--green').trim(),
+                        cs.getPropertyValue('--blue').trim(),
+                        cs.getPropertyValue('--c-crypto').trim(),
+                        cs.getPropertyValue('--c-epf').trim(),
+                        cs.getPropertyValue('--accent').trim(),
+                        cs.getPropertyValue('--c-stocks').trim(),
+                        cs.getPropertyValue('--c-ppf').trim(),
+                    ];
+
                     for (let i = 0; i < 150; i++) {
                         particles.push({
                             x: Math.random() * canvas.width,
@@ -337,21 +426,21 @@ export async function renderDashboard(portfolioId) {
                             rotationSpeed: Math.random() * 4 - 2
                         });
                     }
-                    
+
                     let animationId;
                     const animate = () => {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
+
                         particles.forEach(p => {
                             p.y += p.speedY;
                             p.x += p.speedX;
                             p.rotation += p.rotationSpeed;
-                            
+
                             if (p.y > canvas.height) {
                                 p.y = -20;
                                 p.x = Math.random() * canvas.width;
                             }
-                            
+
                             ctx.save();
                             ctx.translate(p.x, p.y);
                             ctx.rotate(p.rotation * Math.PI / 180);
@@ -359,12 +448,12 @@ export async function renderDashboard(portfolioId) {
                             ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
                             ctx.restore();
                         });
-                        
+
                         animationId = requestAnimationFrame(animate);
                     };
-                    
+
                     animate();
-                    
+
                     // Stop confetti after 5 seconds
                     setTimeout(() => {
                         cancelAnimationFrame(animationId);
@@ -376,10 +465,23 @@ export async function renderDashboard(portfolioId) {
             }, 500);
         }
 
+        _cachedPortfolioId = portfolioId;
+        _chartFilter = 'ALL';
         await renderNetWorthChart(portfolioId);
         await renderNetWorthSparkline(snapshots);
 
         window._dashAllocationData = { allocation, portfolioId };
+
+        window._setChartFilter = (filter) => {
+            _chartFilter = filter;
+            document.querySelectorAll('.chart-filter-pill').forEach(p => {
+                const isActive = p.dataset.filter === filter;
+                p.classList.toggle('active', isActive);
+                p.style.background = isActive ? 'var(--accent)' : 'var(--bg-elevated)';
+                p.style.color = isActive ? '#09090b' : 'var(--text-muted)';
+            });
+            renderNetWorthChart(_cachedPortfolioId);
+        };
     } catch (error) {
         console.error('Dashboard render error:', error);
         container.innerHTML = `<div class="error-state"><p>Failed to load dashboard. Please check your connection.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>`;
@@ -393,8 +495,8 @@ async function renderNetWorthSparkline(snapshots) {
     if (!canvas || snapshots.length < 2) return;
 
     const data = snapshots.slice(-30).map(s => parseFloat(s.net_worth) || 0);
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-        window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const cs = getComputedStyle(document.documentElement);
+    const sparkIsUp = data.length < 2 || data[data.length - 1] >= data[0];
 
     if (netWorthSparklineChart) {
         netWorthSparklineChart.destroy();
@@ -407,7 +509,7 @@ async function renderNetWorthSparkline(snapshots) {
             labels: data.map((_, i) => i),
             datasets: [{
                 data,
-                borderColor: isDark ? '#3b82f6' : '#d97757',
+                borderColor: sparkIsUp ? cs.getPropertyValue('--green').trim() : cs.getPropertyValue('--red').trim(),
                 backgroundColor: 'transparent',
                 borderWidth: 2,
                 pointRadius: 0,
@@ -429,78 +531,168 @@ async function renderNetWorthSparkline(snapshots) {
 
 async function renderNetWorthChart(portfolioId) {
     try {
-        const resp = await api.dashboard.timeline(portfolioId);
-        const snapshots = resp.data || [];
+        // Fetch and cache only on first load or explicit portfolio change
+        if (portfolioId && portfolioId !== _cachedPortfolioId) {
+            _cachedSnapshots = []
+            _cachedPortfolioId = portfolioId;
+        }
+        if (!_cachedSnapshots.length && portfolioId) {
+            const resp = await api.dashboard.timeline(portfolioId);
+            _cachedSnapshots = resp.data || [];
+        }
 
-        if (snapshots.length === 0) {
-            const canvas = document.getElementById('netWorthChart');
-            if (canvas) {
-                const ctx = canvas.getContext('2d');
-                ctx.font = '14px sans-serif';
-                ctx.fillStyle = '#888';
-                ctx.textAlign = 'center';
-                ctx.fillText('No snapshots yet. Click "Take Snapshot" to start tracking.', canvas.width / 2, canvas.height / 2);
-            }
+        const now = Date.now();
+        const cutoffs = {
+            '1W': now - 7 * 24 * 60 * 60 * 1000,
+            '1M': now - 30 * 24 * 60 * 60 * 1000,
+            'ALL': 0,
+        };
+        const cutoff = cutoffs[_chartFilter] ?? 0;
+
+        if (!_cachedSnapshots?.length) {
             return;
         }
 
-        const labels = snapshots.map(s => s.snapshot_date);
-        const netWorthData = snapshots.map(s => parseFloat(s.net_worth) || 0);
+        const snapshots = cutoff > 0
+            ? _cachedSnapshots.filter(s => new Date(s.snapshot_date).getTime() >= cutoff)
+            : _cachedSnapshots;
 
-        const canvas = document.getElementById('netWorthChart');
-        if (!canvas) return;
+        const container = document.getElementById('netWorthChart');
+        if (!container) return;
 
-        if (netWorthChart) {
-            netWorthChart.destroy();
-            netWorthChart = null;
+        if (snapshots.length === 0) {
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:var(--font-mono);font-size:12px;color:var(--muted);">No snapshots yet. Click "Take Snapshot" to start tracking.</div>';
+            return;
         }
 
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-            window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-        const textColor = isDark ? '#ccc' : '#666';
+        const data = snapshots.map(s => ({ d: s.snapshot_date, v: parseFloat(s.net_worth) || 0 }));
+        const isUp = data.length < 2 || data[data.length - 1].v >= data[0].v;
+        const lineColor = isUp ? '#4ade80' : '#f87171';
+        const gradColor = isUp ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
 
-        netWorthChart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Net Worth',
-                    data: netWorthData,
-                    borderColor: '#2196F3',
-                    backgroundColor: 'rgba(33,150,243,0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: snapshots.length > 30 ? 0 : 4,
-                    pointHoverRadius: 6,
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { intersect: false, mode: 'index' },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => Utilities.formatCurrency(ctx.parsed.y),
-                        },
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: textColor, maxTicksLimit: 12 },
-                    },
-                    y: {
-                        grid: { color: gridColor },
-                        ticks: {
-                            color: textColor,
-                            callback: (v) => Utilities.formatCurrency(v),
-                        },
-                    },
-                },
-            },
+        const W = container.offsetWidth || 0;
+        if (W <= 10) return;
+        const H = 220;
+        const PAD = { top: 20, right: 36, bottom: 40, left: 0 };
+        const chartW = W - PAD.left - PAD.right;
+        const chartH = H - PAD.top - PAD.bottom;
+
+        const minV = Math.min(...data.map(d => d.v)) * 0.998;
+        const maxV = Math.max(...data.map(d => d.v)) * 1.001;
+
+        const xScale = (i) => data.length <= 1 ? PAD.left + chartW / 2 : PAD.left + (i / (data.length - 1)) * chartW;
+        const yScale = (v) => PAD.top + chartH - ((v - minV) / (maxV - minV)) * chartH;
+
+        const pts = data.map((d, i) => ({ x: xScale(i), y: yScale(d.v), ...d }));
+
+        // Catmull-Rom smooth curve
+        function catmull(pts) {
+            let d = `M ${pts[0].x} ${pts[0].y}`;
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[Math.max(i - 1, 0)];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[Math.min(i + 2, pts.length - 1)];
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+                d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+            }
+            return d;
+        }
+
+        const linePath = catmull(pts);
+        const areaPath = linePath + ` L ${pts[pts.length - 1].x} ${H - PAD.bottom} L ${pts[0].x} ${H - PAD.bottom} Z`;
+
+        // Grid lines at 4 intervals
+        const yTicks = [];
+        const step = (maxV - minV) / 3;
+        for (let i = 0; i < 4; i++) {
+            yTicks.push(minV + step * i);
+        }
+        const gridLines = yTicks.map(v => {
+            const y = yScale(v);
+            return `<line x1="0" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                    <text x="${W - PAD.right - 4}" y="${y + 3}" font-family="var(--font-mono)" font-size="8" fill="#52525b" text-anchor="end">${(v / 100000).toFixed(0)}L</text>`;
+        }).join('');
+
+        // X axis labels
+        const xLabels = [];
+        const labelStep = Math.max(1, Math.floor(data.length / 5));
+        for (let i = 0; i < data.length; i += labelStep) {
+            xLabels.push(i);
+        }
+        const xLabelsHTML = xLabels.map(i => {
+            const p = pts[i];
+            const date = new Date(data[i].d);
+            const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            return `<text x="${p.x}" y="${H - 4}" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="#52525b">${dateStr}</text>`;
+        }).join('');
+
+        const svgContent = `
+            <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible;">
+                <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${gradColor}"/>
+                        <stop offset="100%" stop-color="rgba(232,255,71,0)"/>
+                    </linearGradient>
+                </defs>
+                ${gridLines}
+                <line x1="${W - PAD.right}" y1="${PAD.top}" x2="${W - PAD.right}" y2="${H - PAD.bottom}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                ${xLabelsHTML}
+                <path d="${areaPath}" fill="url(#areaGrad)"/>
+                <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linecap="round"/>
+                <line id="crossV" x1="0" y1="${PAD.top}" x2="0" y2="${H - PAD.bottom}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 3" style="opacity:0;pointer-events:none;"/>
+                ${pts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${lineColor}" opacity="0" id="pt${i}" style="pointer-events:none;"/>`).join('')}
+            </svg>
+            <div id="tooltip" style="position:absolute;pointer-events:none;background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;font-family:var(--font-mono);font-size:10px;color:var(--text-primary);white-space:nowrap;opacity:0;transition:opacity 0.15s;z-index:10;"></div>
+        `;
+
+        container.style.position = 'relative';
+        container.innerHTML = svgContent;
+        const svgNode = container.querySelector('svg');
+        const crossV = container.querySelector('#crossV');
+        const tooltip = container.querySelector('#tooltip');
+
+        svgNode.addEventListener('mousemove', (e) => {
+            const rect = svgNode.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+
+            let closest = 0, minDist = Infinity;
+            pts.forEach((p, i) => {
+                const d = Math.abs(p.x - mx);
+                if (d < minDist) { minDist = d; closest = i; }
+            });
+
+            const p = pts[closest];
+            crossV.setAttribute('x1', p.x);
+            crossV.setAttribute('x2', p.x);
+            crossV.style.opacity = '1';
+
+            pts.forEach((_, i) => {
+                const c = container.querySelector(`#pt${i}`);
+                if (c) c.setAttribute('opacity', i === closest ? '1' : '0');
+            });
+
+            const date = new Date(data[closest].d);
+            const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            tooltip.innerHTML = `<span style="color:var(--muted);margin-right:8px;">${dateStr}</span>${Utilities.formatCurrency(data[closest].v)}`;
+            tooltip.style.opacity = '1';
+
+            let tx = p.x + 12;
+            if (tx + 160 > W) tx = p.x - 160;
+            tooltip.style.left = tx + 'px';
+            tooltip.style.top = (p.y - 20) + 'px';
+        });
+
+        svgNode.addEventListener('mouseleave', () => {
+            crossV.style.opacity = '0';
+            tooltip.style.opacity = '0';
+            pts.forEach((_, i) => {
+                const c = container.querySelector(`#pt${i}`);
+                if (c) c.setAttribute('opacity', '0');
+            });
         });
     } catch (err) {
         console.error('Chart render error:', err);
@@ -539,11 +731,11 @@ export function renderFIProjection(currentNW, goalTarget) {
 
     const { points, yearsToGoal, totalInvested } = computeProjection(currentNW, goalTarget, annualReturn, monthlyContrib);
 
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const accentColor = isDark ? '#3b82f6' : '#d97757';
-    const goalColor = isDark ? '#10b981' : '#059669';
-    const textColor = isDark ? '#ccc' : '#666';
-    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const cs = getComputedStyle(document.documentElement);
+    const accentColor = cs.getPropertyValue('--accent').trim();
+    const goalColor = cs.getPropertyValue('--green').trim();
+    const textColor = cs.getPropertyValue('--muted').trim();
+    const gridColor = cs.getPropertyValue('--border').trim();
 
     const labels = points.map(p => `Year ${p.year}`);
     const values = points.map(p => p.value);
@@ -579,7 +771,7 @@ export function renderFIProjection(currentNW, goalTarget) {
                     label: 'Projected Balance',
                     data: values,
                     borderColor: accentColor,
-                    backgroundColor: accentColor + '18',
+                    backgroundColor: cs.getPropertyValue('--accent-dim').trim(),
                     fill: true,
                     borderWidth: 2.5,
                     pointRadius: 0,

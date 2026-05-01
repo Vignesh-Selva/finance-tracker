@@ -1,13 +1,23 @@
 import Utilities from '../../utils/utils.js';
 import api from '../../services/api.js';
 
-const CARD_GRADIENTS = {
-    'Visa': 'linear-gradient(135deg, #1a1f71 0%, #2d5fce 100%)',
-    'Mastercard': 'linear-gradient(135deg, #1a1a2e 0%, #e94560 100%)',
-    'Rupay': 'linear-gradient(135deg, #0b3d91 0%, #00a86b 100%)',
-    'Amex': 'linear-gradient(135deg, #006fcf 0%, #00175a 100%)',
-    'Diners Club': 'linear-gradient(135deg, #1a3a4a 0%, #2d7d9a 100%)',
-};
+function _getCardGradients() {
+    const cs = getComputedStyle(document.documentElement);
+    const surface2 = cs.getPropertyValue('--bg-elevated').trim();
+    const surface3 = cs.getPropertyValue('--surface3').trim();
+    const blue = cs.getPropertyValue('--blue').trim();
+    const red = cs.getPropertyValue('--red').trim();
+    const green = cs.getPropertyValue('--c-savings').trim();
+    const epf = cs.getPropertyValue('--c-epf').trim();
+    const ppf = cs.getPropertyValue('--c-ppf').trim();
+    return {
+        'Visa': `linear-gradient(135deg, ${surface3} 0%, ${blue} 100%)`,
+        'Mastercard': `linear-gradient(135deg, ${surface3} 0%, ${red} 100%)`,
+        'Rupay': `linear-gradient(135deg, ${surface3} 0%, ${green} 100%)`,
+        'Amex': `linear-gradient(135deg, ${surface2} 0%, ${epf} 100%)`,
+        'Diners Club': `linear-gradient(135deg, ${surface2} 0%, ${ppf} 100%)`,
+    };
+}
 
 const NETWORK_ICONS = {
     'Visa': '𝗩𝗜𝗦𝗔',
@@ -58,7 +68,8 @@ function getUtilizationClass(pct) {
 }
 
 function _renderCardVisual(card) {
-    const gradient = CARD_GRADIENTS[card.card_type] || CARD_GRADIENTS['Visa'];
+    const gradients = _getCardGradients();
+    const gradient = gradients[card.card_type] || gradients['Visa'];
     const networkIcon = NETWORK_ICONS[card.card_type] || card.card_type;
     const stmt = parseFloat(card.statement_balance) || 0;
     const limit = parseFloat(card.credit_limit) || 0;
@@ -89,7 +100,8 @@ function _renderCardVisual(card) {
 }
 
 function renderFullCardVisual(card) {
-    const gradient = CARD_GRADIENTS[card.card_type] || CARD_GRADIENTS['Visa'];
+    const gradients = _getCardGradients();
+    const gradient = gradients[card.card_type] || gradients['Visa'];
     const networkIcon = NETWORK_ICONS[card.card_type] || card.card_type;
     const stmt = parseFloat(card.statement_balance) || 0;
     const total = parseFloat(card.current_balance) || 0;
@@ -245,7 +257,7 @@ export async function renderCreditCards(portfolioId) {
                     <h2>Credit Cards</h2>
                     <p class="stat-change">${cards.length} card${cards.length !== 1 ? 's' : ''}${nextDueLabel ? ` · Next due ${nextDueLabel}` : ''}</p>
                 </div>
-                <button class="btn btn-primary" onclick="window.app.showAddForm('creditCards')">+ Add Card</button>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('creditCards')">+ Add Card</button>
             </div>
             <div class="stat-grid">
                 <div class="stat-card">
@@ -272,6 +284,7 @@ export async function renderCreditCards(portfolioId) {
             </div>
             ${warningHTML}
             ${cards.length > 0 ? `<div class="cc-list">${cardListHTML}</div>` : '<p class="empty-state">No credit cards added yet.</p>'}
+            <button class="fab-add" onclick="window.app.showAddForm('creditCards')" title="Add Card">+</button>
         `;
 
         window._ccToggle = (id, e) => {

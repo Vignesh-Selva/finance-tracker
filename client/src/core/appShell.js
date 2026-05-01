@@ -49,7 +49,7 @@ class PersonalFinanceApp {
             this.formHandler = new FormHandler(this.portfolioId);
             this.formHandler.app = this;
 
-            this.loadTheme();
+            document.documentElement.setAttribute('data-theme', 'dark');
             this.loadSidebarState();
             this.setupEventListeners();
             await this.initFXRates();
@@ -91,19 +91,6 @@ class PersonalFinanceApp {
         } catch (error) {
             console.error('Failed to load portfolio:', error);
             throw error;
-        }
-    }
-
-    loadTheme() {
-        try {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const themeIcon = document.getElementById('themeIcon');
-            if (themeIcon) {
-                themeIcon.textContent = savedTheme === 'light' ? '🌙' : '☀️';
-            }
-        } catch (error) {
-            console.error('Theme load error:', error);
         }
     }
 
@@ -151,14 +138,6 @@ class PersonalFinanceApp {
             const modal = document.getElementById('dataModal');
             if (event.target === modal) this.closeModal();
         };
-
-        const themeBtn = document.getElementById('themeToggle');
-        if (themeBtn) {
-            themeBtn.onclick = () => {
-                Utilities.toggleTheme();
-                this.loadTheme();
-            };
-        }
 
         const sidebarToggle = document.getElementById('sidebarToggle');
         if (sidebarToggle) sidebarToggle.onclick = () => this.toggleSidebar();
@@ -240,7 +219,7 @@ class PersonalFinanceApp {
         const statusEl = document.getElementById('price-refresh-status');
         const lastSync = settings.last_sync ? new Date(settings.last_sync) : null;
         const now = new Date();
-        
+
         // Check if 24 hours have passed since last refresh
         if (lastSync) {
             const hoursSinceRefresh = (now - lastSync) / (1000 * 60 * 60);
@@ -248,7 +227,7 @@ class PersonalFinanceApp {
                 const hoursLeft = Math.ceil(24 - hoursSinceRefresh);
                 statusEl.textContent = `⏳ Next refresh available in ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''}`;
                 statusEl.style.color = 'var(--text-muted)';
-                Utilities.showNotification('Price refresh limited to once per day', 'warning');
+                Utilities.showNotification(`Price refresh limited to once per day. Wait ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''} to refresh again.`, 'warning');
                 return;
             }
         }
@@ -263,21 +242,21 @@ class PersonalFinanceApp {
         try {
             const { results, errors } = await refreshAllPrices(this.portfolioId);
             const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
-            
+
             if (errors.length > 0) {
                 statusEl.textContent = `⚠️ Refreshed ${updated} holdings with ${errors.length} error${errors.length > 1 ? 's' : ''}`;
                 statusEl.style.color = 'var(--danger)';
                 console.warn('Price refresh errors:', errors);
             } else {
                 statusEl.textContent = `✅ Successfully refreshed ${updated} holdings`;
-                statusEl.style.color = '#10b981';
+                statusEl.style.color = 'var(--green)';
             }
 
             // Auto-snapshot after price refresh
             try {
                 await api.dashboard.takeSnapshot(this.portfolioId);
             } catch (e) {
-                console.warn('Auto-snapshot failed:', e);
+                console.warn('Auto-snapshot failed after refresh:', e);
             }
 
             await this.refreshCurrentTab();
@@ -293,7 +272,55 @@ class PersonalFinanceApp {
         }
     }
 
-    // ─── CRUD helpers ────────────────────────────────────────
+    async handlePriceRefreshFromSidebar() {
+        try {
+            const resp = await api.settings.list(this.portfolioId);
+            const settingsArr = resp?.data || [];
+            const settings = settingsArr[0] || {};
+            const lastSync = settings.last_sync ? new Date(settings.last_sync) : null;
+            const now = new Date();
+
+            // Check if 24 hours have passed since last refresh
+            if (lastSync) {
+                const hoursSinceRefresh = (now - lastSync) / (1000 * 60 * 60);
+                if (hoursSinceRefresh < 24) {
+                    const hoursLeft = Math.ceil(24 - hoursSinceRefresh);
+                    Utilities.showNotification(`Price refresh limited to once per day. Wait ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''} to refresh again.`, 'warning');
+                    return;
+                }
+            }
+
+            Utilities.showNotification('Refresh prices for all investments are limited to once per day.', 'info');
+
+            // Proceed with refresh
+            try {
+                const { results, errors } = await refreshAllPrices(this.portfolioId);
+                const updated = results.mutualFunds.length + results.stocks.length + results.crypto.length;
+
+                if (errors.length > 0) {
+                    console.warn('Price refresh errors:', errors);
+                    Utilities.showNotification(`Refreshed ${updated} holdings with ${errors.length} error${errors.length > 1 ? 's' : ''}`, 'warning');
+                } else {
+                    Utilities.showNotification(`Prices refreshed for ${updated} holdings`, 'success');
+                }
+
+                // Auto-snapshot after price refresh
+                try {
+                    await api.dashboard.takeSnapshot(this.portfolioId);
+                } catch (e) {
+                    console.warn('Auto-snapshot failed after refresh:', e);
+                }
+
+                await this.refreshCurrentTab();
+            } catch (error) {
+                console.error('Price refresh error:', error);
+                Utilities.showNotification('Failed to refresh prices: ' + error.message, 'error');
+            }
+        } catch (error) {
+            console.error('Failed to check settings for price refresh:', error);
+            Utilities.showNotification('Failed to check refresh status', 'error');
+        }
+    }
 
     showAddForm(type) {
         this.isSettingsModal = false;
@@ -420,9 +447,6 @@ class PersonalFinanceApp {
                 <div class="settings-tabs">
                     <button class="settings-tab active" data-tab="profile">👤 Profile</button>
                     <button class="settings-tab" data-tab="preferences">⚙️ Preferences</button>
-                    <button class="settings-tab" data-tab="income-planning">💰 Income & Planning</button>
-                    <button class="settings-tab" data-tab="insurance">🛡️ Insurance</button>
-                    <button class="settings-tab" data-tab="goals">🎯 Goals</button>
                     <button class="settings-tab" data-tab="data">💾 Data</button>
                 </div>
 
@@ -472,6 +496,30 @@ class PersonalFinanceApp {
                             <input type="number" id="setting-dependents" value="${settings.dependents ?? 0}" class="form-input" min="0" placeholder="Number of dependents" />
                         </div>
                     </div>
+                    <p class="form-section-label" style="margin-top: 24px; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono);">Insurance Coverage</p>
+                    <div class="form-group">
+                        <small class="form-hint">Protect yourself and your dependents from financial shocks.</small>
+                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-life-insurance" ${settings.life_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Life Insurance (term plan)</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance" ${settings.health_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (self)</span>
+                            </label>
+                            ${settings.marital_status === 'married' ? `
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance-spouse" ${settings.health_insurance_for_spouse ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (spouse)</span>
+                            </label>` : ''}
+                            ${settings.dependents > 0 ? `
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="setting-health-insurance-dependents" ${settings.health_insurance_for_dependents ? 'checked' : ''} style="width:16px;height:16px;" />
+                                <span>Health Insurance (dependents)</span>
+                            </label>` : ''}
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-tab-content" id="tab-preferences">
@@ -503,9 +551,7 @@ class PersonalFinanceApp {
                         <small class="form-hint">Advisor warns if crypto exceeds this threshold</small>
                         <input type="number" id="setting-btc-cap" value="${settings.btc_cap ?? 10}" class="form-input" min="0" max="100" step="1" placeholder="10" />
                     </div>
-                </div>
-
-                <div class="settings-tab-content" id="tab-income-planning">
+                    <p class="form-section-label" style="margin-top: 24px; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono);">Income & Planning</p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                         <div class="form-group">
                             <label>Monthly Take-home Salary (₹):</label>
@@ -546,48 +592,6 @@ class PersonalFinanceApp {
                     </div>
                 </div>
 
-                <div class="settings-tab-content" id="tab-insurance">
-                    <div class="form-group">
-                        <label>Insurance Coverage:</label>
-                        <small class="form-hint">Protect yourself and your dependents from financial shocks.</small>
-                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                <input type="checkbox" id="setting-life-insurance" ${settings.life_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
-                                <span>Life Insurance (term plan)</span>
-                            </label>
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                <input type="checkbox" id="setting-health-insurance" ${settings.health_insurance ? 'checked' : ''} style="width:16px;height:16px;" />
-                                <span>Health Insurance (self)</span>
-                            </label>
-                            ${settings.marital_status === 'married' ? `
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                <input type="checkbox" id="setting-health-insurance-spouse" ${settings.health_insurance_for_spouse ? 'checked' : ''} style="width:16px;height:16px;" />
-                                <span>Health Insurance (spouse)</span>
-                            </label>` : ''}
-                            ${settings.dependents > 0 ? `
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                <input type="checkbox" id="setting-health-insurance-dependents" ${settings.health_insurance_for_dependents ? 'checked' : ''} style="width:16px;height:16px;" />
-                                <span>Health Insurance (dependents)</span>
-                            </label>` : ''}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-tab-content" id="tab-goals">
-                    <div class="form-group">
-                        <label>Financial Goal:</label>
-                        <input type="number" id="setting-goal" value="${settings.goal}" class="form-input" step="1000" min="0" placeholder="Your target net worth" />
-                    </div>
-                    <div class="form-group">
-                        <label>EPF Balance:</label>
-                        <input type="number" id="setting-epf" value="${settings.epf}" class="form-input" step="0.01" min="0" placeholder="Employee Provident Fund" />
-                    </div>
-                    <div class="form-group">
-                        <label>PPF Balance:</label>
-                        <input type="number" id="setting-ppf" value="${settings.ppf}" class="form-input" step="0.01" min="0" placeholder="Public Provident Fund" />
-                    </div>
-                </div>
-
                 <div class="settings-tab-content" id="tab-data">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
                         <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
@@ -597,14 +601,6 @@ class PersonalFinanceApp {
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
                         New user? Download the template to see the Excel structure with sample data.
                     </p>
-                    <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-                        <h4 style="margin: 0 0 12px 0; font-size: 0.95rem;">Price Refresh</h4>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
-                            Refresh prices for all mutual funds, stocks, and crypto. Limited to once per day.
-                        </p>
-                        <button type="button" class="btn btn-secondary" id="settings-refresh-prices-btn">🔄 Refresh Prices</button>
-                        <p id="price-refresh-status" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;"></p>
-                    </div>
                     <div style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px;">
                         <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; color: var(--danger);">Danger Zone</h4>
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
@@ -685,13 +681,13 @@ class PersonalFinanceApp {
             }
 
             const displayCurrency = document.getElementById('setting-display-currency')?.value || document.getElementById('setting-currency').value;
-            
+
             // Calculate age from date_of_birth
             let calculatedAge = null;
             if (dateOfBirth) {
                 const birthDate = new Date(dateOfBirth);
                 const today = new Date();
-                
+
                 // Validate year is reasonable (between 1900 and current year)
                 const birthYear = birthDate.getFullYear();
                 const currentYear = today.getFullYear();
@@ -699,21 +695,21 @@ class PersonalFinanceApp {
                     Utilities.showNotification('Invalid year in date of birth. Please enter a valid date.', 'error');
                     return;
                 }
-                
+
                 let age = currentYear - birthYear;
                 const monthDiff = today.getMonth() - birthDate.getMonth();
                 if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
                     age--;
                 }
                 calculatedAge = age;
-                
+
                 // Validate age is not over 110 years
                 if (calculatedAge > 110) {
                     Utilities.showNotification('Date of birth cannot be more than 110 years ago', 'error');
                     return;
                 }
             }
-            
+
             const data = {
                 currency: document.getElementById('setting-currency').value,
                 display_currency: displayCurrency,
@@ -1052,7 +1048,6 @@ class PersonalFinanceApp {
                 let importedOrders = 0;
                 for (const cfg of orderImports) {
                     if (data[cfg.key] && Array.isArray(data[cfg.key])) {
-                        console.log(`Processing ${cfg.key}: ${data[cfg.key].length} orders`);
                         for (const order of data[cfg.key]) {
                             const { id: _oid, created_at: _ca, updated_at: _ua, ...rest } = order;
                             const existingHoldingId = rest[cfg.holdingIdField];
@@ -1106,18 +1101,15 @@ class PersonalFinanceApp {
                                             await cfg.api.create({ ...orderData, [cfg.holdingIdField]: existingHoldingId, portfolio_id: this.portfolioId });
                                             importedOrders++;
                                         } else {
-                                            console.log(`Skipped order with holding_id ${existingHoldingId} - not found in current portfolio`);
                                             skippedOrders++;
                                         }
                                     } catch (e) {
                                         console.error(`Failed to create order:`, e, rest);
-                                        console.log(`Skipped order with holding_id ${existingHoldingId} - lookup failed`);
                                         skippedOrders++;
                                     }
                                 }
                             } else {
                                 // Order has no holding_id at all - skip it
-                                console.log(`Skipped order with no holding_id`);
                                 skippedOrders++;
                             }
                         }

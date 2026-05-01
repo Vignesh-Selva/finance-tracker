@@ -81,6 +81,120 @@ const Utilities = {
                 resolve(false);
             }
         });
+    },
+
+    openBottomSheet(fields, actions) {
+        // Remove existing sheet if any
+        const existingSheet = document.getElementById('mobile-bottom-sheet');
+        const existingOverlay = document.getElementById('mobile-bottom-sheet-overlay');
+        if (existingSheet) existingSheet.remove();
+        if (existingOverlay) existingOverlay.remove();
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'mobile-bottom-sheet-overlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        `;
+
+        // Create sheet
+        const sheet = document.createElement('div');
+        sheet.id = 'mobile-bottom-sheet';
+        sheet.style.cssText = `
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+            background: var(--surface2); border-radius: 20px 20px 0 0; padding: 24px;
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16,1,0.3);
+            max-height: 80vh; overflow-y: auto;
+        `;
+
+        // Drag handle
+        const dragHandle = document.createElement('div');
+        dragHandle.style.cssText = `
+            width: 36px; height: 4px; background: var(--muted2); border-radius: 2px; margin: 0 auto 20px;
+        `;
+        sheet.appendChild(dragHandle);
+
+        // Fields list
+        Object.entries(fields).forEach(([label, value]) => {
+            const fieldRow = document.createElement('div');
+            fieldRow.style.cssText = `
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 12px 0; border-bottom: 1px solid var(--border);
+            `;
+            fieldRow.innerHTML = `
+                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">${label}</span>
+                <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); font-weight: 500;">${value}</span>
+            `;
+            sheet.appendChild(fieldRow);
+        });
+
+        // Actions (Edit and Delete buttons)
+        if (actions && actions.length > 0) {
+            actions.forEach(action => {
+                const btn = document.createElement('button');
+                btn.textContent = action.label;
+                btn.style.cssText = `
+                    width: 100%; padding: 12px; margin-top: 12px;
+                    border-radius: 12px; border: 1px solid var(--border);
+                    background: var(--surface3); color: var(--text-primary);
+                    font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer;
+                    transition: all 0.2s;
+                `;
+                btn.onmouseenter = () => {
+                    btn.style.background = 'var(--bg-elevated)';
+                    btn.style.borderColor = 'var(--border2)';
+                };
+                btn.onmouseleave = () => {
+                    btn.style.background = 'var(--surface3)';
+                    btn.style.borderColor = 'var(--border)';
+                };
+                btn.onclick = action.onClick;
+                sheet.appendChild(btn);
+            });
+        }
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.style.cssText = `
+            width: 100%; padding: 12px; margin-top: 12px;
+            border-radius: 12px; border: 1px solid var(--border);
+            background: transparent; color: var(--muted);
+            font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        `;
+        closeBtn.onmouseenter = () => {
+            closeBtn.style.background = 'var(--surface3)';
+            closeBtn.style.borderColor = 'var(--border2)';
+        };
+        closeBtn.onmouseleave = () => {
+            closeBtn.style.background = 'transparent';
+            closeBtn.style.borderColor = 'var(--border)';
+        };
+        closeBtn.onclick = closeSheet;
+        sheet.appendChild(closeBtn);
+
+        // Function to close sheet
+        function closeSheet() {
+            sheet.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+                overlay.remove();
+                sheet.remove();
+            }, 300);
+        }
+
+        // Event listeners
+        overlay.onclick = closeSheet;
+
+        // Append to DOM
+        document.body.appendChild(overlay);
+        document.body.appendChild(sheet);
+
+        // Trigger animation
+        requestAnimationFrame(() => {
+            sheet.style.transform = 'translateY(0)';
+        });
     }
 };
 

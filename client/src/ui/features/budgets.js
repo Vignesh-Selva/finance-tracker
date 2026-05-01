@@ -83,8 +83,9 @@ export async function renderBudgets(portfolioId) {
         const html = `
             <div class="section-header">
                 <h2>Budgets</h2>
-                <button class="btn btn-primary" onclick="window.app.showAddForm('budgets')">+ Add Budget</button>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('budgets')">+ Add Budget</button>
             </div>
+            <button class="fab-add" onclick="window.app.showAddForm('budgets')" title="Add Budget">+</button>
             ${budgets.length > 0 ? `
             <div class="data-table-container">
                 <table class="data-table">

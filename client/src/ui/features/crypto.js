@@ -44,17 +44,18 @@ function _buildShell() {
     return `
         <div class="mft">
             <div class="section-header">
-                <h2 class="page-title">Crypto</h2>
+                <div>
+                    <p class="page-eyebrow">WEALTH OS · CRYPTO</p>
+                    <h1 class="page-title">Crypto</h1>
+                </div>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('crypto')">+ Add Crypto</button>
             </div>
             <div class="mft-tab-bar" id="cr-tab-bar">
-                <button class="mft-tab ${_cryptoActiveTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">
-                    📊 Portfolio
-                </button>
-                <button class="mft-tab ${_cryptoActiveTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">
-                    📋 Order History
-                </button>
+                <button class="mft-tab ${_cryptoActiveTab === 'portfolio' ? 'active' : ''}" data-tab="portfolio">Portfolio</button>
+                <button class="mft-tab ${_cryptoActiveTab === 'orderHistory' ? 'active' : ''}" data-tab="orderHistory">Order History</button>
             </div>
             <div id="cr-tab-content"></div>
+            <button class="fab-add" onclick="window.app.showAddForm('crypto')" title="Add Crypto">+</button>
         </div>`;
 }
 
@@ -110,10 +111,51 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
         const btcProgress = btcGoal > 0 ? Math.min(100, (totalBtcQty / btcGoal) * 100) : 0;
         const inrNeeded = pricePerBtc !== null && btcRemaining > 0 ? btcRemaining * pricePerBtc : null;
 
+        // Platform badge colors
+        const getPlatformBadge = (platform) => {
+            if (!platform) return '—';
+            const p = platform.toLowerCase();
+            if (p.includes('coindcx')) {
+                return `<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">CoinDCX</span>`;
+            } else if (p.includes('binance')) {
+                return `<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Binance</span>`;
+            } else if (p.includes('trust') || p.includes('wallet')) {
+                return `<span style="background:rgba(192,132,252,0.15);color:#c084fc;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Trust Wallet</span>`;
+            }
+            return `<span style="background:var(--surface3);color:var(--muted);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">${platform}</span>`;
+        };
+
         const visible = _cryptoShowClosed
             ? resolved
             : resolved.filter(c => !(c._derived && c._qty === 0));
-        const holdings = sortData(visible, sort.col, sort.dir);
+
+        // Separate BTC holdings from others
+        const visibleBtc = visible.filter(c => BTC_PATTERN.test((c.coin_name || '').trim()));
+        const visibleNonBtc = visible.filter(c => !BTC_PATTERN.test((c.coin_name || '').trim()));
+
+        // Sort non-BTC holdings
+        const sortedNonBtc = sortData(visibleNonBtc, sort.col, sort.dir);
+
+        // Combine: BTC grouped row first (if any), then sorted non-BTC
+        let holdings = [];
+        if (visibleBtc.length > 0) {
+            const totalBtcInvested = visibleBtc.reduce((s, c) => s + c._invested, 0);
+            const totalBtcCurrent = visibleBtc.reduce((s, c) => s + (parseFloat(c.current) || 0), 0);
+            const totalBtcPl = totalBtcCurrent - totalBtcInvested;
+            const totalBtcPlPct = totalBtcInvested > 0 ? ((totalBtcPl / totalBtcInvested) * 100).toFixed(2) : '0.00';
+            holdings.push({
+                _isBtcGroup: true,
+                coin_name: 'BTC',
+                platform: `${visibleBtc.length} platform${visibleBtc.length > 1 ? 's' : ''}`,
+                _qty: totalBtcQty,
+                _invested: totalBtcInvested,
+                current: totalBtcCurrent,
+                _pl: totalBtcPl,
+                _plPct: totalBtcPlPct,
+                _subRows: visibleBtc
+            });
+        }
+        holdings = holdings.concat(sortedNonBtc);
 
         const totalInvested = holdings.reduce((s, f) => s + f._invested, 0);
         const totalCurrent = holdings.reduce((s, f) => s + (parseFloat(f.current) || 0), 0);
@@ -123,57 +165,102 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
 
         let tableRows = '';
         holdings.forEach(item => {
-            const invested = item._invested;
-            const current = parseFloat(item.current) || 0;
-            const pl = current - invested;
-            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
-
-            const isClosed = item._derived && item._qty === 0;
-            const rowStyle = isClosed ? 'opacity:0.5;' : '';
+            let invested, current, pl, plPct, rowStyle = '';
+            if (item._isBtcGroup) {
+                invested = item._invested;
+                current = item.current;
+                pl = item._pl;
+                plPct = item._plPct;
+                rowStyle = 'cursor:pointer;';
+            } else {
+                invested = item._invested;
+                current = parseFloat(item.current) || 0;
+                pl = current - invested;
+                plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+                const isClosed = item._derived && item._qty === 0;
+                rowStyle = isClosed ? 'opacity:0.5;' : '';
+            }
 
             let qtyCell;
-            if (isClosed) {
-                qtyCell = `<span class="badge badge-muted">Closed</span>`;
-            } else if (!item._derived) {
-                qtyCell = `
-                    <span class="mono" style="font-size:12px;">${item._qty.toFixed(8)}</span>
-                    <span class="badge badge-muted" style="cursor:pointer;margin-left:4px;font-size:10px;"
-                        data-legacy-coin="${item.id}" title="No order history — click to add orders">No history</span>`;
+            if (item._isBtcGroup) {
+                qtyCell = `<span class="mono" style="font-size:12px;">${item._qty.toFixed(6)}</span>`;
             } else {
-                qtyCell = `<span class="mono" style="font-size:12px;">${item._qty.toFixed(8)}</span>`;
+                const isClosed = item._derived && item._qty === 0;
+                if (isClosed) {
+                    qtyCell = `<span class="badge badge-muted">Closed</span>`;
+                } else if (!item._derived) {
+                    qtyCell = `
+                        <span class="mono" style="font-size:12px;" title="${item._qty.toFixed(8)}">${item._qty.toFixed(6)}</span>
+                        <span class="mono" style="cursor:pointer;margin-left:4px;font-size:11px;color:var(--muted);"
+                            data-legacy-coin="${item.id}" title="No price history available">⏱</span>`;
+                } else {
+                    qtyCell = `<span class="mono" style="font-size:12px;" title="${item._qty.toFixed(8)}">${item._qty.toFixed(6)}</span>`;
+                }
             }
 
             tableRows += `
-                <tr style="${rowStyle}">
+                <tr style="${rowStyle}" data-btc-group="${item._isBtcGroup ? 'true' : ''}">
                     <td data-label="Coin">${item.coin_name}</td>
-                    <td data-label="Platform">${item.platform || '—'}</td>
+                    <td data-label="Platform">${item._isBtcGroup ? `<span style="color:var(--accent);font-size:12px;">▼</span> ${item.platform}` : getPlatformBadge(item.platform)}</td>
                     <td data-label="Qty">${qtyCell}</td>
                     <td data-label="Invested" class="mono">${Utilities.formatCurrency(invested)}</td>
                     <td data-label="Current" class="mono">${Utilities.formatCurrency(current)}</td>
                     <td data-label="P/L" class="mono ${pl >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(pl)} (${plPct}%)</td>
                     <td class="actions">
+                        ${item._isBtcGroup ? `<button class="btn btn-sm btn-ghost" style="padding:4px 8px;font-size:12px;" onclick="this.closest('tr').nextElementSibling.style.display === 'none' ? (this.closest('tr').nextElementSibling.style.display='table-row', this.textContent='▲') : (this.closest('tr').nextElementSibling.style.display='none', this.textContent='▼')">▼</button>` : `
                         <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('crypto','${item.id}')">Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('crypto','${item.id}')">Delete</button>
+                        <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('crypto','${item.id}')">Delete</button>`}
                     </td>
                 </tr>`;
+            if (item._isBtcGroup && item._subRows) {
+                item._subRows.forEach((subItem, idx) => {
+                    const subInvested = subItem._invested;
+                    const subCurrent = parseFloat(subItem.current) || 0;
+                    const subPl = subCurrent - subInvested;
+                    const subPlPct = subInvested > 0 ? ((subPl / subInvested) * 100).toFixed(2) : '0.00';
+                    const subQty = subItem._qty.toFixed(6);
+                    tableRows += `
+                        <tr style="background:var(--bg-elevated);" data-btc-subrow="true" style="display:none;" class="btc-subrow">
+                            <td data-label="Coin" style="padding-left:32px;font-size:12px;color:var(--muted);">${subItem.coin_name}</td>
+                            <td data-label="Platform">${getPlatformBadge(subItem.platform)}</td>
+                            <td data-label="Qty" class="mono" style="font-size:11px;">${subQty}</td>
+                            <td data-label="Invested" class="mono" style="font-size:11px;">${Utilities.formatCurrency(subInvested)}</td>
+                            <td data-label="Current" class="mono" style="font-size:11px;">${Utilities.formatCurrency(subCurrent)}</td>
+                            <td data-label="P/L" class="mono ${subPl >= 0 ? 'value-positive' : 'value-negative'}" style="font-size:11px;">${Utilities.formatCurrency(subPl)} (${subPlPct}%)</td>
+                            <td class="actions">
+                                <button class="btn btn-sm btn-ghost" onclick="window.app.editEntry('crypto','${subItem.id}')">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="window.app.deleteEntry('crypto','${subItem.id}')">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            }
         });
 
         tabContent.innerHTML = `
-            <div class="section-header" style="margin-top:20px;">
+            <div class="section-header">
                 <div style="display:flex;gap:8px;align-items:center;">
                     ${closedCount > 0 ? `
                     <button class="btn btn-ghost btn-sm" id="cr-toggle-closed">
                         ${_cryptoShowClosed ? '📁 Hide Closed' : '📂 Show Closed'} (${closedCount})
                     </button>` : ''}
                 </div>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn btn-primary" onclick="window.app.showAddForm('crypto')">+ Add Crypto</button>
-                </div>
             </div>
             <div class="stat-grid">
                 <div class="stat-card"><h3>Invested</h3><p class="stat-value mono">${Utilities.formatCurrency(totalInvested)}</p></div>
                 <div class="stat-card"><h3>Current Value</h3><p class="stat-value mono">${Utilities.formatCurrency(totalCurrent)}</p></div>
                 <div class="stat-card"><h3>P/L</h3><p class="stat-value mono ${totalPL >= 0 ? 'value-positive' : 'value-negative'}">${Utilities.formatCurrency(totalPL)} (${plPercent}%)</p></div>
+                <div class="stat-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <h3 style="margin:0;">₿ BTC Goal</h3>
+                        <input type="number" value="${btcGoal}" min="0.001" step="0.001"
+                            class="form-input" style="width:60px;padding:4px 8px;font-size:12px;"
+                            onchange="window._updateBtcGoal(this.value)">
+                    </div>
+                    <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:8px 0;">
+                        <div style="height:100%;background:var(--accent);width:${btcProgress.toFixed(1)}%;border-radius:2px;transition:width 0.4s;"></div>
+                    </div>
+                    <p class="stat-change" style="font-size:11px;margin:0;">${totalBtcQty.toFixed(8)} / ${btcGoal} BTC <span style="color:var(--accent);">(${btcProgress.toFixed(1)}%)</span></p>
+                </div>
             </div>
             ${holdings.length > 0 ? `
             <div class="data-table-container">
@@ -189,39 +276,62 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
-            </div>` : '<p class="empty-state">No crypto holdings added yet.</p>'}
-            <div class="stat-card" style="margin-top:24px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-                    <h3 style="margin:0;">₿ BTC Goal</h3>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-                        Goal:
-                        <input type="number" value="${btcGoal}" min="0.001" step="0.001"
-                            class="form-input" style="width:80px;padding:4px 8px;font-size:13px;"
-                            onchange="window._updateBtcGoal(this.value)">
-                        BTC
-                    </div>
-                </div>
-                <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:14px;">
-                    <div style="height:100%;background:var(--accent);width:${btcProgress.toFixed(1)}%;border-radius:4px;"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;font-size:13px;">
-                    <div>
-                        <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px;">Owned</div>
-                        <div class="mono" style="font-weight:600;">${totalBtcQty.toFixed(8)} BTC</div>
-                        <div style="color:var(--text-muted);font-size:11px;">${btcProgress.toFixed(1)}% of goal</div>
-                    </div>
-                    <div>
-                        <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px;">Remaining</div>
-                        <div class="mono" style="font-weight:600;">${btcRemaining > 0 ? btcRemaining.toFixed(8) + ' BTC' : '✓ Goal reached!'}</div>
-                        ${inrNeeded !== null ? `<div style="color:var(--text-muted);font-size:11px;">≈ ${Utilities.formatCurrency(inrNeeded)} to invest</div>` : ''}
-                    </div>
-                    ${pricePerBtc !== null ? `
-                    <div>
-                        <div style="color:var(--text-muted);font-size:11px;margin-bottom:2px;">BTC Price (avg cost)</div>
-                        <div class="mono" style="font-weight:600;">${Utilities.formatCurrency(pricePerBtc)}</div>
-                    </div>` : ''}
-                </div>
             </div>
+            <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
+                ${holdings.map(item => {
+            if (item._isBtcGroup) {
+                const plClass = item._pl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+                return `
+                            <div class="mobile-compact-row mobile-btc-group" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--bg-elevated;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                    <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.coin_name} <span style="color:var(--accent);font-size:11px;" class="btc-expand-icon">▼</span></span>
+                                    <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(item.current)}</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${item.platform}</span>
+                                    <span style="font-family:var(--font-mono);font-size:11px;${plClass};font-weight:500;">${item._plPct}%</span>
+                                </div>
+                            </div>
+                            <div class="mobile-btc-subrows" style="display:none;">
+                                ${item._subRows.map(subItem => {
+                    const subPl = subItem.current - subItem._invested;
+                    const subPlPct = subItem._invested > 0 ? ((subPl / subItem._invested) * 100).toFixed(2) : '0.00';
+                    const subPlClass = subPl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+                    return `
+                                    <div class="mobile-compact-row" style="padding:12px 16px 12px 32px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--surface3);" data-coin-id="${subItem.id}">
+                                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                            <span style="font-family:var(--font-ui);font-size:13px;color:var(--text-muted);font-weight:500;">${subItem.coin_name}</span>
+                                            <span style="font-family:var(--font-mono);font-size:13px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(subItem.current)}</span>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                                            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);">${subItem.platform}</span>
+                                            <span style="font-family:var(--font-mono);font-size:10px;${subPlClass};font-weight:500;">${subPlPct}%</span>
+                                        </div>
+                                    </div>
+                                `;
+                }).join('')}
+                            </div>
+                        `;
+            }
+            const invested = item._invested;
+            const current = parseFloat(item.current) || 0;
+            const pl = current - invested;
+            const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+            const plClass = pl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+            return `
+                        <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-coin-id="${item.id}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.coin_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(current)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${item.coin_name} · ${item._qty.toFixed(6)}</span>
+                                <span style="font-family:var(--font-mono);font-size:11px;${plClass};font-weight:500;">${plPct}%</span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
+            </div>` : '<p class="empty-state">No crypto holdings added yet.</p>'}
         `;
 
         const toggleClosedBtn = tabContent.querySelector('#cr-toggle-closed');
@@ -243,6 +353,86 @@ async function _renderPortfolioTab(tabContent, container, portfolioId) {
                 renderOrderHistoryTab(tc, portfolioId, 'crypto');
             });
         });
+
+        // BTC group row expand/collapse
+        tabContent.querySelector('[data-btc-group="true"]')?.addEventListener('click', (e) => {
+            const subRows = tabContent.querySelectorAll('.btc-subrow');
+            const isHidden = subRows[0]?.style.display === 'none' || subRows[0]?.style.display === '';
+            subRows.forEach(row => {
+                row.style.display = isHidden ? 'table-row' : 'none';
+            });
+            const icon = e.target.closest('tr').querySelector('[data-btc-group="true"] td:nth-child(2) span');
+            if (icon) icon.textContent = isHidden ? '▲' : '▼';
+        });
+
+        // Mobile list tap handlers
+        tabContent.querySelectorAll('[data-coin-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const coinId = row.dataset.coinId;
+                const coin = holdings.find(c => c.id === coinId);
+                if (!coin) return;
+                const invested = coin._invested;
+                const current = parseFloat(coin.current) || 0;
+                const pl = current - invested;
+                const plPct = invested > 0 ? ((pl / invested) * 100).toFixed(2) : '0.00';
+                const fields = {
+                    'Coin Name': coin.coin_name,
+                    'Platform': coin.platform || '—',
+                    'Quantity': coin._qty.toFixed(8),
+                    'Invested': Utilities.formatCurrency(invested),
+                    'Current Value': Utilities.formatCurrency(current),
+                    'P/L': `${Utilities.formatCurrency(pl)} (${plPct}%)`,
+                };
+                const actions = [
+                    {
+                        label: 'Edit',
+                        onClick: () => {
+                            window.app.editEntry('crypto', coinId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: () => {
+                            window.app.deleteEntry('crypto', coinId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    }
+                ];
+                Utilities.openBottomSheet(fields, actions);
+            });
+        });
+
+        // Mobile BTC group expansion toggle
+        tabContent.querySelectorAll('.mobile-btc-group').forEach(groupRow => {
+            groupRow.addEventListener('click', (e) => {
+                const subrowsContainer = groupRow.nextElementSibling;
+                const icon = groupRow.querySelector('.btc-expand-icon');
+                if (subrowsContainer && subrowsContainer.classList.contains('mobile-btc-subrows')) {
+                    const isHidden = subrowsContainer.style.display === 'none' || subrowsContainer.style.display === '';
+                    subrowsContainer.style.display = isHidden ? 'block' : 'none';
+                    if (icon) icon.textContent = isHidden ? '▲' : '▼';
+                }
+            });
+        });
+
+        // Add mobile CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+            }
+        `;
+        tabContent.appendChild(mobileStyle);
 
         window._updateBtcGoal = async (value) => {
             const g = parseFloat(value);

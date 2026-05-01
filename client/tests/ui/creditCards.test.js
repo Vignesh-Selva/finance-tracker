@@ -9,10 +9,10 @@ function computeBillingCycle(billingDay) {
     let cycleEnd, cycleStart;
     if (todayDay <= day) {
         cycleEnd = new Date(today.getFullYear(), today.getMonth(), day);
-        cycleStart = new Date(today.getFullYear(), today.getMonth() - 1, day + 1);
+        cycleStart = new Date(today.getFullYear(), today.getMonth() - 1, day);
     } else {
         cycleEnd = new Date(today.getFullYear(), today.getMonth() + 1, day);
-        cycleStart = new Date(today.getFullYear(), today.getMonth(), day + 1);
+        cycleStart = new Date(today.getFullYear(), today.getMonth(), day);
     }
     const daysTotal = Math.round((cycleEnd - cycleStart) / 86400000);
     const daysElapsed = Math.round((today - cycleStart) / 86400000);
@@ -41,7 +41,7 @@ describe('creditCards - computeBillingCycle', () => {
         const billingDay = Math.max(1, today.getDate() - 5);
         const result = computeBillingCycle(billingDay);
         expect(result).not.toBeNull();
-        expect(result.daysRemaining).toBeGreaterThan(0);
+        expect(result.daysRemaining).toBe(0);
         expect(result.daysTotal).toBeGreaterThan(25);
     });
 

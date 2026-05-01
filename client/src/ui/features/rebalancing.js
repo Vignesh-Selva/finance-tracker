@@ -7,12 +7,12 @@ const _LOCKED_IN_KEYS = new Set(['epfPpf']);
 const BUCKETS = ['Equity', 'Debt', 'Cash', 'Gold', 'Crypto', 'Other'];
 
 const ASSET_CLASSES = [
-    { key: 'savings', label: 'Savings', color: '#d97757' },
-    { key: 'fixedDeposits', label: 'Fixed Deposits', color: '#3b82f6' },
-    { key: 'mutualFunds', label: 'Mutual Funds', color: '#059669' },
-    { key: 'stocks', label: 'Stocks', color: '#8b5cf6' },
-    { key: 'crypto', label: 'Crypto', color: '#f59e0b' },
-    { key: 'epfPpf', label: 'EPF / PPF', color: '#6b7280' },
+    { key: 'savings',       label: 'Savings' },
+    { key: 'fixedDeposits', label: 'Fixed Deposits' },
+    { key: 'mutualFunds',   label: 'Mutual Funds' },
+    { key: 'stocks',        label: 'Stocks' },
+    { key: 'crypto',        label: 'Crypto' },
+    { key: 'epfPpf',        label: 'EPF / PPF' },
 ];
 
 // ─── Module state ─────────────────────────────────────────

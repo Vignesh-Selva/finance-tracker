@@ -50,8 +50,11 @@ export async function renderFixedDeposits(portfolioId) {
 
         const html = `
             <div class="section-header">
-                <h2>Fixed Deposits</h2>
-                <button class="btn btn-primary" onclick="window.app.showAddForm('fixedDeposits')">+ Add FD</button>
+                <div>
+                    <p class="page-eyebrow">WEALTH OS · FIXED DEPOSITS</p>
+                    <h1 class="page-title">Fixed Deposits</h1>
+                </div>
+                <button class="btn btn-primary btn-add-desktop" onclick="window.app.showAddForm('fixedDeposits')">+ Add FD</button>
             </div>
             <div class="stat-grid">
                 <div class="stat-card"><h3>Total Invested</h3><p class="stat-value">${Utilities.formatCurrency(totalInvested)}</p></div>
@@ -71,10 +74,83 @@ export async function renderFixedDeposits(portfolioId) {
                     </tr></thead>
                     <tbody>${tableRows}</tbody>
                 </table>
+            </div>
+            <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;">
+                ${fds.map(item => {
+            const invested = parseFloat(item.invested) || 0;
+            const maturity = parseFloat(item.maturity) || 0;
+            const interest = item.interest_rate;
+            return `
+                        <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-fd-id="${item.id}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="font-family:var(--font-ui);font-size:14px;color:var(--text-primary);font-weight:500;">${item.bank_name}</span>
+                                <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-primary);font-weight:500;">${Utilities.formatCurrency(maturity)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);">${item.bank_name} · ${item.tenure || '—'}</span>
+                                <span style="font-family:var(--font-mono);font-size:11px;color:var(--yellow);font-weight:500;">${interest}%</span>
+                            </div>
+                        </div>
+                    `;
+        }).join('')}
             </div>` : '<p class="empty-state">No fixed deposits added yet.</p>'}
+            <button class="fab-add" onclick="window.app.showAddForm('fixedDeposits')" title="Add FD">+</button>
         `;
 
         container.innerHTML = html;
+
+        // Mobile list tap handlers
+        container.querySelectorAll('[data-fd-id]').forEach(row => {
+            row.addEventListener('click', () => {
+                const fdId = row.dataset.fdId;
+                const fd = fds.find(f => f.id === fdId);
+                if (!fd) return;
+                const fields = {
+                    'Bank Name': fd.bank_name,
+                    'Invested': Utilities.formatCurrency(fd.invested),
+                    'Maturity Value': Utilities.formatCurrency(fd.maturity),
+                    'Interest Rate': `${fd.interest_rate}%`,
+                    'Tenure': fd.tenure || '—',
+                    'Start Date': Utilities.formatDate(fd.start_date),
+                    'Maturity Date': Utilities.formatDate(fd.maturity_date),
+                };
+                const actions = [
+                    {
+                        label: 'Edit',
+                        onClick: () => {
+                            window.app.editEntry('fixedDeposits', fdId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: () => {
+                            window.app.deleteEntry('fixedDeposits', fdId);
+                            const sheet = document.getElementById('mobile-bottom-sheet');
+                            const overlay = document.getElementById('mobile-bottom-sheet-overlay');
+                            if (sheet) sheet.style.transform = 'translateY(100%)';
+                            if (overlay) overlay.remove();
+                            if (sheet) setTimeout(() => sheet.remove(), 300);
+                        }
+                    }
+                ];
+                Utilities.openBottomSheet(fields, actions);
+            });
+        });
+
+        // Add mobile CSS
+        const mobileStyle = document.createElement('style');
+        mobileStyle.textContent = `
+            @media (max-width: 680px) {
+                .data-table-container { display: none !important; }
+                .mobile-list-container { display: block !important; }
+            }
+        `;
+        container.appendChild(mobileStyle);
     } catch (error) {
         console.error('FD render error:', error);
         container.innerHTML = '<div class="error-state"><p>Failed to load fixed deposits.</p><button class="btn btn-primary" onclick="window.app.refreshCurrentTab()">Retry</button></div>';
