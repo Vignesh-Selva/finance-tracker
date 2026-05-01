@@ -34,16 +34,19 @@ if (googleBtn) {
       return;
     }
     try {
+      const redirectUrl = window.location.origin + '/';
+      console.log('Redirecting to:', redirectUrl);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/'
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
         }
       });
       if (error) throw error;
     } catch (error) {
       console.error('Google auth error:', error);
-      alert('Authentication failed. Please try again.');
+      alert('Authentication failed: ' + error.message);
     }
   });
 }
