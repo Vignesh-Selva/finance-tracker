@@ -1,4 +1,5 @@
 import PersonalFinanceApp from './core/appShell.js';
+import '../styles/main.css'
 import { getSession, onAuthStateChange } from './services/authService.js';
 
 let app = null;
