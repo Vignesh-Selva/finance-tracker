@@ -59,7 +59,7 @@ if (googleBtn) {
       return;
     }
     try {
-      const redirectUrl = window.location.origin + '/';
+      const redirectUrl = window.location.href;
       console.log('Redirecting to:', redirectUrl);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
