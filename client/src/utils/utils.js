@@ -138,7 +138,7 @@ const Utilities = {
                     width: 100%; padding: 12px; margin-top: 12px;
                     border-radius: 12px; border: 1px solid var(--border);
                     background: var(--surface3); color: var(--text-primary);
-                    font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer;
+                    font-family: var(--font-mono); font-size: 14px; font-weight: 600; cursor: pointer;
                     transition: all 0.2s;
                 `;
                 btn.onmouseenter = () => {
@@ -161,7 +161,7 @@ const Utilities = {
             width: 100%; padding: 12px; margin-top: 12px;
             border-radius: 12px; border: 1px solid var(--border);
             background: transparent; color: var(--muted);
-            font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: var(--font-mono); font-size: 14px; font-weight: 600; cursor: pointer;
             transition: all 0.2s;
         `;
         closeBtn.onmouseenter = () => {

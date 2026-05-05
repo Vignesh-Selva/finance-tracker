@@ -2,20 +2,23 @@ import Utilities from '../utils/utils.js';
 import { setDisplayCurrency } from '../utils/formatUtils.js';
 import { fetchFXRates, COMMON_CURRENCIES } from '../services/fxRates.js';
 import { FormHandler } from '../ui/forms/formHandler.js';
-import { renderDashboard } from '../ui/features/dashboard.js';
-import { renderExpenses } from '../ui/features/expenses.js';
-import { renderSavings } from '../ui/features/savings.js';
-import { renderFixedDeposits } from '../ui/features/fixedDeposits.js';
-import { renderMutualFunds } from '../ui/features/mutualFunds.js';
-import { renderStocks } from '../ui/features/stocks.js';
-import { renderCrypto } from '../ui/features/crypto.js';
-import { renderLiabilities } from '../ui/features/liabilities.js';
-import { renderCreditCards } from '../ui/features/creditCards.js';
-import { renderBudgets } from '../ui/features/budgets.js';
-import { renderRebalancing } from '../ui/features/rebalancing.js';
 import api from '../services/api.js';
 import { signOut as authSignOut, updateUser, getCurrentUser, extractUsernameFromEmail } from '../services/authService.js';
 import { refreshAllPrices } from '../services/priceFetcher.js';
+
+const _LAZY_MODULES = {
+    dashboard:     () => import('../ui/features/dashboard.js').then(m => m.renderDashboard),
+    expenses:      () => import('../ui/features/expenses.js').then(m => m.renderExpenses),
+    savings:       () => import('../ui/features/savings.js').then(m => m.renderSavings),
+    fixedDeposits: () => import('../ui/features/fixedDeposits.js').then(m => m.renderFixedDeposits),
+    mutualFunds:   () => import('../ui/features/mutualFunds.js').then(m => m.renderMutualFunds),
+    stocks:        () => import('../ui/features/stocks.js').then(m => m.renderStocks),
+    crypto:        () => import('../ui/features/crypto.js').then(m => m.renderCrypto),
+    liabilities:   () => import('../ui/features/liabilities.js').then(m => m.renderLiabilities),
+    creditCards:   () => import('../ui/features/creditCards.js').then(m => m.renderCreditCards),
+    budgets:       () => import('../ui/features/budgets.js').then(m => m.renderBudgets),
+    rebalancing:   () => import('../ui/features/rebalancing.js').then(m => m.renderRebalancing),
+};
 
 class PersonalFinanceApp {
     constructor() {
@@ -25,20 +28,7 @@ class PersonalFinanceApp {
         this.sidebarCollapsed = false;
         this.userSidebarPref = null;
         this.isSettingsModal = false;
-
-        this.renderers = {
-            dashboard: renderDashboard,
-            expenses: renderExpenses,
-            savings: renderSavings,
-            fixedDeposits: renderFixedDeposits,
-            mutualFunds: renderMutualFunds,
-            stocks: renderStocks,
-            crypto: renderCrypto,
-            liabilities: renderLiabilities,
-            creditCards: renderCreditCards,
-            budgets: renderBudgets,
-            rebalancing: renderRebalancing,
-        };
+        this._rendererCache = {};
     }
 
     async init() {
@@ -191,8 +181,13 @@ class PersonalFinanceApp {
 
     async renderCurrentTab() {
         try {
-            const renderFn = this.renderers[this.currentTab];
-            if (renderFn) await renderFn(this.portfolioId);
+            const loader = _LAZY_MODULES[this.currentTab];
+            if (loader) {
+                if (!this._rendererCache[this.currentTab]) {
+                    this._rendererCache[this.currentTab] = await loader();
+                }
+                await this._rendererCache[this.currentTab](this.portfolioId);
+            }
         } catch (error) {
             console.error('Render error:', error);
             Utilities.showNotification('Failed to render content', 'error');

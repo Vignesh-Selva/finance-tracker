@@ -87,6 +87,11 @@ h1 {
     letter-spacing: -0.02em;
 }
 
+h2, h3, h4 {
+    font-family: var(--font-ui);
+    font-weight: 700;
+}
+
 .page-eyebrow {
     font-family: var(--font-mono);
     font-size: 9px;
@@ -316,17 +321,20 @@ h1 {
     }
 
     .mobile-summary-label {
+        font-family: var(--font-ui);
         font-size: 13px;
         color: var(--text-muted);
     }
 
     .mobile-summary-value {
+        font-family: var(--font-mono);
         font-size: 14px;
         font-weight: 600;
         color: var(--text-primary);
     }
 
     .mobile-summary-header {
+        font-family: var(--font-mono);
         font-size: 14px;
         font-weight: 600;
         color: var(--accent);
@@ -416,7 +424,7 @@ h1 {
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
     transition: background 0.15s, opacity 0.15s, transform 0.15s;
     user-select: none;
 }
@@ -465,7 +473,7 @@ h1 {
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 500;
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
 }
@@ -521,6 +529,7 @@ h1 {
 }
 
 .stat-card h3 {
+    font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
     color: var(--text-muted);
@@ -530,6 +539,7 @@ h1 {
 }
 
 .stat-value {
+    font-family: var(--font-mono);
     font-size: 1.75rem;
     font-weight: 700;
     margin-bottom: 5px;
@@ -537,6 +547,7 @@ h1 {
 }
 
 .stat-change {
+    font-family: var(--font-mono);
     font-size: 0.9rem;
 }
 
@@ -633,11 +644,13 @@ h1 {
 }
 
 .legend-label {
+    font-family: var(--font-ui);
     flex: 1;
     font-size: 0.9rem;
 }
 
 .legend-value {
+    font-family: var(--font-mono);
     font-weight: bold;
     font-size: 0.9rem;
 }
@@ -735,6 +748,7 @@ h1 {
 }
 
 .data-table th {
+    font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
     color: var(--text-muted);
@@ -749,6 +763,7 @@ h1 {
 }
 
 .data-table td {
+    font-family: var(--font-mono);
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-subtle);
     font-size: 14px;
@@ -764,6 +779,7 @@ h1 {
 }
 
 .badge {
+    font-family: var(--font-mono);
     display: inline-flex;
     align-items: center;
     font-size: 10px;
@@ -876,7 +892,7 @@ h1 {
     border-radius: 12px;
     background: var(--bg-elevated);
     color: var(--text-primary);
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
     font-size: 14px;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -996,6 +1012,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* Last refreshed label */
 .last-refreshed {
+    font-family: var(--font-mono);
     text-align: right;
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -1359,7 +1376,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    font-family: var(--font-ui);
+    font-family: var(--font-mono);
     transition: background 0.15s;
 }
 
@@ -1800,28 +1817,17 @@ th.sort-desc .sort-icon {
     }
 
     .allocation-legend {
-        display: flex;
-        flex-direction: row;
-        overflow-x: auto;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
-        flex-wrap: nowrap;
-        padding-bottom: 6px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
         margin-top: 12px;
     }
 
-    .allocation-legend::-webkit-scrollbar {
-        display: none;
-    }
-
     .legend-item {
-        flex-shrink: 0;
-        white-space: nowrap;
         background: var(--bg-elevated);
         border: 1px solid var(--border);
-        border-radius: 100px;
-        padding: 5px 12px;
+        border-radius: 8px;
+        padding: 8px 10px;
         gap: 6px;
     }
 
@@ -1838,7 +1844,8 @@ th.sort-desc .sort-icon {
     }
 
     .breakdown {
-        padding: 14px;
+        padding: 16px;
+        min-height: auto;
     }
 
     /* Settings modal mobile optimization */

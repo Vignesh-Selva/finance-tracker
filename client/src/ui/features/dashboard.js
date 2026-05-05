@@ -202,17 +202,32 @@ export async function renderDashboard(portfolioId) {
 
 
         const html = `
-            <div class="dash-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;">
-                <div>
-                    <p class="dash-eyebrow" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Wealth OS · Personal Finance</p>
-                    <h1 class="dash-greeting" style="font-family:var(--font-display);font-size:clamp(32px,5vw,48px);font-weight:400;font-style:italic;line-height:1;color:var(--text-primary);letter-spacing:-0.01em;margin:0;">${isBirthday ? birthdayMessage : `Good ${getGreetingTimeOfDay()}, <em>${username || 'there'}</em>`}</h1>
-                </div>
-                <div class="dash-header-right" style="display:flex;align-items:center;gap:20px;">
-                    <span class="dash-refresh-badge" style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:0.08em;"><span class="dash-live-dot" style="width:6px;height:6px;background:var(--green);border-radius:50%;display:inline-block;margin-right:6px;animation:dashPulse 2s ease infinite;"></span><span id="header-clock"></span></span>
+            <div class="dash-header" style="margin-bottom:28px;">
+                <p class="dash-eyebrow" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;text-align:center;">Wealth OS · Personal Finance</p>
+                <div class="dash-header-content" style="display:flex;align-items:flex-end;justify-content:space-between;">
+                    <h1 class="dash-greeting" style="font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:400;font-style:italic;line-height:1;color:var(--text-primary);letter-spacing:-0.01em;margin:0;">${isBirthday ? birthdayMessage : `Good ${getGreetingTimeOfDay()}, <em>${username || 'there'}</em>`}</h1>
+                    <div class="dash-header-right" style="display:flex;align-items:center;gap:20px;">
+                        <span class="dash-refresh-badge" style="font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:0.08em;"><span class="dash-live-dot" style="width:6px;height:6px;background:var(--green);border-radius:50%;display:inline-block;margin-right:6px;animation:dashPulse 2s ease infinite;"></span><span id="header-clock"></span></span>
+                    </div>
                 </div>
             </div>
             <style>
                 @keyframes dashPulse { 0%,100% { opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.4); } 50% { opacity:0.7;box-shadow:0 0 0 4px rgba(74,222,128,0); } }
+                @media (max-width: 768px) {
+                    .dash-header-content {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 12px;
+                    }
+                    .dash-greeting {
+                        font-size: clamp(24px,6vw,32px) !important;
+                        text-align: center;
+                    }
+                    .dash-header-right {
+                        justify-content: center;
+                    }
+                }
             </style>
             ${isBirthday ? '<canvas id="birthdayConfetti" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>' : ''}
             <div class="stat-grid">
@@ -368,8 +383,8 @@ export async function renderDashboard(portfolioId) {
                         ${['1W', '1M', 'ALL'].map(f => `<button class="chart-filter-pill${f === 'ALL' ? ' active' : ''}" data-filter="${f}" onclick="window._setChartFilter('${f}')" style="background:${f === 'ALL' ? 'rgba(232,255,71,0.08)' : 'transparent'};color:${f === 'ALL' ? '#e8ff47' : 'var(--muted2)'};border:${f === 'ALL' ? '1px solid rgba(232,255,71,0.25)' : '1px solid var(--border)'};border-radius:100px;padding:4px 10px;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;">${f}</button>`).join('')}
                     </div>
                 </div>
-                <div class="chart-container" style="position:relative;height:220px;width:100%;padding-left:0;">
-                    <div id="netWorthChart" style="width:100%;height:100%;overflow:visible;"></div>
+                <div class="chart-container" style="position:relative;height:220px;width:100%;padding:16px;">
+                    <div id="netWorthChart" style="width:100%;height:100%;"></div>
                 </div>
             </div>
 
@@ -467,8 +482,12 @@ export async function renderDashboard(portfolioId) {
 
         _cachedPortfolioId = portfolioId;
         _chartFilter = 'ALL';
-        await renderNetWorthChart(portfolioId);
-        await renderNetWorthSparkline(snapshots);
+        
+        // Render chart after layout is settled to ensure container has dimensions
+        requestAnimationFrame(async () => {
+            await renderNetWorthChart(portfolioId);
+            await renderNetWorthSparkline(snapshots);
+        });
 
         window._dashAllocationData = { allocation, portfolioId };
 
@@ -571,8 +590,8 @@ async function renderNetWorthChart(portfolioId) {
         const gradColor = isUp ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
 
         const W = container.offsetWidth || 0;
+        const H = container.offsetHeight || 220;
         if (W <= 10) return;
-        const H = 220;
         const PAD = { top: 20, right: 36, bottom: 40, left: 0 };
         const chartW = W - PAD.left - PAD.right;
         const chartH = H - PAD.top - PAD.bottom;

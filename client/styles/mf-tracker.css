@@ -49,6 +49,7 @@
 }
 
 .mft-summary-label {
+  font-family: var(--mft-font-mono);
   font-size: 0.78rem;
   color: var(--mft-muted);
   text-transform: uppercase;
@@ -85,7 +86,7 @@
   border: 1px solid var(--mft-card-border);
   border-radius: 12px;
   color: var(--mft-text);
-  font-family: var(--mft-font-ui);
+  font-family: var(--mft-font-mono);
   font-size: 0.9rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -178,7 +179,7 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: var(--mft-font-ui);
+  font-family: var(--mft-font-mono);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -381,6 +382,7 @@
 }
 
 .mft-chip-label {
+  font-family: var(--mft-font-mono);
   font-size: 0.68rem;
   color: var(--mft-muted);
   text-transform: uppercase;
@@ -498,6 +500,7 @@
 }
 
 .mft-detail-label {
+  font-family: var(--mft-font-mono);
   font-size: 0.72rem;
   color: var(--mft-muted);
   text-transform: uppercase;
@@ -528,6 +531,7 @@
 }
 
 .mft-holdings-label {
+  font-family: var(--mft-font-mono);
   font-size: 0.68rem;
   color: var(--mft-muted);
   text-transform: uppercase;
@@ -644,7 +648,7 @@
   border: 1px solid var(--mft-card-border);
   border-radius: 12px;
   color: var(--mft-text);
-  font-family: var(--mft-font-ui);
+  font-family: var(--mft-font-mono);
   font-size: 0.82rem;
   outline: none;
   cursor: pointer;
