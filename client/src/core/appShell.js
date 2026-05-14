@@ -442,6 +442,7 @@ class PersonalFinanceApp {
                 <div class="settings-tabs">
                     <button class="settings-tab active" data-tab="profile">👤 Profile</button>
                     <button class="settings-tab" data-tab="preferences">⚙️ Preferences</button>
+                    <button class="settings-tab" data-tab="financial">💼 Financial</button>
                     <button class="settings-tab" data-tab="data">💾 Data</button>
                 </div>
 
@@ -587,6 +588,31 @@ class PersonalFinanceApp {
                     </div>
                 </div>
 
+                <div class="settings-tab-content" id="tab-financial">
+                    <p class="form-section-label" style="margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono);">Portfolio Targets</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label>Net Worth Goal (₹):</label>
+                            <small class="form-hint">Target total portfolio value</small>
+                            <input type="number" id="setting-goal" value="${settings.goal ?? 15000000}" class="form-input" min="0" step="10000" placeholder="e.g. 15000000" />
+                        </div>
+                        <div class="form-group">
+                            <label>EPF Balance (₹):</label>
+                            <small class="form-hint">Current Employees' Provident Fund balance</small>
+                            <input type="number" id="setting-epf" value="${settings.epf ?? 0}" class="form-input" min="0" step="10000" placeholder="e.g. 500000" />
+                        </div>
+                        <div class="form-group">
+                            <label>PPF Balance (₹):</label>
+                            <small class="form-hint">Current Public Provident Fund balance</small>
+                            <input type="number" id="setting-ppf" value="${settings.ppf ?? 0}" class="form-input" min="0" step="10000" placeholder="e.g. 150000" />
+                        </div>
+                    </div>
+                    <p class="form-section-label" style="margin-top: 24px; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-mono);">Investment Rules</p>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">Personal investment principles to guide your decisions.</p>
+                    <div id="settings-rules-list"></div>
+                    <button type="button" class="btn btn-secondary" id="settings-add-rule-btn" style="margin-top: 8px; font-size: 13px; padding: 7px 14px;">+ Add Rule</button>
+                </div>
+
                 <div class="settings-tab-content" id="tab-data">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
                         <button type="button" class="btn btn-secondary" id="settings-export-btn">💾 Export Data</button>
@@ -635,6 +661,48 @@ class PersonalFinanceApp {
             if (deleteAllBtn) deleteAllBtn.addEventListener('click', () => this.deleteAllData());
             const refreshPricesBtn = document.getElementById('settings-refresh-prices-btn');
             if (refreshPricesBtn) refreshPricesBtn.addEventListener('click', () => this.handlePriceRefresh(settings));
+
+            const rulesKey = `fin_rules_v1_${this.portfolioId}`;
+            const loadRules = () => { try { return JSON.parse(localStorage.getItem(rulesKey) || '[]'); } catch { return []; } };
+            const saveRules = (r) => localStorage.setItem(rulesKey, JSON.stringify(r));
+            const renderRulesList = () => {
+                const rulesList = document.getElementById('settings-rules-list');
+                if (!rulesList) return;
+                const rules = loadRules();
+                rulesList.innerHTML = rules.map((r, i) => `
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;" data-rule-index="${i}">
+                        <span style="color:var(--text-muted);font-size:13px;min-width:22px;">${i + 1}.</span>
+                        <input type="text" value="${r.replace(/"/g, '&quot;')}" class="form-input" style="flex:1;" data-rule-input="${i}" />
+                        <button type="button" class="btn-ghost" style="padding:6px 10px;color:var(--red);" data-rule-delete="${i}">✕</button>
+                    </div>`).join('');
+                rulesList.querySelectorAll('[data-rule-input]').forEach(input => {
+                    input.addEventListener('change', (e) => {
+                        const r = loadRules();
+                        r[parseInt(e.target.dataset.ruleInput)] = e.target.value;
+                        saveRules(r);
+                    });
+                });
+                rulesList.querySelectorAll('[data-rule-delete]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const r = loadRules();
+                        r.splice(parseInt(e.target.dataset.ruleDelete), 1);
+                        saveRules(r);
+                        renderRulesList();
+                    });
+                });
+            };
+            renderRulesList();
+            const addRuleBtn = document.getElementById('settings-add-rule-btn');
+            if (addRuleBtn) addRuleBtn.addEventListener('click', () => {
+                const r = loadRules();
+                r.push('');
+                saveRules(r);
+                renderRulesList();
+                setTimeout(() => {
+                    const inputs = document.querySelectorAll('#settings-rules-list [data-rule-input]');
+                    inputs[inputs.length - 1]?.focus();
+                }, 50);
+            });
         } catch {
             Utilities.showNotification('Failed to load settings', 'error');
         }

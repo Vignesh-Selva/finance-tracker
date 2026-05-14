@@ -23,13 +23,11 @@ async function checkSession() {
     const hasOAuthParams = hashParams.has('access_token') || hashParams.has('error');
 
     if (hasOAuthParams) {
-      console.log('Detected OAuth callback, processing...');
       // Let Supabase handle the OAuth callback from URL automatically
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
 
       if (data.session) {
-        console.log('OAuth successful, redirecting to main app');
         // Clear the hash from URL to remove tokens
         window.location.hash = '';
         // Redirect to main app
@@ -60,7 +58,6 @@ if (googleBtn) {
     }
     try {
       const redirectUrl = window.location.href;
-      console.log('Redirecting to:', redirectUrl);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
