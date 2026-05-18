@@ -595,7 +595,7 @@
         </a>
         <div class="divider"><span>OR</span></div>
         <form id="auth-form">
-          <div class="form-group" id="name-group" style="display: none;">
+          <div class="form-group" id="name-group">
             <label class="form-label" for="name-input">Name</label>
             <input type="text" id="name-input" class="form-input" placeholder="Your name">
           </div>
@@ -708,6 +708,7 @@
       }
     }
     window.setFormMode = setFormMode;
+    setFormMode(true);
 
     document.getElementById('toggle-link').addEventListener('click', e => {
       e.preventDefault();
