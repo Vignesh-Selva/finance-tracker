@@ -231,8 +231,8 @@ export async function renderDashboard(portfolioId) {
             </style>
             ${isBirthday ? '<canvas id="birthdayConfetti" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>' : ''}
             <div class="stat-grid">
-                <div class="stat-card desktop-summary-card" style="background:linear-gradient(135deg,#0f1a0f 0%,#0d1320 100%);border-color:rgba(74,222,128,0.15);position:relative;overflow:hidden;">
-                    <div style="content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(74,222,128,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+                <div class="stat-card desktop-summary-card" style="background:linear-gradient(135deg,var(--green-dim) 0%,var(--bg-card) 100%);border-color:var(--green-dim);position:relative;overflow:hidden;">
+                    <div style="content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,var(--green-dim) 0%,transparent 70%);pointer-events:none;"></div>
                     <h3>Net Worth</h3>
                     <p class="stat-value">${Utilities.formatCurrency(netWorth.total)}</p>
                     <p class="stat-change ${changePercentClass}" style="font-size:1rem;font-weight:700;margin-top:6px;">${changePercentRaw >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(changePercent))}% this month</p>
@@ -325,32 +325,32 @@ export async function renderDashboard(portfolioId) {
                 <h3>Investments P/L</h3>
                 ${hasInvestments ? `
                 <div class="stat-grid">
-                    <div class="stat-card" style="background:linear-gradient(135deg,${totalPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${totalPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'};">
+                    <div class="stat-card" style="background:linear-gradient(135deg,${totalPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'} 0%,var(--bg-card) 100%);border-color:${totalPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'};">
                         <h3>Total P/L</h3>
                         <p class="stat-value ${totalPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(totalPL.pl)}</p>
                         <p class="stat-change">${totalPL.plPercent}%</p>
-                        <div style="margin-top:14px;height:1px;background:${totalPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <div style="margin-top:14px;height:1px;background:${totalPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"></div>
                         <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">ALL INSTRUMENTS COMBINED</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('mutualFunds')" style="cursor:pointer;background:linear-gradient(135deg,${mfPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${mfPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
+                    <div class="stat-card" onclick="window.app.switchTab('mutualFunds')" style="cursor:pointer;background:linear-gradient(135deg,${mfPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'} 0%,var(--bg-card) 100%);border-color:${mfPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}">
                         <h3>Mutual Funds P/L</h3>
                         <p class="stat-value ${mfPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(mfPL.pl)}</p>
                         <p class="stat-change">${mfPL.plPercent}%</p>
-                        <div style="margin-top:14px;height:1px;background:${mfPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <div style="margin-top:14px;height:1px;background:${mfPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"></div>
                         <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">MUTUAL FUNDS PORTFOLIO</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('stocks')" style="cursor:pointer;background:linear-gradient(135deg,${stocksPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${stocksPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
+                    <div class="stat-card" onclick="window.app.switchTab('stocks')" style="cursor:pointer;background:linear-gradient(135deg,${stocksPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'} 0%,var(--bg-card) 100%);border-color:${stocksPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}">
                         <h3>Stocks & ETF P/L</h3>
                         <p class="stat-value ${stocksPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(stocksPL.pl)}</p>
                         <p class="stat-change">${stocksPL.plPercent}%</p>
-                        <div style="margin-top:14px;height:1px;background:${stocksPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <div style="margin-top:14px;height:1px;background:${stocksPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"></div>
                         <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">STOCKS & ETF PORTFOLIO</p>
                     </div>
-                    <div class="stat-card" onclick="window.app.switchTab('crypto')" style="cursor:pointer;background:linear-gradient(135deg,${cryptoPL.pl >= 0 ? '#0d180d' : '#18100f'} 0%,var(--bg-card) 100%);border-color:${cryptoPL.pl >= 0 ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)'}">
+                    <div class="stat-card" onclick="window.app.switchTab('crypto')" style="cursor:pointer;background:linear-gradient(135deg,${cryptoPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'} 0%,var(--bg-card) 100%);border-color:${cryptoPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}">
                         <h3>Crypto P/L</h3>
                         <p class="stat-value ${cryptoPL.pl >= 0 ? 'positive' : 'negative'}">${Utilities.formatCurrency(cryptoPL.pl)}</p>
                         <p class="stat-change">${cryptoPL.plPercent}%</p>
-                        <div style="margin-top:14px;height:1px;background:${cryptoPL.pl >= 0 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)'}"></div>
+                        <div style="margin-top:14px;height:1px;background:${cryptoPL.pl >= 0 ? 'var(--green-dim)' : 'var(--red-dim)'}"></div>
                         <p style="margin-top:10px;font-family:var(--font-mono);font-size:8px;color:var(--muted2);letter-spacing:0.08em;">CRYPTO PORTFOLIO</p>
                     </div>
                 </div>
@@ -380,7 +380,7 @@ export async function renderDashboard(portfolioId) {
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                     <h3 style="margin:0;">Net Worth History</h3>
                     <div style="display:flex;gap:6px;">
-                        ${['1W', '1M', 'ALL'].map(f => `<button class="chart-filter-pill${f === 'ALL' ? ' active' : ''}" data-filter="${f}" onclick="window._setChartFilter('${f}')" style="background:${f === 'ALL' ? 'rgba(232,255,71,0.08)' : 'transparent'};color:${f === 'ALL' ? '#e8ff47' : 'var(--muted2)'};border:${f === 'ALL' ? '1px solid rgba(232,255,71,0.25)' : '1px solid var(--border)'};border-radius:100px;padding:4px 10px;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;">${f}</button>`).join('')}
+                        ${['1W', '1M', 'ALL'].map(f => `<button class="chart-filter-pill${f === 'ALL' ? ' active' : ''}" data-filter="${f}" onclick="window._setChartFilter('${f}')" style="background:${f === 'ALL' ? 'var(--accent-dim)' : 'transparent'};color:${f === 'ALL' ? 'var(--accent)' : 'var(--muted2)'};border:${f === 'ALL' ? '1px solid var(--border2)' : '1px solid var(--border)'};border-radius:100px;padding:4px 10px;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--font-mono);transition:all 0.2s;">${f}</button>`).join('')}
                     </div>
                 </div>
                 <div class="chart-container" style="position:relative;height:220px;width:100%;padding:16px;">
@@ -497,7 +497,7 @@ export async function renderDashboard(portfolioId) {
                 const isActive = p.dataset.filter === filter;
                 p.classList.toggle('active', isActive);
                 p.style.background = isActive ? 'var(--accent)' : 'var(--bg-elevated)';
-                p.style.color = isActive ? '#09090b' : 'var(--text-muted)';
+                p.style.color = isActive ? 'var(--accent-fg)' : 'var(--text-muted)';
             });
             renderNetWorthChart(_cachedPortfolioId);
         };
@@ -586,8 +586,11 @@ async function renderNetWorthChart(portfolioId) {
 
         const data = snapshots.map(s => ({ d: s.snapshot_date, v: parseFloat(s.net_worth) || 0 }));
         const isUp = data.length < 2 || data[data.length - 1].v >= data[0].v;
-        const lineColor = isUp ? '#4ade80' : '#f87171';
-        const gradColor = isUp ? 'rgba(74,222,128,0.12)' : 'rgba(248,113,113,0.12)';
+        const cs = getComputedStyle(document.documentElement);
+        const lineColor = isUp ? cs.getPropertyValue('--green').trim() : cs.getPropertyValue('--red').trim();
+        const gradColor = isUp ? cs.getPropertyValue('--green-dim').trim() : cs.getPropertyValue('--red-dim').trim();
+        const gridStroke = cs.getPropertyValue('--border').trim();
+        const labelFill = cs.getPropertyValue('--muted').trim();
 
         const W = container.offsetWidth || 0;
         const H = container.offsetHeight || 220;
@@ -632,8 +635,8 @@ async function renderNetWorthChart(portfolioId) {
         }
         const gridLines = yTicks.map(v => {
             const y = yScale(v);
-            return `<line x1="0" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-                    <text x="${W - PAD.right - 4}" y="${y + 3}" font-family="var(--font-mono)" font-size="8" fill="#52525b" text-anchor="end">${(v / 100000).toFixed(0)}L</text>`;
+            return `<line x1="0" y1="${y}" x2="${W - PAD.right}" y2="${y}" stroke="${gridStroke}" stroke-width="1"/>
+                    <text x="${W - PAD.right - 4}" y="${y + 3}" font-family="var(--font-mono)" font-size="8" fill="${labelFill}" text-anchor="end">${(v / 100000).toFixed(0)}L</text>`;
         }).join('');
 
         // X axis labels
@@ -646,7 +649,7 @@ async function renderNetWorthChart(portfolioId) {
             const p = pts[i];
             const date = new Date(data[i].d);
             const dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-            return `<text x="${p.x}" y="${H - 4}" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="#52525b">${dateStr}</text>`;
+            return `<text x="${p.x}" y="${H - 4}" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="${labelFill}">${dateStr}</text>`;
         }).join('');
 
         const svgContent = `
@@ -654,15 +657,15 @@ async function renderNetWorthChart(portfolioId) {
                 <defs>
                     <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stop-color="${gradColor}"/>
-                        <stop offset="100%" stop-color="rgba(232,255,71,0)"/>
+                        <stop offset="100%" stop-color="transparent"/>
                     </linearGradient>
                 </defs>
                 ${gridLines}
-                <line x1="${W - PAD.right}" y1="${PAD.top}" x2="${W - PAD.right}" y2="${H - PAD.bottom}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                <line x1="${W - PAD.right}" y1="${PAD.top}" x2="${W - PAD.right}" y2="${H - PAD.bottom}" stroke="${gridStroke}" stroke-width="1"/>
                 ${xLabelsHTML}
                 <path d="${areaPath}" fill="url(#areaGrad)"/>
                 <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linecap="round"/>
-                <line id="crossV" x1="0" y1="${PAD.top}" x2="0" y2="${H - PAD.bottom}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="3 3" style="opacity:0;pointer-events:none;"/>
+                <line id="crossV" x1="0" y1="${PAD.top}" x2="0" y2="${H - PAD.bottom}" stroke="${gridStroke}" stroke-width="1" stroke-dasharray="3 3" style="opacity:0;pointer-events:none;"/>
                 ${pts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${lineColor}" opacity="0" id="pt${i}" style="pointer-events:none;"/>`).join('')}
             </svg>
             <div id="tooltip" style="position:absolute;pointer-events:none;background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;font-family:var(--font-mono);font-size:10px;color:var(--text-primary);white-space:nowrap;opacity:0;transition:opacity 0.15s;z-index:10;"></div>

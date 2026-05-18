@@ -39,8 +39,8 @@ class PersonalFinanceApp {
             this.formHandler = new FormHandler(this.portfolioId);
             this.formHandler.app = this;
 
-            document.documentElement.setAttribute('data-theme', 'dark');
             this.loadSidebarState();
+            this._syncThemeToggle();
             this.setupEventListeners();
             await this.initFXRates();
             await this.switchTab('dashboard');
@@ -120,6 +120,22 @@ class PersonalFinanceApp {
         this.setSidebarCollapsed(true, false);
     }
 
+    toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch(e) {}
+        this._syncThemeToggle();
+    }
+
+    _syncThemeToggle() {
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const icon = document.getElementById('themeToggleIcon');
+        const label = document.getElementById('themeToggleLabel');
+        if (icon) icon.textContent = dark ? '☀️' : '🌙';
+        if (label) label.textContent = dark ? 'Light Mode' : 'Dark Mode';
+    }
+
     setupEventListeners() {
         const closeBtn = document.querySelector('#dataModal .close');
         if (closeBtn) closeBtn.onclick = () => this.closeModal();
@@ -134,6 +150,9 @@ class PersonalFinanceApp {
 
         const backdrop = document.getElementById('sidebarBackdrop');
         if (backdrop) backdrop.onclick = () => this.setSidebarCollapsed(true, false);
+
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        if (themeToggleBtn) themeToggleBtn.addEventListener('click', () => this.toggleTheme());
 
         window.addEventListener('resize', () => this.updateResponsiveLayout());
 

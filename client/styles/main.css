@@ -1,9 +1,79 @@
-/* ═══ Design System — Dark Only ════════════════════════ */
+/* ═══ Design System — Light / Dark ════════════════════════════ */
 :root {
+    /* Backgrounds */
+    --bg-primary:     #fafafa;
+    --bg-card:        #ffffff;
+    --bg-elevated:    #f4f4f5;
+    --surface2:       #f4f4f5;
+    --surface3:       #e4e4e7;
+
+    /* Borders */
+    --border:         rgba(0,0,0,0.08);
+    --border-subtle:  rgba(0,0,0,0.04);
+    --border2:        rgba(0,0,0,0.12);
+
+    /* Accent */
+    --accent:         #18181b;
+    --accent-fg:      #ffffff;
+    --accent-dim:     rgba(24,24,27,0.06);
+    --accent-hover:   rgba(24,24,27,0.85);
+    --accent-glow:    rgba(24,24,27,0.04);
+
+    /* Status colors */
+    --green:          #16a34a;
+    --green-dim:      rgba(22,163,74,0.08);
+    --red:            #dc2626;
+    --red-dim:        rgba(220,38,38,0.08);
+    --amber:          #d97706;
+    --yellow:         #d97706;
+    --blue:           #2563eb;
+    --highlight:      rgba(24,24,27,0.04);
+
+    /* Text */
+    --text-primary:   #18181b;
+    --text-secondary: #52525b;
+    --text-muted:     #71717a;
+    --muted:          #71717a;
+    --muted2:         #a1a1aa;
+
+    /* Asset palette */
+    --c-savings:  #16a34a;
+    --c-fd:       #d97706;
+    --c-mf:       #2563eb;
+    --c-stocks:   #9333ea;
+    --c-crypto:   #ea580c;
+    --c-epf:      #0891b2;
+    --c-ppf:      #7c3aed;
+
+    /* Shadows */
+    --shadow-card:  0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-glow:  0 0 0 1px rgba(24,24,27,0.06);
+
+    /* Typography */
+    --font-ui:      'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:    'DM Mono', 'Fira Code', monospace;
+    --font-display: 'Instrument Serif', Georgia, serif;
+
+    /* Legacy aliases — keep existing code working */
+    --primary:    var(--accent);
+    --secondary:  var(--green);
+    --danger:     var(--red);
+    --warning:    var(--amber);
+    --info:       var(--blue);
+    --bg:         var(--bg-primary);
+    --text:       var(--text-primary);
+    --card-bg:    var(--bg-card);
+    --shadow-sm:  0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md:  var(--shadow-card);
+    --radius:     20px;
+}
+
+[data-theme="dark"] {
     /* Backgrounds */
     --bg-primary:     #09090b;
     --bg-card:        #111113;
     --bg-elevated:    #18181b;
+    --surface2:       #18181b;
     --surface3:       #1f1f23;
 
     /* Borders */
@@ -13,6 +83,7 @@
 
     /* Accent */
     --accent:         #e8ff47;
+    --accent-fg:      #09090b;
     --accent-dim:     rgba(232,255,71,0.08);
     --accent-hover:   rgba(232,255,71,0.85);
     --accent-glow:    rgba(232,255,71,0.08);
@@ -46,24 +117,7 @@
     /* Shadows */
     --shadow-card:  0 4px 24px rgba(0,0,0,0.5);
     --shadow-glow:  0 0 0 1px rgba(232,255,71,0.08);
-
-    /* Typography */
-    --font-ui:      'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-mono:    'DM Mono', 'Fira Code', monospace;
-    --font-display: 'Instrument Serif', Georgia, serif;
-
-    /* Legacy aliases — keep existing code working */
-    --primary:    var(--accent);
-    --secondary:  var(--green);
-    --danger:     var(--red);
-    --warning:    var(--amber);
-    --info:       var(--blue);
-    --bg:         var(--bg-primary);
-    --text:       var(--text-primary);
-    --card-bg:    var(--bg-card);
-    --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-    --shadow-md:  var(--shadow-card);
-    --radius:     20px;
+    --shadow-sm:    0 1px 3px rgba(0,0,0,0.4);
 }
 
 body {
@@ -72,7 +126,7 @@ body {
     color: var(--text-primary);
 }
 
-body::before {
+[data-theme="dark"] body::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -447,7 +501,7 @@ h2, h3, h4 {
 
 .btn-primary {
     background: var(--accent);
-    color: #09090b;
+    color: var(--accent-fg);
     box-shadow: 0 2px 8px var(--accent-dim);
 }
 
@@ -908,13 +962,16 @@ h2, h3, h4 {
 }
 
 /* Date picker */
-input[type="date"] {
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+[data-theme="dark"] input[type="date"] {
     color-scheme: dark;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(1);
-    cursor: pointer;
 }
 
 /* Skeleton loading states */
@@ -1026,6 +1083,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 14px;
     /* padding: 20px; */
     box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.breakdown .chart-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 /* Drill-down expand button in allocation legend */
@@ -1553,7 +1617,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     right: 24px;
     z-index: 50;
     background: var(--accent);
-    color: #09090b;
+    color: var(--accent-fg);
     border: none;
     border-radius: 100px;
     width: 56px;
@@ -1931,7 +1995,7 @@ th.sort-desc .sort-icon {
 
 .settings-tab.active {
     background: var(--accent);
-    color: #09090b;
+    color: var(--accent-fg);
     border-color: var(--accent);
 }
 

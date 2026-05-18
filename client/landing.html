@@ -1,1300 +1,416 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#09090b">
+  <meta name="theme-color" content="#ffffff">
   <title>Wealth OS — Your entire financial life. One dashboard.</title>
+  <script>
+    (function(){
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t);
+        } else {
+          document.documentElement.setAttribute('data-theme',
+            window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        }
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap"
     rel="stylesheet">
   <style>
-    /* ─── RESET & BASE ──────────────────────────────────── */
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    /* ─── RESET ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      background: #09090b;
-      color: #fafafa;
-      font-family: 'Syne', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ─── TOKENS ────────────────────────────────────────── */
+    /* ─── TOKENS ─── light default / dark override ───────── */
     :root {
-      --bg: #09090b;
-      --surface: #111113;
-      --surface2: #18181b;
-      --surface3: #1f1f23;
-      --border: rgba(255, 255, 255, 0.07);
-      --border2: rgba(255, 255, 255, 0.13);
-      --text: #fafafa;
-      --muted: #71717a;
-      --muted2: #3f3f46;
-      --green: #4ade80;
-      --green-dim: rgba(74, 222, 128, 0.1);
-      --red: #f87171;
-      --amber: #fbbf24;
-      --accent: #e8ff47;
-      --accent2: rgba(232, 255, 71, 0.08);
-      --blue: #60a5fa;
-
-      --nav-h: 64px;
-      --max: 1140px;
-      --r: 20px;
-    }
-
-    /* ─── NOISE OVERLAY ─────────────────────────────────── */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 999;
-      opacity: 0.5;
-    }
-
-    /* ─── SCROLLBAR ─────────────────────────────────────── */
-    ::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--surface3);
-      border-radius: 4px;
-    }
-
-    /* ─── NAV ───────────────────────────────────────────── */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      height: var(--nav-h);
-      display: flex;
-      align-items: center;
-      padding: 0 clamp(16px, 4vw, 48px);
-      border-bottom: 1px solid transparent;
-      transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
-    }
-
-    nav.scrolled {
-      background: rgba(9, 9, 11, 0.85);
-      border-color: var(--border);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-
-    .nav-inner {
-      width: 100%;
-      max-width: var(--max);
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text);
-      text-decoration: none;
-    }
-
-    .nav-logo span {
-      font-size: 20px;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .btn-ghost {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 100px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .btn-ghost:hover {
-      color: var(--text);
-      border-color: var(--border2);
-    }
-
-    .btn-primary {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      color: #09090b;
-      background: var(--accent);
-      border: none;
-      padding: 9px 20px;
-      border-radius: 100px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: inline-block;
-      white-space: nowrap;
-    }
-
-    .btn-primary:hover {
-      background: #f0ff6a;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(232, 255, 71, 0.25);
-    }
-
-    /* mobile nav toggle */
-    .nav-toggle {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 4px;
-    }
-
-    .nav-toggle span {
-      display: block;
-      width: 22px;
-      height: 1.5px;
-      background: var(--muted);
-      border-radius: 2px;
-      transition: all 0.3s;
-    }
-
-    /* mobile menu */
-    .nav-mobile {
-      display: none;
-      position: fixed;
-      top: var(--nav-h);
-      left: 0;
-      right: 0;
-      background: rgba(9, 9, 11, 0.97);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 24px clamp(16px, 4vw, 48px) 32px;
-      z-index: 99;
-      transform: translateY(-10px);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s;
-    }
-
-    .nav-mobile.open {
-      display: block;
-      transform: translateY(0);
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .nav-mobile ul {
-      list-style: none;
-      margin-bottom: 24px;
-    }
-
-    .nav-mobile ul li {
-      border-bottom: 1px solid var(--border);
-    }
-
-    .nav-mobile ul li a {
-      display: block;
-      padding: 14px 0;
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      color: var(--muted);
-      text-decoration: none;
-      letter-spacing: 0.06em;
-      transition: color 0.2s;
-    }
-
-    .nav-mobile ul li a:hover {
-      color: var(--text);
-    }
-
-    .nav-mobile .btn-primary {
-      width: 100%;
-      text-align: center;
-      padding: 14px;
-      font-size: 13px;
-      border-radius: 12px;
-    }
-
-    /* ─── HERO ──────────────────────────────────────────── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding: calc(var(--nav-h) + 40px) clamp(16px, 4vw, 48px) 80px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* grid lines bg */
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-      background-size: 80px 80px;
-      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 100%);
-    }
-
-    .hero-glow {
-      position: absolute;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 700px;
-      height: 600px;
-      background: radial-gradient(ellipse, rgba(232, 255, 71, 0.04) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-inner {
-      width: 100%;
-      max-width: var(--max);
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: clamp(40px, 6vw, 80px);
-      align-items: center;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(232, 255, 71, 0.06);
-      border: 1px solid rgba(232, 255, 71, 0.18);
-      padding: 6px 14px;
-      border-radius: 100px;
-      margin-bottom: 28px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      color: var(--accent);
-      animation: fadeUp 0.5s ease both;
-    }
-
-    .hero-badge-dot {
-      width: 5px;
-      height: 5px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: blink 2s ease infinite;
-    }
-
-    .hero-h1 {
-      font-family: 'Instrument Serif', serif;
-      font-weight: 400;
-      font-size: clamp(38px, 5.5vw, 68px);
-      line-height: 1.05;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      margin-bottom: 8px;
-      animation: fadeUp 0.5s 0.1s ease both;
-    }
-
-    .hero-h1 em {
-      font-style: italic;
-      color: var(--accent);
-      display: block;
-    }
-
-    .hero-sub {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(14px, 1.6vw, 17px);
-      color: var(--muted);
-      line-height: 1.65;
-      max-width: 440px;
-      margin-bottom: 36px;
-      animation: fadeUp 0.5s 0.2s ease both;
-    }
-
-    .hero-ctas {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      animation: fadeUp 0.5s 0.3s ease both;
-    }
-
-    .btn-hero {
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      color: #09090b;
-      background: var(--accent);
-      padding: 14px 28px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.25s;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .btn-hero:hover {
-      background: #f0ff6a;
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(232, 255, 71, 0.28);
-    }
-
-    .btn-hero-ghost {
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--border2);
-      padding: 13px 24px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn-hero-ghost:hover {
-      color: var(--text);
-      border-color: var(--border2);
-    }
-
-    .hero-trust {
-      margin-top: 28px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      color: var(--muted2);
-      animation: fadeUp 0.5s 0.4s ease both;
-    }
-
-    .trust-dot {
-      width: 3px;
-      height: 3px;
-      background: var(--muted2);
-      border-radius: 50%;
-    }
-
-    /* HERO MOCKUP */
-    .hero-mockup {
-      animation: fadeUp 0.6s 0.2s ease both;
-      position: relative;
-    }
-
-    .mockup-window {
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    }
-
-    .mockup-bar {
-      background: var(--surface2);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .mockup-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
-    .mockup-dot.r {
-      background: #ef4444;
-    }
-
-    .mockup-dot.y {
-      background: #f59e0b;
-    }
-
-    .mockup-dot.g {
-      background: #22c55e;
-    }
-
-    .mockup-body {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .mockup-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-    }
-
-    .mockup-card-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted2);
-      margin-bottom: 6px;
-    }
-
-    .mockup-card-val {
-      font-family: 'DM Mono', monospace;
-      font-size: 22px;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
-
-    .mockup-card-sub {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      color: var(--green);
-      margin-top: 3px;
-    }
-
-    .mockup-card-sub.neg {
-      color: var(--red);
-    }
-
-    .mockup-card-sub.neu {
-      color: var(--muted);
-    }
-
-    /* floating glow on mockup */
-    .mockup-glow {
-      position: absolute;
-      bottom: -80px;
-      right: -80px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(232, 255, 71, 0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* ─── TICKER ────────────────────────────────────────── */
-    .ticker-section {
-      padding: 0 0 0 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .ticker-track {
-      display: flex;
-      gap: 0;
-      animation: ticker 20s linear infinite;
-      width: max-content;
-    }
-
-    .ticker-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 32px;
-      border-right: 1px solid var(--border);
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-    }
-
-    .ticker-label {
-      color: var(--muted2);
-    }
-
-    .ticker-val {
-      color: var(--text);
-    }
-
-    .ticker-chg {
-      color: var(--green);
-    }
-
-    .ticker-chg.neg {
-      color: var(--red);
-    }
-
-    /* ─── SECTION COMMON ────────────────────────────────── */
-    section {
-      padding: clamp(64px, 10vw, 120px) clamp(16px, 4vw, 48px);
-    }
-
-    .section-inner {
-      max-width: var(--max);
-      margin: 0 auto;
-    }
-
-    .eyebrow {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--accent);
-      display: block;
-      margin-bottom: 16px;
-    }
-
-    .section-h2 {
-      font-family: 'Instrument Serif', serif;
-      font-weight: 400;
-      font-size: clamp(28px, 4vw, 48px);
-      line-height: 1.1;
-      letter-spacing: -0.01em;
-      color: var(--text);
-      margin-bottom: 16px;
-    }
-
-    .section-h2 em {
-      font-style: italic;
-      color: var(--accent);
-    }
-
-    .section-sub {
-      font-size: clamp(13px, 1.5vw, 16px);
-      color: var(--muted);
-      line-height: 1.7;
-      max-width: 520px;
-    }
-
-    /* ─── ASSET CLASSES ─────────────────────────────────── */
-    .assets-section {
-      padding-top: clamp(40px, 6vw, 80px);
-      padding-bottom: clamp(40px, 6vw, 80px);
-    }
-
-    .assets-scroll {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .assets-scroll::-webkit-scrollbar {
-      display: none;
-    }
-
-    .asset-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 10px 18px;
-      border-radius: 100px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      white-space: nowrap;
-      transition: all 0.2s;
-      cursor: default;
-      flex-shrink: 0;
-    }
-
-    .asset-pill:hover {
-      border-color: var(--border2);
-      color: var(--text);
-    }
-
-    .asset-pill-icon {
-      font-size: 14px;
-    }
-
-    /* ─── HOW IT WORKS ──────────────────────────────────── */
-    .hiw-section {}
-
-    .hiw-header {
-      margin-bottom: clamp(40px, 6vw, 64px);
-    }
-
-    .hiw-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .step-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.3s, transform 0.3s;
-    }
-
-    .step-card:hover {
-      border-color: var(--border2);
-      transform: translateY(-3px);
-    }
-
-    .step-num {
-      font-family: 'Instrument Serif', serif;
-      font-style: italic;
-      font-size: 64px;
-      font-weight: 400;
-      line-height: 1;
-      color: rgba(255, 255, 255, 0.04);
-      position: absolute;
-      top: 12px;
-      right: 20px;
-      user-select: none;
-      pointer-events: none;
-    }
-
-    .step-badge {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 15px;
-      color: #09090b;
-      margin-bottom: 20px;
-    }
-
-    .step-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 16px;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-
-    .step-desc {
-      font-family: 'Syne', sans-serif;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    /* ─── FEATURES ──────────────────────────────────────── */
-    .features-section {}
-
-    .feat-header {
-      margin-bottom: clamp(40px, 6vw, 64px);
-    }
-
-    .feat-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .feat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 24px;
-      transition: border-color 0.3s, transform 0.3s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feat-card:hover {
-      border-color: var(--border2);
-      transform: translateY(-2px);
-    }
-
-    .feat-card.wide {
-      grid-column: span 2;
-    }
-
-    .feat-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-    }
-
-    .feat-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .feat-desc {
-      font-family: 'Syne', sans-serif;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    .feat-card-accent {
-      background: linear-gradient(135deg, #0f1a0f 0%, var(--surface) 100%);
-      border-color: rgba(74, 222, 128, 0.15);
-    }
-
-    .feat-card-accent .feat-icon {
-      border-color: rgba(74, 222, 128, 0.2);
-      background: rgba(74, 222, 128, 0.08);
-    }
-
-    /* ─── PRIVACY ───────────────────────────────────────── */
-    .privacy-section {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .privacy-header {
-      text-align: center;
-      margin-bottom: clamp(40px, 6vw, 64px);
-    }
-
-    .privacy-header .section-sub {
-      margin: 0 auto;
-    }
-
-    .privacy-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .priv-card {
+      --bg:        #ffffff;
+      --surface:   #f7f7f8;
+      --surface2:  #efeff0;
+      --border:    rgba(0,0,0,0.08);
+      --border2:   rgba(0,0,0,0.14);
+      --text:      #111111;
+      --muted:     #666666;
+      --muted2:    #999999;
+      --accent:    #18181b;
+      --accent-fg: #ffffff;
+      --green:     #16a34a;
+      --red:       #dc2626;
+      --nav-h:     60px;
+      --max:       1080px;
+      --r:         14px;
+    }
+
+    [data-theme="dark"] {
+      --bg:        #09090b;
+      --surface:   #111113;
+      --surface2:  #18181b;
+      --border:    rgba(255,255,255,0.07);
+      --border2:   rgba(255,255,255,0.13);
+      --text:      #fafafa;
+      --muted:     #71717a;
+      --muted2:    #52525b;
+      --accent:    #e8ff47;
+      --accent-fg: #09090b;
+      --green:     #4ade80;
+      --red:       #f87171;
+    }
+
+    /* ─── BASE ───────────────────────────────────────────── */
+    body {
       background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 24px;
-      transition: border-color 0.3s, transform 0.3s;
-    }
-
-    .priv-card:hover {
-      border-color: var(--border2);
-      transform: translateY(-2px);
-    }
-
-    .priv-icon {
-      font-size: 28px;
-      margin-bottom: 14px;
-      display: block;
-    }
-
-    .priv-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 14px;
       color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .priv-desc {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.65;
-      font-family: 'Syne', sans-serif;
-    }
-
-    /* ─── SIGNUP ────────────────────────────────────────── */
-    .signup-section {}
-
-    .signup-inner {
-      max-width: 480px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .signup-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: clamp(28px, 5vw, 48px);
-      margin-top: 40px;
-      text-align: left;
-    }
-
-    .signup-card h3 {
-      font-family: 'Instrument Serif', serif;
-      font-style: italic;
-      font-size: 26px;
-      font-weight: 400;
-      color: var(--text);
-      text-align: center;
-      margin-bottom: 6px;
-    }
-
-    .signup-card .sub {
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      color: var(--muted2);
-      text-align: center;
-      margin-bottom: 28px;
-    }
-
-    .btn-google {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      color: var(--text);
-      padding: 13px;
-      border-radius: 12px;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-
-    .btn-google:hover {
-      background: var(--surface3);
-      border-color: var(--border2);
-    }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 20px 0;
-    }
-
-    .divider::before,
-    .divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .divider span {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      color: var(--muted2);
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-label {
-      display: block;
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      margin-bottom: 7px;
-    }
-
-    .form-input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 12px 14px;
-      border-radius: 10px;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      transition: border-color 0.2s;
-      outline: none;
-    }
-
-    .form-input::placeholder {
-      color: var(--muted2);
-    }
-
-    .form-input:focus {
-      border-color: rgba(232, 255, 71, 0.4);
-    }
-
-    .btn-signup {
-      width: 100%;
-      background: var(--accent);
-      border: none;
-      color: #09090b;
-      padding: 14px;
-      border-radius: 12px;
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      transition: all 0.25s;
-      margin-top: 6px;
-    }
-
-    .btn-signup:hover {
-      background: #f0ff6a;
-      box-shadow: 0 8px 24px rgba(232, 255, 71, 0.25);
-    }
-
-    .signin-link {
-      text-align: center;
-      margin-top: 16px;
-      font-family: 'DM Mono', monospace;
-      font-size: 10px;
-      color: var(--muted2);
-    }
-
-    .signin-link a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .signin-link a:hover {
-      text-decoration: underline;
-    }
-
-    /* ─── FOOTER ────────────────────────────────────────── */
-    footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 48px) clamp(24px, 4vw, 40px);
-    }
-
-    .footer-inner {
-      max-width: var(--max);
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 40px;
-    }
-
-    .footer-brand .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
+      font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
       font-size: 15px;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .footer-brand p {
-      font-family: 'Syne', sans-serif;
-      font-size: 12px;
-      color: var(--muted);
       line-height: 1.6;
     }
 
-    .footer-col h4 {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted2);
-      margin-bottom: 16px;
-    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
 
-    .footer-col ul {
-      list-style: none;
+    /* ─── NAV ────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      z-index: 100;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .footer-col ul li a {
-      font-family: 'Syne', sans-serif;
-      font-size: 13px;
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .footer-col ul li a:hover {
-      color: var(--text);
-    }
-
-    .footer-bottom {
-      max-width: var(--max);
-      margin: 32px auto 0;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
+      padding: 0 clamp(16px, 4vw, 48px);
+      background: var(--bg);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s;
     }
 
-    .footer-bottom p {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      color: var(--muted2);
-      letter-spacing: 0.06em;
+    nav.scrolled { border-color: var(--border); }
+
+    .nav-inner {
+      width: 100%; max-width: var(--max); margin: 0 auto;
+      display: flex; align-items: center;
     }
 
-    .footer-tags {
-      display: flex;
-      gap: 8px;
+    .nav-logo {
+      font-weight: 700; font-size: 14px; color: var(--text);
+      text-decoration: none; flex-shrink: 0; margin-right: 32px;
     }
 
-    .footer-tag {
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      letter-spacing: 0.1em;
-      padding: 3px 8px;
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      color: var(--muted2);
+    .nav-links { display: flex; align-items: center; gap: 24px; list-style: none; flex: 1; }
+
+    .nav-links a {
+      font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+      color: var(--muted); text-decoration: none; transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+    .nav-theme-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      width: 30px; height: 30px; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: border-color 0.15s, color 0.15s;
+    }
+    .nav-theme-btn:hover { border-color: var(--border2); color: var(--text); }
+
+    .nav-signin {
+      font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+      color: var(--muted); text-decoration: none; padding: 6px 12px; transition: color 0.15s;
+    }
+    .nav-signin:hover { color: var(--text); }
+
+    .nav-cta {
+      font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+      letter-spacing: 0.06em; background: var(--accent); color: var(--accent-fg);
+      border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      text-decoration: none; display: inline-block; transition: opacity 0.15s; white-space: nowrap;
+    }
+    .nav-cta:hover { opacity: 0.82; }
+
+    .nav-toggle {
+      display: none; background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 15px;
+      color: var(--text); line-height: 1;
     }
 
-    /* ─── ANIMATIONS ─────────────────────────────────────── */
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
+    .nav-mobile {
+      display: none; position: fixed; top: var(--nav-h); left: 0; right: 0;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      padding: 20px clamp(16px, 4vw, 48px) 24px; z-index: 99;
+    }
+    .nav-mobile.open { display: block; }
+    .nav-mobile ul { list-style: none; margin-bottom: 16px; }
+    .nav-mobile ul li a {
+      display: block; padding: 12px 0; font-family: 'DM Mono', monospace; font-size: 13px;
+      color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); transition: color 0.15s;
+    }
+    .nav-mobile ul li a:hover { color: var(--text); }
+    .nav-mobile .nav-cta { display: block; text-align: center; padding: 12px; font-size: 13px; border-radius: 10px; }
 
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    /* ─── HERO ───────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: calc(var(--nav-h) + 56px) clamp(16px, 4vw, 48px) 80px;
     }
 
-    @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.4;
-      }
+    .hero-inner {
+      max-width: var(--max); margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: clamp(40px, 6vw, 80px); align-items: center;
     }
 
-    @keyframes ticker {
-      from {
-        transform: translateX(0);
-      }
-
-      to {
-        transform: translateX(-50%);
-      }
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 20px;
     }
 
-    @keyframes float {
-
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(-8px);
-      }
+    .hero-h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(32px, 5vw, 58px); font-weight: 400;
+      line-height: 1.08; letter-spacing: -0.02em; color: var(--text); margin-bottom: 20px;
     }
 
-    .hero-mockup {
-      animation: fadeUp 0.6s 0.2s ease both, float 6s 1s ease-in-out infinite;
+    .hero-sub {
+      font-size: clamp(14px, 1.6vw, 16px); color: var(--muted);
+      line-height: 1.7; max-width: 400px; margin-bottom: 32px;
     }
 
-    /* scroll reveal */
-    .reveal {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+    .hero-ctas { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+
+    .btn-primary {
+      font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+      letter-spacing: 0.06em; background: var(--accent); color: var(--accent-fg);
+      border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer;
+      text-decoration: none; display: inline-block; transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.82; }
+
+    .btn-ghost {
+      font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.06em;
+      color: var(--muted); background: none; border: 1px solid var(--border2);
+      padding: 11px 22px; border-radius: 10px; cursor: pointer;
+      text-decoration: none; display: inline-block; transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-ghost:hover { color: var(--text); }
+
+    .hero-trust {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      letter-spacing: 0.1em; color: var(--muted2);
     }
 
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
+    .hero-mockup { display: flex; flex-direction: column; gap: 10px; }
+
+    .mockup-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 18px 20px;
     }
 
-    .reveal-delay-1 {
-      transition-delay: 0.1s;
+    .mc-label {
+      font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--muted2); margin-bottom: 6px;
     }
 
-    .reveal-delay-2 {
-      transition-delay: 0.2s;
+    .mc-value {
+      font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500;
+      letter-spacing: -0.02em; color: var(--text);
     }
 
-    .reveal-delay-3 {
-      transition-delay: 0.3s;
+    .mc-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--green); margin-top: 4px; }
+    .mc-sub.neg { color: var(--red); }
+    .mc-sub.neu { color: var(--muted); }
+
+    /* ─── ASSET STRIP ────────────────────────────────────── */
+    .asset-strip {
+      padding: 20px clamp(16px, 4vw, 48px);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+
+    .asset-strip-inner {
+      max-width: var(--max); margin: 0 auto;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+
+    .as-label {
+      font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--muted2); margin-right: 4px; flex-shrink: 0;
+    }
+
+    .as-pill {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.04em;
+      color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+      padding: 4px 11px; border-radius: 100px;
+    }
+
+    /* ─── SECTIONS ───────────────────────────────────────── */
+    section { padding: clamp(64px, 10vw, 112px) clamp(16px, 4vw, 48px); }
+
+    .inner { max-width: var(--max); margin: 0 auto; }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--muted2); display: block; margin-bottom: 14px;
+    }
+
+    .section-h2 {
+      font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+      font-size: clamp(26px, 4vw, 42px); line-height: 1.1; letter-spacing: -0.01em;
+      color: var(--text); margin-bottom: 12px;
+    }
+
+    .section-sub { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 480px; }
+
+    /* ─── FEATURES ───────────────────────────────────────── */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      background: var(--border); border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden; gap: 1px; margin-top: 48px;
+    }
+
+    .feat-item { background: var(--bg); padding: 24px 26px; }
+
+    .feat-name { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+
+    .feat-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── HOW IT WORKS ───────────────────────────────────── */
+    .hiw-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 48px; }
+
+    .step-num {
+      font-family: 'Instrument Serif', Georgia, serif; font-style: italic;
+      font-size: 40px; color: var(--muted2); line-height: 1; margin-bottom: 16px;
+    }
+
+    .step-title { font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 8px; }
+
+    .step-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── PRIVACY ────────────────────────────────────────── */
+    .privacy-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+
+    .priv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 48px; }
+
+    .priv-title { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+
+    .priv-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ─── AUTH SECTION ───────────────────────────────────── */
+    .signup-inner { max-width: 440px; margin: 0 auto; text-align: center; }
+
+    .auth-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: clamp(24px, 4vw, 40px); margin-top: 32px; text-align: left;
+    }
+
+    .auth-card-title {
+      font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-style: italic;
+      font-size: 24px; color: var(--text); text-align: center; margin-bottom: 4px;
+    }
+
+    .auth-card-sub {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+      color: var(--muted2); text-align: center; margin-bottom: 24px;
+    }
+
+    .btn-google {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+      padding: 11px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 12px;
+      letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s; text-decoration: none;
+    }
+    .btn-google:hover { opacity: 0.82; }
+
+    .divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .divider span {
+      font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--muted2);
+    }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-label {
+      display: block; font-family: 'DM Mono', monospace; font-size: 9px;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+    }
+
+    .form-input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border2); color: var(--text);
+      padding: 11px 14px; border-radius: 10px; font-family: 'DM Mono', monospace;
+      font-size: 13px; transition: border-color 0.15s; outline: none;
+    }
+    .form-input::placeholder { color: var(--muted2); }
+    .form-input:focus { border-color: var(--accent); }
+
+    .btn-submit {
+      width: 100%; background: var(--accent); color: var(--accent-fg); border: none;
+      padding: 13px; border-radius: 10px; font-family: 'DM Mono', monospace;
+      font-size: 13px; font-weight: 500; letter-spacing: 0.06em;
+      cursor: pointer; transition: opacity 0.15s; margin-top: 4px;
+    }
+    .btn-submit:hover { opacity: 0.85; }
+
+    .auth-toggle {
+      text-align: center; margin-top: 16px; font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--muted2);
+    }
+    .auth-toggle a { color: var(--text); text-decoration: none; font-weight: 600; }
+    .auth-toggle a:hover { text-decoration: underline; }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: clamp(28px, 4vw, 44px) clamp(16px, 4vw, 48px);
+    }
+
+    .footer-inner {
+      max-width: var(--max); margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px; flex-wrap: wrap;
+    }
+
+    .footer-logo { font-weight: 700; font-size: 14px; color: var(--text); }
+
+    .footer-links { display: flex; gap: 24px; list-style: none; }
+
+    .footer-links a {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+      color: var(--muted); text-decoration: none; transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy {
+      font-family: 'DM Mono', monospace; font-size: 10px;
+      color: var(--muted2); letter-spacing: 0.06em;
     }
 
     /* ─── RESPONSIVE ─────────────────────────────────────── */
     @media (max-width: 900px) {
-
-      .nav-links,
-      .btn-ghost {
-        display: none;
-      }
-
-      .nav-toggle {
-        display: flex;
-      }
-
-      .hero-inner {
-        grid-template-columns: 1fr;
-        gap: 48px;
-        text-align: center;
-      }
-
-      .hero-badge {
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .hero-sub {
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .hero-ctas {
-        justify-content: center;
-      }
-
-      .hero-trust {
-        justify-content: center;
-      }
-
-      .hero-mockup {
-        max-width: 400px;
-        margin: 0 auto;
-      }
-
-      .hiw-grid {
-        grid-template-columns: 1fr;
-        gap: 14px;
-      }
-
-      .feat-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .feat-card.wide {
-        grid-column: span 2;
-      }
-
-      .privacy-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .footer-inner {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .footer-brand {
-        grid-column: span 2;
-      }
+      .nav-links, .nav-signin { display: none; }
+      .nav-toggle { display: block; }
+      .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+      .hero-sub { max-width: 100%; }
+      .feat-grid { grid-template-columns: 1fr 1fr; }
+      .hiw-steps { grid-template-columns: 1fr; gap: 28px; }
+      .priv-grid { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 580px) {
-      .feat-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .feat-card.wide {
-        grid-column: span 1;
-      }
-
-      .privacy-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .footer-inner {
-        grid-template-columns: 1fr;
-      }
-
-      .footer-brand {
-        grid-column: span 1;
-      }
-
-      .hiw-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .btn-hero,
-      .btn-hero-ghost {
-        width: 100%;
-        justify-content: center;
-        text-align: center;
-      }
-
-      .hero-ctas {
-        flex-direction: column;
-      }
+      .feat-grid { grid-template-columns: 1fr; }
+      .priv-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 20px; }
+      .hero-ctas { flex-direction: column; }
+      .btn-primary, .btn-ghost { width: 100%; text-align: center; }
     }
   </style>
 </head>
@@ -1302,210 +418,135 @@
 <body>
 
   <!-- NAV -->
-  <nav>
+  <nav id="main-nav">
     <div class="nav-inner">
-      <a href="#" class="nav-logo"><span>💰</span> Wealth OS</a>
+      <a class="nav-logo" href="#">&#x1F4B0; Wealth OS</a>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#how-it-works">How it works</a></li>
         <li><a href="#security">Security</a></li>
       </ul>
       <div class="nav-right">
-        <a href="#signup" class="btn-ghost" data-mode="signin">Sign In</a>
-        <a href="#signup" class="btn-primary" data-mode="signup">Get Started Free</a>
-        <button class="nav-toggle" aria-label="Toggle menu">
-          <span></span><span></span><span></span>
-        </button>
+        <button class="nav-theme-btn" id="landingThemeBtn" aria-label="Toggle theme">&#x1F319;</button>
+        <a href="#signup" class="nav-signin" data-mode="signin">Sign In</a>
+        <a href="#signup" class="nav-cta" data-mode="signup">Get Started</a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">&#9776;</button>
       </div>
     </div>
   </nav>
 
   <!-- MOBILE MENU -->
-  <div class="nav-mobile">
+  <div class="nav-mobile" id="navMobile">
     <ul>
       <li><a href="#features">Features</a></li>
-      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#security">Security</a></li>
     </ul>
-    <a href="#signup" class="btn-primary" data-mode="signup">Get Started Free</a>
+    <a href="#signup" class="nav-cta" data-mode="signup">Get Started Free</a>
   </div>
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-glow"></div>
     <div class="hero-inner">
-      <div class="hero-content">
-        <div class="hero-badge"><span class="hero-badge-dot"></span> Wealth OS is here</div>
-        <h1 class="hero-h1">Your entire financial life.<br><em>One dashboard.</em></h1>
-        <p class="hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your
-          true net worth without checking five different apps.</p>
+      <div>
+        <span class="hero-eyebrow">Personal Finance Tracker</span>
+        <h1 class="hero-h1">Your entire financial life. One dashboard.</h1>
+        <p class="hero-sub">Track savings, FDs, mutual funds, stocks, and crypto with live prices. Finally know your true net worth without checking five different apps.</p>
         <div class="hero-ctas">
-          <a href="#signup" class="btn-hero">Start Tracking Now</a>
-          <a href="#features" class="btn-hero-ghost">Explore Features ↓</a>
+          <a href="#signup" class="btn-primary" data-mode="signup">Get Started Free</a>
+          <a href="#features" class="btn-ghost">Explore Features &#8594;</a>
         </div>
-        <div class="hero-trust">
-          <span class="trust-dot"></span>
-          <span>Private • Secure • Your Data</span>
-          <span class="trust-dot"></span>
-        </div>
+        <p class="hero-trust">&#x1F512; Private &middot; Open Source &middot; Your Data</p>
       </div>
       <div class="hero-mockup">
-        <div class="mockup-window">
-          <div class="mockup-bar">
-            <div class="mockup-dot r"></div>
-            <div class="mockup-dot y"></div>
-            <div class="mockup-dot g"></div>
-          </div>
-          <div class="mockup-body">
-            <div class="mockup-card">
-              <div class="mockup-card-label">Net Worth</div>
-              <div class="mockup-card-val">₹48.4L</div>
-              <div class="mockup-card-sub">↑ +8.4% vs last month</div>
-            </div>
-            <div class="mockup-card">
-              <div class="mockup-card-label">Mutual Funds P&L</div>
-              <div class="mockup-card-val">₹31.2L</div>
-              <div class="mockup-card-sub">▲ +21.3% XIRR</div>
-            </div>
-            <div class="mockup-card">
-              <div class="mockup-card-label">EPF + PPF</div>
-              <div class="mockup-card-val">₹8.9L</div>
-              <div class="mockup-card-sub neu">→ Stable growth</div>
-            </div>
-          </div>
+        <div class="mockup-card">
+          <p class="mc-label">Net Worth</p>
+          <p class="mc-value">&#x20B9;48.4L</p>
+          <p class="mc-sub">&#x2191; +8.4% this month</p>
         </div>
-        <div class="mockup-glow"></div>
+        <div class="mockup-card">
+          <p class="mc-label">Mutual Funds P&amp;L</p>
+          <p class="mc-value">&#x20B9;31.2L</p>
+          <p class="mc-sub">&#x25B2; +21.3% XIRR</p>
+        </div>
+        <div class="mockup-card">
+          <p class="mc-label">EPF + PPF</p>
+          <p class="mc-value">&#x20B9;8.9L</p>
+          <p class="mc-sub neu">&#x2192; Stable growth</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- TICKER -->
-  <div class="ticker-section">
-    <div class="ticker-track">
-      <div class="ticker-item"><span class="ticker-label">Nifty 50</span><span class="ticker-val">24,328.50</span><span
-          class="ticker-chg">▲ +0.42%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Sensex</span><span class="ticker-val">80,242.24</span><span
-          class="ticker-chg">▲ +0.38%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Bitcoin</span><span class="ticker-val">₹84,22,400</span><span
-          class="ticker-chg neg">▼ −1.24%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Gold ETF</span><span class="ticker-val">₹7,842</span><span
-          class="ticker-chg">▲ +0.18%</span></div>
-      <div class="ticker-item"><span class="ticker-label">USD/INR</span><span class="ticker-val">₹83.94</span><span
-          class="ticker-chg neg">▼ −0.06%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Nifty Bank</span><span
-          class="ticker-val">52,140.80</span><span class="ticker-chg">▲ +0.61%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Ethereum</span><span class="ticker-val">₹2,28,650</span><span
-          class="ticker-chg">▲ +0.93%</span></div>
-      <!-- duplicate for seamless loop -->
-      <div class="ticker-item"><span class="ticker-label">Nifty 50</span><span class="ticker-val">24,328.50</span><span
-          class="ticker-chg">▲ +0.42%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Sensex</span><span class="ticker-val">80,242.24</span><span
-          class="ticker-chg">▲ +0.38%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Bitcoin</span><span class="ticker-val">₹84,22,400</span><span
-          class="ticker-chg neg">▼ −1.24%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Gold ETF</span><span class="ticker-val">₹7,842</span><span
-          class="ticker-chg">▲ +0.18%</span></div>
-      <div class="ticker-item"><span class="ticker-label">USD/INR</span><span class="ticker-val">₹83.94</span><span
-          class="ticker-chg neg">▼ −0.06%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Nifty Bank</span><span
-          class="ticker-val">52,140.80</span><span class="ticker-chg">▲ +0.61%</span></div>
-      <div class="ticker-item"><span class="ticker-label">Ethereum</span><span class="ticker-val">₹2,28,650</span><span
-          class="ticker-chg">▲ +0.93%</span></div>
+  <!-- ASSET STRIP -->
+  <div class="asset-strip">
+    <div class="asset-strip-inner">
+      <span class="as-label">Track &#x2192;</span>
+      <span class="as-pill">&#x1F3E6; Savings</span>
+      <span class="as-pill">&#x1F4C8; Fixed Deposits</span>
+      <span class="as-pill">&#x1F4BC; Mutual Funds</span>
+      <span class="as-pill">&#x1F4CA; Stocks</span>
+      <span class="as-pill">&#x1FA99; Crypto</span>
+      <span class="as-pill">&#x1F3E0; EPF &amp; PPF</span>
     </div>
   </div>
 
-  <!-- ASSET CLASSES -->
-  <section class="assets-section">
-    <div class="section-inner">
-      <span class="eyebrow">Track Everything</span>
-      <div class="assets-scroll">
-        <div class="asset-pill"><span class="asset-pill-icon">🏦</span> Savings Accounts</div>
-        <div class="asset-pill"><span class="asset-pill-icon">📈</span> Fixed Deposits</div>
-        <div class="asset-pill"><span class="asset-pill-icon">💼</span> Mutual Funds</div>
-        <div class="asset-pill"><span class="asset-pill-icon">📊</span> Stocks</div>
-        <div class="asset-pill"><span class="asset-pill-icon">🪙</span> Crypto</div>
-        <div class="asset-pill"><span class="asset-pill-icon">🏠</span> EPF & PPF</div>
-        <div class="asset-pill"><span class="asset-pill-icon">💎</span> Gold ETFs</div>
-        <div class="asset-pill"><span class="asset-pill-icon">🏢</span> ESOPs</div>
-        <div class="asset-pill"><span class="asset-pill-icon">🎯</span> NPS</div>
-        <div class="asset-pill"><span class="asset-pill-icon">💵</span> Cash</div>
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="inner">
+      <span class="eyebrow">Features</span>
+      <h2 class="section-h2">Everything you need to manage wealth.</h2>
+      <p class="section-sub">Powerful tools built for Indian investors. No complexity, no clutter.</p>
+      <div class="feat-grid">
+        <div class="feat-item">
+          <p class="feat-name">Net Worth Dashboard</p>
+          <p class="feat-desc">See your complete financial picture at a glance with real-time portfolio value and allocation charts.</p>
+        </div>
+        <div class="feat-item">
+          <p class="feat-name">Live Prices</p>
+          <p class="feat-desc">Real-time stock, mutual fund, and crypto prices from trusted sources, refreshed on demand.</p>
+        </div>
+        <div class="feat-item">
+          <p class="feat-name">XIRR Tracking</p>
+          <p class="feat-desc">Calculate accurate returns across SIPs and lumpsum investments with full order history.</p>
+        </div>
+        <div class="feat-item">
+          <p class="feat-name">Rebalancing Advisor</p>
+          <p class="feat-desc">Set target allocations and see exactly what to buy or sell to stay on track. Includes SIP planning.</p>
+        </div>
+        <div class="feat-item">
+          <p class="feat-name">Order History</p>
+          <p class="feat-desc">Track every buy and sell order with weighted average cost calculations across all asset classes.</p>
+        </div>
+        <div class="feat-item">
+          <p class="feat-name">Data Portability</p>
+          <p class="feat-desc">Export and import your entire portfolio as an Excel workbook. Your data, always yours.</p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- HOW IT WORKS -->
-  <section class="hiw-section" id="how-it-works">
-    <div class="section-inner">
-      <div class="hiw-header">
-        <span class="eyebrow">How It Works</span>
-        <h2 class="section-h2">Get started in <em>minutes</em></h2>
-        <p class="section-sub">No complex setup. Just connect your data and start tracking.</p>
-      </div>
-      <div class="hiw-grid">
-        <div class="step-card">
-          <span class="step-num">1</span>
-          <div class="step-badge">1</div>
-          <h3 class="step-title">Connect your Supabase</h3>
-          <p class="step-desc">Create a free Supabase project and add your credentials. Your data stays in your own
-            database.</p>
+  <section id="how-it-works">
+    <div class="inner">
+      <span class="eyebrow">How It Works</span>
+      <h2 class="section-h2">Get started in minutes.</h2>
+      <p class="section-sub">No complex setup. No broker connections. Just your data.</p>
+      <div class="hiw-steps">
+        <div>
+          <p class="step-num">01</p>
+          <p class="step-title">Create your account</p>
+          <p class="step-desc">Sign up with email or Google. Your data is stored securely in your own Supabase database &#x2014; not ours.</p>
         </div>
-        <div class="step-card">
-          <span class="step-num">2</span>
-          <div class="step-badge">2</div>
-          <h3 class="step-title">Add your holdings</h3>
-          <p class="step-desc">Manually enter your investments or import from brokers. We support all major asset
-            classes.</p>
+        <div>
+          <p class="step-num">02</p>
+          <p class="step-title">Add your holdings</p>
+          <p class="step-desc">Enter your investments manually or import from an Excel template. Supports savings, FDs, mutual funds, stocks, crypto, and more.</p>
         </div>
-        <div class="step-card">
-          <span class="step-num">3</span>
-          <div class="step-badge">3</div>
-          <h3 class="step-title">Track in real-time</h3>
-          <p class="step-desc">Live prices, automated P&L calculations, and beautiful charts. All in one dashboard.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section class="features-section" id="features">
-    <div class="section-inner">
-      <div class="feat-header">
-        <span class="eyebrow">Features</span>
-        <h2 class="section-h2">Everything you need to <em>manage wealth</em></h2>
-        <p class="section-sub">Powerful tools designed for Indian investors.</p>
-      </div>
-      <div class="feat-grid">
-        <div class="feat-card">
-          <div class="feat-icon">📊</div>
-          <h3 class="feat-title">Net Worth Dashboard</h3>
-          <p class="feat-desc">See your complete financial picture at a glance with beautiful charts and real-time
-            updates.</p>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">📈</div>
-          <h3 class="feat-title">Live Prices</h3>
-          <p class="feat-desc">Real-time stock, mutual fund, and crypto prices from trusted sources.</p>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">🎯</div>
-          <h3 class="feat-title">XIRR Tracking</h3>
-          <p class="feat-desc">Calculate accurate returns on your SIPs and lumpsum investments.</p>
-        </div>
-        <div class="feat-card wide feat-card-accent">
-          <div class="feat-icon">🔒</div>
-          <h3 class="feat-title">100% Private</h3>
-          <p class="feat-desc">Your data never leaves your Supabase. No analytics, no tracking, no data selling.
-            Complete privacy by design.</p>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">📱</div>
-          <h3 class="feat-title">Responsive Design</h3>
-          <p class="feat-desc">Works perfectly on desktop, tablet, and mobile. Track anywhere.</p>
-        </div>
-        <div class="feat-card">
-          <div class="feat-icon">⚡</div>
-          <h3 class="feat-title">Fast & Lightweight</h3>
-          <p class="feat-desc">Built for speed. No bloat, no unnecessary features. Just what you need.</p>
+        <div>
+          <p class="step-num">03</p>
+          <p class="step-title">Track in real-time</p>
+          <p class="step-desc">Live prices, automated P&amp;L calculations, and rebalancing advice &#x2014; all in one clean dashboard.</p>
         </div>
       </div>
     </div>
@@ -1513,43 +554,38 @@
 
   <!-- PRIVACY / SECURITY -->
   <section class="privacy-section" id="security">
-    <div class="section-inner">
-      <div class="privacy-header">
-        <span class="eyebrow">Security</span>
-        <h2 class="section-h2">Your data is <em>yours alone</em></h2>
-        <p class="section-sub">We don't store your data. We don't sell it. It stays in your Supabase.</p>
-      </div>
-      <div class="privacy-grid">
-        <div class="priv-card">
-          <span class="priv-icon">🔐</span>
-          <h3 class="priv-title">Client-Side Encryption</h3>
-          <p class="priv-desc">All sensitive data is encrypted before it leaves your browser.</p>
+    <div class="inner">
+      <span class="eyebrow">Security</span>
+      <h2 class="section-h2">Your data is yours alone.</h2>
+      <p class="section-sub">We don&#x27;t store your financial data. It lives in your own Supabase project, under your control.</p>
+      <div class="priv-grid">
+        <div>
+          <p class="priv-title">Your Own Database</p>
+          <p class="priv-desc">Connect your own Supabase project. We never have access to your financial data.</p>
         </div>
-        <div class="priv-card">
-          <span class="priv-icon">🗄️</span>
-          <h3 class="priv-title">Your Own Database</h3>
-          <p class="priv-desc">Connect to your own Supabase project. We never see your data.</p>
+        <div>
+          <p class="priv-title">No Analytics or Tracking</p>
+          <p class="priv-desc">Zero third-party scripts. No cookies, no analytics, no data selling. Ever.</p>
         </div>
-        <div class="priv-card">
-          <span class="priv-icon">🚫</span>
-          <h3 class="priv-title">No Tracking</h3>
-          <p class="priv-desc">Zero analytics. No cookies. No third-party scripts.</p>
+        <div>
+          <p class="priv-title">Open Source</p>
+          <p class="priv-desc">The full codebase is open source. Audit it, self-host it, or fork it. Transparency by design.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- SIGNUP -->
-  <section class="signup-section" id="signup">
-    <div class="section-inner signup-inner">
+  <section id="signup">
+    <div class="inner signup-inner">
       <span class="eyebrow">Get Started</span>
-      <h2 class="section-h2">Start tracking <em>today</em></h2>
+      <h2 class="section-h2">Start tracking today.</h2>
       <p class="section-sub">Free forever. No credit card required.</p>
-      <div class="signup-card">
-        <h3 id="form-title">Create your account</h3>
-        <p class="sub" id="form-sub">Join Wealth OS in seconds</p>
+      <div class="auth-card">
+        <p class="auth-card-title" id="form-title">Create your account</p>
+        <p class="auth-card-sub" id="form-sub">Join Wealth OS in seconds</p>
         <a href="#" class="btn-google">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.64 9.2c0-.637-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
             <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-2.048.86-2.43 0-4.467-1.637-5.2-3.826H.688v2.318C2.166 15.757 5.416 18 9 18z" fill="#34A853"/>
             <path d="M3.8 10.595a4.672 4.672 0 0 1 0-3.012V5.265H.688C.248 6.462 0 7.712 0 9c0 1.288.248 2.538.688 3.735l3.112-2.14z" fill="#FBBC05"/>
@@ -1560,20 +596,20 @@
         <div class="divider"><span>OR</span></div>
         <form id="auth-form">
           <div class="form-group" id="name-group" style="display: none;">
-            <label class="form-label">Name</label>
-            <input type="text" id="name-input" class="form-input" placeholder="Your full name">
+            <label class="form-label" for="name-input">Name</label>
+            <input type="text" id="name-input" class="form-input" placeholder="Your name">
           </div>
           <div class="form-group">
-            <label class="form-label">Email</label>
+            <label class="form-label" for="email-input">Email</label>
             <input type="email" id="email-input" class="form-input" placeholder="you@example.com">
           </div>
           <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="password-input" class="form-input" placeholder="••••••••">
+            <label class="form-label" for="password-input">Password</label>
+            <input type="password" id="password-input" class="form-input" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;">
           </div>
-          <button type="submit" class="btn-signup" id="submit-btn">Create Account</button>
+          <button type="submit" class="btn-submit" id="submit-btn">Create Account</button>
         </form>
-        <p class="signin-link"><span id="toggle-text">Already have an account? </span><a href="#" id="toggle-link">Sign In</a></p>
+        <p class="auth-toggle"><span id="toggle-text">Already have an account? </span><a href="#" id="toggle-link">Sign In</a></p>
       </div>
     </div>
   </section>
@@ -1581,112 +617,79 @@
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="logo"><span>💰</span> Wealth OS</div>
-        <p>Your entire financial life. One dashboard. Private, secure, and completely yours.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <ul>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#how-it-works">How It Works</a></li>
-          <li><a href="#security">Security</a></li>
-          <li><a href="#signup">Pricing</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="#">Documentation</a></li>
-          <li><a href="#">GitHub</a></li>
-          <li><a href="#">Changelog</a></li>
-          <li><a href="#">Support</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2026 Wealth OS. All rights reserved.</p>
-      <div class="footer-tags">
-        <span class="footer-tag">Open Source</span>
-        <span class="footer-tag">Privacy First</span>
-        <span class="footer-tag">Made in India</span>
-      </div>
+      <span class="footer-logo">&#x1F4B0; Wealth OS</span>
+      <ul class="footer-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#">GitHub</a></li>
+      </ul>
+      <p class="footer-copy">&#x00A9; 2026 Wealth OS &middot; Made in India</p>
     </div>
   </footer>
 
   <script type="module" src="/src/landing-auth.js"></script>
 
   <script>
-    // NAV SCROLL EFFECT
-    const nav = document.querySelector('nav');
+    // NAV SCROLL
+    const nav = document.getElementById('main-nav');
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 20) {
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    });
+      nav.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
 
-    // MOBILE MENU TOGGLE
-    const navToggle = document.querySelector('.nav-toggle');
-    const navMobile = document.querySelector('.nav-mobile');
+    // MOBILE MENU
+    const navToggle = document.getElementById('navToggle');
+    const navMobile = document.getElementById('navMobile');
     let menuOpen = false;
-
     navToggle.addEventListener('click', () => {
       menuOpen = !menuOpen;
       navMobile.classList.toggle('open', menuOpen);
-      navToggle.setAttribute('aria-expanded', menuOpen);
     });
-
-    // Close mobile menu when clicking a link
-    navMobile.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        menuOpen = false;
-        navMobile.classList.remove('open');
-        navToggle.setAttribute('aria-expanded', false);
-      });
-    });
-
-    // SCROLL REVEAL
-    const revealElements = document.querySelectorAll('.reveal');
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
-    }, { threshold: 0.1 });
-
-    revealElements.forEach(el => revealObserver.observe(el));
+    navMobile.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+      menuOpen = false;
+      navMobile.classList.remove('open');
+    }));
 
     // SMOOTH SCROLL
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const href = a.getAttribute('href');
+        if (href === '#') return;
+        const target = document.querySelector(href);
+        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
       });
     });
 
-    // AUTH FORM MODE SWITCHING
-    const formTitle = document.getElementById('form-title');
-    const formSub = document.getElementById('form-sub');
-    const nameGroup = document.getElementById('name-group');
-    const nameInput = document.getElementById('name-input');
-    const submitBtn = document.getElementById('submit-btn');
-    const toggleText = document.getElementById('toggle-text');
-    const toggleLink = document.getElementById('toggle-link');
+    // THEME TOGGLE
+    const themeBtn = document.getElementById('landingThemeBtn');
+    function syncLandingTheme() {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      themeBtn.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+      themeBtn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    syncLandingTheme();
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch(e) {}
+      syncLandingTheme();
+    });
 
+    // AUTH FORM MODE
     let isSignUpMode = true;
     window.isSignUpMode = isSignUpMode;
 
     function setFormMode(signUp) {
       isSignUpMode = signUp;
       window.isSignUpMode = isSignUpMode;
+      const nameGroup = document.getElementById('name-group');
+      const nameInput = document.getElementById('name-input');
+      const formTitle = document.getElementById('form-title');
+      const formSub = document.getElementById('form-sub');
+      const submitBtn = document.getElementById('submit-btn');
+      const toggleText = document.getElementById('toggle-text');
+      const toggleLink = document.getElementById('toggle-link');
       if (signUp) {
-        // Signup mode
         formTitle.textContent = 'Create your account';
         formSub.textContent = 'Join Wealth OS in seconds';
         nameGroup.style.display = 'block';
@@ -1695,7 +698,6 @@
         toggleText.textContent = 'Already have an account? ';
         toggleLink.textContent = 'Sign In';
       } else {
-        // Signin mode
         formTitle.textContent = 'Welcome back';
         formSub.textContent = 'Sign in to your account';
         nameGroup.style.display = 'none';
@@ -1707,21 +709,14 @@
     }
     window.setFormMode = setFormMode;
 
-    // Toggle link click handler
-    toggleLink.addEventListener('click', (e) => {
+    document.getElementById('toggle-link').addEventListener('click', e => {
       e.preventDefault();
       setFormMode(!isSignUpMode);
     });
 
-    // Handle data-mode attributes on navigation links
-    document.querySelectorAll('[data-mode]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        const mode = link.getAttribute('data-mode');
-        if (mode === 'signup') {
-          setFormMode(true);
-        } else if (mode === 'signin') {
-          setFormMode(false);
-        }
+    document.querySelectorAll('[data-mode]').forEach(el => {
+      el.addEventListener('click', () => {
+        setFormMode(el.getAttribute('data-mode') === 'signup');
       });
     });
   </script>

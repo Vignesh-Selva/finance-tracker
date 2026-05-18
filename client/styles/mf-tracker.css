@@ -187,7 +187,7 @@
 
 .mft-btn-primary {
   background: var(--mft-accent);
-  color: #09090b;
+  color: var(--accent-fg);
   box-shadow: 0 2px 8px var(--accent-dim);
 }
 
@@ -329,7 +329,7 @@
 .mft-badge-category {
   background: var(--accent-dim);
   color: var(--mft-accent);
-  border: 1px solid rgba(232,255,71,0.15);
+  border: 1px solid var(--border);
 }
 
 .mft-badge-amc {
@@ -459,7 +459,7 @@
 .mft-alert-info {
   background: var(--accent-dim);
   color: var(--mft-accent);
-  border: 1px solid rgba(232,255,71,0.15);
+  border: 1px solid var(--border);
 }
 
 .mft-alert-dismiss {
