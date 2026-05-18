@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { supabase } from '../../src/services/supabaseClient.js';
 
 describe('supabaseClient', () => {

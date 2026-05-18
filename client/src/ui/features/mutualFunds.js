@@ -262,7 +262,6 @@ async function renderPortfolioTab(container, portfolioId) {
             const xirr = FinanceUtils.xirrFromHolding(invested, current, item._firstOrderDate || item.created_at);
             const xirrValue = xirr !== null ? `${xirr.value}%` : '—';
             const xirrClass = xirr !== null ? (parseFloat(xirr.value) >= 0 ? 'color:var(--green)' : 'color:var(--red)') : '';
-            const plClass = pl >= 0 ? 'color:var(--green)' : 'color:var(--red)';
             const fundName = item.fund_name.length > 30 ? item.fund_name.substring(0, 30) + '...' : item.fund_name;
             return `
                         <div class="mobile-compact-row" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;" data-fund-id="${item.id}">

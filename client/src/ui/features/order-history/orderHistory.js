@@ -327,8 +327,6 @@ function _buildTable(orders, holdings, cfg, state) {
         <div class="mobile-list-container" style="display:none;background:var(--surface);border-radius:20px;padding:0;overflow:hidden;margin-top:16px;">
             ${orders.map(o => {
                 const holdingName = holdingMap.get(o[cfg.holdingIdField]) || '—';
-                const qty = parseFloat(o[cfg.unitsField] ?? o.units ?? o.quantity) || 0;
-                const price = parseFloat(o[cfg.priceField] ?? o.nav ?? o.price) || 0;
                 const amount = parseFloat(o.amount) || 0;
                 const date = o.execution_date
                     ? new Date(o.execution_date + 'T00:00:00').toLocaleDateString('en-IN', {
